@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import ConnectSupabaseSteps from "@/components/tutorial/ConnectSupabaseSteps";
 import SignUpUserSteps from "@/components/tutorial/SignUpUserSteps";
 import Header from "@/components/Header";
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 export default async function Index() {
   const canInitSupabaseClient = () => {
@@ -49,6 +50,7 @@ export default async function Index() {
           </a>
         </p>
       </footer>
+      <SpeedInsights />
     </div>
   );
 }
