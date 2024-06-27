@@ -36,7 +36,17 @@ function FocusGraph({
 
   //console.log("client1.5", data)
   
-  const parsedData = JSON.parse(data)
+  let parsedData
+  try {
+    parsedData = JSON.parse(data)
+  } catch(err) {
+    let errorMessage
+    if (err instanceof Error) {
+      errorMessage = err.message;
+    }
+    console.log(`-- JSON Parsing error --\n${err}\n-- Cause --\n${errorMessage}`)
+    parsedData = {nodes: [], links: []}
+  }
   
   // console.log("client2", parsedData["links"][5])
 
