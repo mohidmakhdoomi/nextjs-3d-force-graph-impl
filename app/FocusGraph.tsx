@@ -23,7 +23,7 @@ const ForwardGraph3D = forwardRef(
 function FocusGraph({
   data,
 }: {
-  data: React.ReactNode
+  data: string
 }) {
   const fgRef = useRef<ForceGraphMethods>();
 //  const { data, error } = useSWR(GetData(), fetcher)
@@ -41,7 +41,7 @@ function FocusGraph({
   // console.log("client2", parsedData["links"][5])
 
   const handleClick = useCallback(
-    (node) => {
+    (node: any) => {
       const distance = 40;
       const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
       if (fgRef.current) {

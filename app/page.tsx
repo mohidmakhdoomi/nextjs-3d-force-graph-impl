@@ -25,7 +25,7 @@ export default async function Index() {
   
   // const initialFetch = await GetData()
   const end = new Date()
-  console.log(dataURL + " graph data loaded in "+(end-start)+" ms.")
+  console.log(dataURL + " graph data loaded in "+(end.valueOf()-start.valueOf())+" ms.")
   // console.log("page", JSON.parse(initialFetch)['links'][5])
     
   return (
