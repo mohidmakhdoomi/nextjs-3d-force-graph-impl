@@ -5,21 +5,29 @@ import ConnectSupabaseSteps from "@/components/tutorial/ConnectSupabaseSteps";
 import SignUpUserSteps from "@/components/tutorial/SignUpUserSteps";
 import Header from "@/components/Header";
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import FocusGraph from "./FocusGraph";
+// import { GetData } from "./DataGetter"
+
 
 export default async function Index() {
-  const canInitSupabaseClient = () => {
-    // This function is just for the interactive tutorial.
-    // Feel free to remove it once you have Supabase connected.
-    try {
-      createClient();
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
-
-  const isSupabaseConnected = canInitSupabaseClient();
-
+  const isSupabaseConnected = true //canInitSupabaseClient();
+  // console.log('ok')
+  const dataURL = ((process.env.NEXT_PUBLIC_VERCEL_ENV == 'local') ? "http://" : "https://") + process.env.NEXT_PUBLIC_VERCEL_URL + "/graph/"
+  const start = new Date()
+  const initialReq = await fetch(dataURL, { 
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json",
+    }, 
+    next: { revalidate: false } }
+  )
+  const initialFetch = JSON.stringify(await initialReq.json())
+  
+  // const initialFetch = await GetData()
+  const end = new Date()
+  console.log(dataURL + " graph data loaded in "+(end-start)+" ms.")
+  // console.log("page", JSON.parse(initialFetch)['links'][5])
+    
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
       <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
@@ -32,6 +40,7 @@ export default async function Index() {
       <div className="flex-1 flex flex-col gap-20 max-w-4xl px-3">
         <Header />
         <main className="flex-1 flex flex-col gap-6">
+          <FocusGraph data={initialFetch} />
           <h2 className="font-bold text-4xl mb-4">Next steps</h2>
           {isSupabaseConnected ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
         </main>
