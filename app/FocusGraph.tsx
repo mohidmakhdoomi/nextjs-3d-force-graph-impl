@@ -42,7 +42,7 @@ function FocusGraph({
   } catch(err) {
     let errorMessage
     if (err instanceof Error) {
-      errorMessage = err.message;
+      errorMessage = err.cause;
     }
     console.log(`-- JSON Parsing error --\n${err}\n-- Cause --\n${errorMessage}`)
     parsedData = {nodes: [], links: []}

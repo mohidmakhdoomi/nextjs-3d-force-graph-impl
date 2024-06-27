@@ -14,15 +14,26 @@ export default async function Index() {
   // console.log('ok')
   const dataURL = ((process.env.NEXT_PUBLIC_VERCEL_ENV == 'local') ? "http://" : "https://") + process.env.NEXT_PUBLIC_VERCEL_URL + "/graph/"
   const start = new Date()
-  const initialReq = await fetch(dataURL, { 
-    method: 'POST',
-    headers: {
-      "Content-Type": "application/json",
-    }, 
-    next: { revalidate: false } }
-  )
-  const initialFetch = JSON.stringify(await initialReq.json())
-  
+  let initialFetch
+  try {
+      const initialReq = await fetch(dataURL, { 
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+        }, 
+        next: { revalidate: false } 
+      }
+    )
+    initialFetch = JSON.stringify(await initialReq.json())
+  } catch(err) {
+    let errorMessage
+    if (err instanceof Error) {
+      errorMessage = err.cause;
+    }
+    console.log(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
+    console.log(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
+    initialFetch = JSON.stringify({nodes: [], links: []})
+  }
   // const initialFetch = await GetData()
   const end = new Date()
   console.log(dataURL + " graph data loaded in "+(end.valueOf()-start.valueOf())+" ms.")
