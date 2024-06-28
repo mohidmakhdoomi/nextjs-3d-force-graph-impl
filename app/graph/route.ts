@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server'
 import { read } from '@/lib/neo4j';
 
 export async function GET() {
