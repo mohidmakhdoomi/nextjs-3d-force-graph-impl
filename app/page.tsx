@@ -15,21 +15,11 @@ export default async function Index() {
   const dataURL = ((process.env.NEXT_PUBLIC_VERCEL_ENV == 'local') ? "http://" : "https://") + process.env.NEXT_PUBLIC_VERCEL_URL + "/graph"
   console.log("!!! CI: ", process.env.CI)
   const start = new Date()
+
   let initialFetch
-  const originalJSONstringy = JSON.stringify;
-  JSON.stringify = function(data) {
-    try {
-        // Call the original JSON.stringify with the same `this` varaible
-        // and arguments.
-        const argumentsTyped: any = arguments;
-        return originalJSONstringy.apply(this, argumentsTyped);
-    } catch (error) {
-        console.warn('ERROR: Failed to stringify', data);
-        throw error;
-    }
-  };
+  let initialReq
   try {
-      const initialReq = await fetch(dataURL, {         
+      initialReq = await fetch(dataURL, {         
         next: { revalidate: 0 } 
       }
     )
@@ -45,6 +35,9 @@ export default async function Index() {
     } else {
       console.log(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
       console.log(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
+      if (initialReq !== undefined) {
+        console.log(`-- JSON Fetching error --\n${err}\n-- Data --\n${errorMessage}`)
+      }
     }
     initialFetch = JSON.stringify({nodes: [], links: []})
   }
