@@ -6,8 +6,8 @@ import SignUpUserSteps from "@/components/tutorial/SignUpUserSteps";
 import Header from "@/components/Header";
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import FocusGraph from "./FocusGraph";
-// import { GetData } from "./DataGetter"
 
+// import { GetData } from "./DataGetter"
 
 export default async function Index() {
   const isSupabaseConnected = true //canInitSupabaseClient();
@@ -16,12 +16,8 @@ export default async function Index() {
   const start = new Date()
   let initialFetch
   try {
-      const initialReq = await fetch(dataURL, { 
-        method: 'POST',
-        headers: {
-          "Content-Type": "application/json",
-        }, 
-        next: { revalidate: false } 
+      const initialReq = await fetch(dataURL, {         
+        next: { revalidate: 300 } 
       }
     )
     initialFetch = JSON.stringify(await initialReq.json())

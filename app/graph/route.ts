@@ -9,5 +9,5 @@ export async function GET() {
   links?.forEach(l => {ids.add(l.source);ids.add(l.target);});
   const gData = { nodes: Array.from(ids).map(id => {return {id}}), links: links};
   
-  return NextResponse.json(gData);
+  return Response.json(gData);
 }
