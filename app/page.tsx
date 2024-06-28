@@ -28,7 +28,7 @@ export default async function Index() {
       errorMessage = err.cause;
     }
 
-    if (process.env.CI === "true") {
+    if ((process.env.CI !== undefined) && (process.env.CI.trim() === "1")) {
       console.log(`-- Build in progress cannot access /graph endpoint --\n-- URL --\n${dataURL}`)
     } else {
       console.log(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
