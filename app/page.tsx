@@ -5,6 +5,7 @@ import ConnectSupabaseSteps from "@/components/tutorial/ConnectSupabaseSteps";
 import SignUpUserSteps from "@/components/tutorial/SignUpUserSteps";
 import Header from "@/components/Header";
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from "@vercel/analytics/react";
 import FocusGraph from "./FocusGraph";
 
 // import { GetData } from "./DataGetter"
