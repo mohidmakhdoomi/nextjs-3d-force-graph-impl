@@ -16,6 +16,18 @@ export default async function Index() {
   console.log("!!! CI: ", process.env.CI)
   const start = new Date()
   let initialFetch
+  const originalJSONstringy = JSON.stringify;
+  JSON.stringify = function(data) {
+    try {
+        // Call the original JSON.stringify with the same `this` varaible
+        // and arguments.
+        const argumentsTyped: any = arguments;
+        return originalJSONstringy.apply(this, argumentsTyped);
+    } catch (error) {
+        console.warn('ERROR: Failed to stringify', data);
+        throw error;
+    }
+  };
   try {
       const initialReq = await fetch(dataURL, {         
         next: { revalidate: 0 } 
