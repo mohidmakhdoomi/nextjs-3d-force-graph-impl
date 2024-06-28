@@ -13,7 +13,7 @@ export default async function Index() {
   const isSupabaseConnected = true //canInitSupabaseClient();
   // console.log('ok')
   const dataURL = ((process.env.NEXT_PUBLIC_VERCEL_ENV == 'local') ? "http://" : "https://") + process.env.NEXT_PUBLIC_VERCEL_URL + "/graph"
-  console.log("!!! CI: ", process.env.CI)
+  // console.log("!!! CI: ", process.env.CI)
   const start = new Date()
 
   let initialFetch
