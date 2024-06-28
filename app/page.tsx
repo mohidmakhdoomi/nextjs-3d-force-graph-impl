@@ -18,11 +18,21 @@ export default async function Index() {
 
   let initialFetch
   let initialReq
+  let cloneReq
   try {
-      initialReq = await fetch(dataURL, {         
-        next: { revalidate: 0 } 
-      }
-    )
+    const autoBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+    const revalidateSeconds = 300
+    if (autoBypass !== undefined) {
+      const requestHeaders = new Headers();
+      requestHeaders.set('x-vercel-protection-bypass', autoBypass);
+      initialReq = await fetch(dataURL, {
+        headers: requestHeaders,
+        next: { revalidate: revalidateSeconds } 
+      })
+    } else {
+      initialReq = await fetch(dataURL, { next: { revalidate: revalidateSeconds } })
+    }
+    cloneReq = initialReq.clone()
     initialFetch = JSON.stringify(await initialReq.json())
   } catch(err) {
     let errorMessage
@@ -35,8 +45,8 @@ export default async function Index() {
     } else {
       console.log(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
       console.log(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
-      if (initialReq !== undefined) {
-        console.log(`-- JSON Fetching error --\n${err}\n-- Data --\n${String(initialReq)}`)
+      if (cloneReq !== undefined) {
+        console.log(`-- JSON Fetching error --\n${err}\n-- Data --\n${await cloneReq.text()}`)
       }
     }
     initialFetch = JSON.stringify({nodes: [], links: []})

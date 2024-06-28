@@ -1,8 +1,6 @@
-import { NextResponse } from 'next/server'
 import { read } from '@/lib/neo4j';
 
-export async function GET(request: Request) {
-  console.log(request)
+export async function GET() {
   const links = await read(`
   MATCH (n)-[:INTERACTS1]->(m) RETURN n.name as source, m.name as target
   `)
