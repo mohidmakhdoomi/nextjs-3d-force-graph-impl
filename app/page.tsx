@@ -12,12 +12,13 @@ import FocusGraph from "./FocusGraph";
 export default async function Index() {
   const isSupabaseConnected = true //canInitSupabaseClient();
   // console.log('ok')
-  const dataURL = ((process.env.NEXT_PUBLIC_VERCEL_ENV == 'local') ? "http://" : "https://") + process.env.NEXT_PUBLIC_VERCEL_URL + "/graph/"
+  const dataURL = ((process.env.NEXT_PUBLIC_VERCEL_ENV == 'local') ? "http://" : "https://") + process.env.NEXT_PUBLIC_VERCEL_URL + "/graph"
+  console.log("!!! CI: ", process.env.CI)
   const start = new Date()
   let initialFetch
   try {
       const initialReq = await fetch(dataURL, {         
-        next: { revalidate: 300 } 
+        next: { revalidate: 0 } 
       }
     )
     initialFetch = JSON.stringify(await initialReq.json())
@@ -26,8 +27,13 @@ export default async function Index() {
     if (err instanceof Error) {
       errorMessage = err.cause;
     }
-    console.log(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
-    console.log(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
+
+    if (process.env.CI === "true") {
+      console.log(`-- Build in progress cannot access /graph endpoint --\n-- URL --\n${dataURL}`)
+    } else {
+      console.log(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
+      console.log(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
+    }
     initialFetch = JSON.stringify({nodes: [], links: []})
   }
   // const initialFetch = await GetData()
