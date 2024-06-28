@@ -36,7 +36,7 @@ export default async function Index() {
       console.log(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
       console.log(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
       if (initialReq !== undefined) {
-        console.log(`-- JSON Fetching error --\n${err}\n-- Data --\n${initialReq}`)
+        console.log(`-- JSON Fetching error --\n${err}\n-- Data --\n${JSON.stringify(initialReq)}`)
       }
     }
     initialFetch = JSON.stringify({nodes: [], links: []})
