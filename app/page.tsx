@@ -6,7 +6,7 @@ import SignUpUserSteps from "@/components/tutorial/SignUpUserSteps";
 import Header from "@/components/Header";
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from "@vercel/analytics/react";
-import FocusGraph from "./FocusGraph";
+import FocusGraph from "./FocusGraphWrapper";
 
 // import { GetData } from "./DataGetter"
 
@@ -68,8 +68,8 @@ export default async function Index() {
 
       <div className="flex-1 flex flex-col gap-20 max-w-4xl px-3">
         <Header />
+        <FocusGraph data={initialFetch} />
         <main className="flex-1 flex flex-col gap-6">
-          <FocusGraph data={initialFetch} />
           <h2 className="font-bold text-4xl mb-4">Next steps</h2>
           {isSupabaseConnected ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
         </main>
