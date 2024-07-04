@@ -1,12 +1,14 @@
 import { read } from '@/lib/neo4j';
 
 export async function GET() {
-  const links = await read(`
-  MATCH (n)-[:INTERACTS1]->(m) RETURN n.name as source, m.name as target
+  let links = await read(`
+  MATCH (u:User)-[p:PROVIDED]->(a:Answer) RETURN u.display_name as source, a.link as target
   `)
+  if (links === undefined) {
+    links = []
+  }
   const ids = new Set()
-  links?.forEach(l => {ids.add(l.source);ids.add(l.target);});
-  const gData = { nodes: Array.from(ids).map(id => {return {id}}), links: links};
-  
+  links.forEach(l => {ids.add(l.source);ids.add(l.target);});
+  const gData = { nodes: Array.from(links).flatMap((id) => [{"id":id.source, "group":1},{"id":id.target, "group":2}]), links: links};
   return Response.json(gData);
 }
