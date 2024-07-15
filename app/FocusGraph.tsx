@@ -21,9 +21,10 @@ import {TrackballControls} from "three-stdlib";
 function FocusGraph({data,}: { data: string }) {
     const fgRef = useRef<ForceGraphMethods>();
     const counter = useRef<number>(0);
-    // let Graph: any;
 
-    let parsedData: any
+    let Graph: any;
+
+    let parsedData: {nodes: never[], links: never[]}
     try {
         parsedData = JSON.parse(data)
     } catch (err) {
@@ -46,20 +47,20 @@ function FocusGraph({data,}: { data: string }) {
     // const cameraY = useRef<number>(0);
     // const cameraZ = useRef<number>(7500);
 
-    const nodes = parsedData.nodes.map((node: any) => ({
-        id: node.id,
-        group: node.group,
-        // x: Math.random(),
-        // y: Math.random(),
-        // z: Math.random(),
-        // vx: (Math.random() * 2) - 1,
-        // vy: (Math.random() * 2) - 1,
-        // vz: (Math.random() * 2) - 1,
-    }));
+    // const nodes = parsedData.nodes.map((node) => ({
+    //     id: node.id,
+    //     group: node.group,
+    //     // x: Math.random(),
+    //     // y: Math.random(),
+    //     // z: Math.random(),
+    //     // vx: (Math.random() * 2) - 1,
+    //     // vy: (Math.random() * 2) - 1,
+    //     // vz: (Math.random() * 2) - 1,
+    // }));
+    //
+    // parsedData = {nodes: nodes, links: parsedData.links};
 
-    parsedData = {nodes: nodes, links: parsedData.links};
-
-    function rotate() {
+    const rotate = useCallback(() => {
         // cameraX.current = fgRef.current?.camera().position?.x!
         // cameraY.current = fgRef.current?.camera().position?.y!
         // cameraZ.current = fgRef.current?.camera().position?.z!
@@ -95,7 +96,7 @@ function FocusGraph({data,}: { data: string }) {
         console.log("--------------------------------")
         console.log("camera pos ", threeCamera.position)
         console.log("camera up ", threeCamera.up)
-        let worldDir = new Vector3();
+        const worldDir = new Vector3();
         threeCamera.getWorldDirection(worldDir)
         console.log("world dir ", worldDir)
         console.log("control target  ", threeControls.target)
@@ -105,22 +106,28 @@ function FocusGraph({data,}: { data: string }) {
         // const threeCamera = (fgRef.current?.camera() as PerspectiveCamera)
         // fgRef.current?.cameraPosition(threeCamera.position, origin, 10)
 
-        const origin = new Vector3(0,0,0);
+        // const origin = new Vector3(0,0,0);
         // const threeCamera = (fgRef.current?.camera() as PerspectiveCamera)
 
         rotateTimer.current = setInterval(() => {
-            // threeCamera.lookAt(origin);
-            threeCamera.parent?.localToWorld(threeCamera.position); // compensate for world coordinate
+            if (fgRef.current !== undefined) {
+                const threeCam = fgRef.current.camera() as PerspectiveCamera
+                // threeCamera.parent?.localToWorld(threeCamera.position); // compensate for world coordinate
 
-            threeCamera.position.sub(origin); // remove the offset
-            const upVec = threeCamera.up.clone()
-            threeCamera.position.applyAxisAngle(upVec, -Math.PI / 600); // rotate the POSITION
-            threeCamera.position.add(origin); // re-add the offset
+                // threeCamera.position.sub(origin); // remove the offset
+                const upVec = threeCam.up.clone()
+                threeCam.position.applyAxisAngle(upVec, -Math.PI / 300); // rotate the POSITION
+                // threeCamera.position.add(origin); // re-add the offset
 
-            threeCamera.parent?.worldToLocal(threeCamera.position); // undo world coordinates compensation
+                // threeCamera.parent?.worldToLocal(threeCamera.position); // undo world coordinates compensation
 
-            threeCamera.rotateOnAxis(upVec, -Math.PI / 600); // rotate the OBJECT
-        }, 10);
+                threeCam.rotateOnAxis(upVec, -Math.PI / 300); // rotate the OBJECT
+            }
+        }, 20);
+
+        // const upVec = threeCamera.up.clone()
+        // threeCamera.position.applyAxisAngle(upVec, -Math.PI / 600); // rotate the POSITION
+        // threeCamera.rotateOnAxis(upVec, -Math.PI / 600); // rotate the OBJECT
 
 
 
@@ -134,13 +141,18 @@ function FocusGraph({data,}: { data: string }) {
         //     }, {x:0,y:0,z:0});
         //     angle.current += (Math.PI / 300)
         // }, 10);
-    }
+    }, []);
 
     function disableRotate() {
         // const threeControls = fgRef.current?.controls() as OrbitControls;
         // threeControls.autoRotate = false
         // threeControls.update()
+
+
         clearInterval(rotateTimer.current)
+        // const threeCamera = (fgRef.current?.camera() as PerspectiveCamera)
+        // threeCamera.position.applyAxisAngle(threeCamera.up.clone(), 0);
+        // threeCamera.rotateOnAxis(threeCamera.up.clone(), 0);
     }
 
     function showAxis() {
@@ -168,6 +180,7 @@ function FocusGraph({data,}: { data: string }) {
                 const threeCamera = (fgRef.current.camera() as PerspectiveCamera)
                 const threeControls = (fgRef.current.controls() as TrackballControls)
                 threeControls.noPan = true
+                threeControls.zoomSpeed = 1.0
 
                 console.log("Starting PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
                 threeCamera.fov = 40
@@ -176,6 +189,10 @@ function FocusGraph({data,}: { data: string }) {
                 threeCamera.updateProjectionMatrix()
                 console.log("Changed PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
                 // threeControls.saveState()
+
+                setInterval(() => {
+                    (fgRef.current?.controls() as TrackballControls).update();
+                }, 5)
 
                 if (!isRotationActive) {
                     disableRotate()
@@ -191,7 +208,25 @@ function FocusGraph({data,}: { data: string }) {
                 threeScene.add( axesHelper );
             }
         }
-    }, []);
+    }, [isAxisVisible, isRotationActive, parsedData, rotate]);
+
+    const handleDragEnd = useCallback(
+        (node: any) => {
+            Graph?.props.graphData.nodes.forEach((origNode: any) => {
+                if (origNode.fx !== undefined) {
+                    console.log(`Node ${origNode.id}: x = ${origNode.x}, y = ${origNode.y}, z = ${origNode.z}, fx = ${origNode.fx}, fy = ${origNode.fy}, fz = ${origNode.fz}`);
+                    origNode.fx = undefined
+                    origNode.fy = undefined
+                    origNode.fz = undefined
+                }
+            })
+
+            node.fx = node.x;
+            node.fy = node.y;
+            node.fz = node.z;
+        },
+        [Graph?.props.graphData.nodes]
+    );
 
     const handleClick = useCallback(
         (node: any) => {
@@ -206,31 +241,18 @@ function FocusGraph({data,}: { data: string }) {
             const viewDistance = 80;
             const distRatio = 1 + viewDistance / Math.hypot(node.x, node.y, node.z);
             // fgRef.current.getGraphBbox()
-            // const distMult = Math.sqrt((node.x - fgRef.current.camera().x)**2 + (node.y - fgRef.current.camera().y)**2 + (node.z - fgRef.current.camera().z)**2)
+            // const distMulti = Math.sqrt((node.x - fgRef.current.camera().x)**2 + (node.y - fgRef.current.camera().y)**2 + (node.z - fgRef.current.camera().z)**2)
             // fgRef.current?.zoomToFit(10, 0, (x) => (x.id === node.id));
-            fgRef.current?.cameraPosition(
-                {x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio}, // new position
-                {x: 0, y: 0, z: 0}, // node  // lookAt ({ x, y, z })
-                2000  // ms transition duration
-            )
-        },
-        [fgRef]
-    );
-
-    const handleDragEnd = (node: any) => {
-        Graph.props.graphData.nodes.forEach((origNode: any) => {
-            if (origNode.fx !== undefined) {
-                console.log(`Node ${origNode.id}: x = ${origNode.x}, y = ${origNode.y}, z = ${origNode.z}, fx = ${origNode.fx}, fy = ${origNode.fy}, fz = ${origNode.fz}`);
-                origNode.fx = undefined
-                origNode.fy = undefined
-                origNode.fz = undefined
+            if (fgRef.current !== undefined) {
+                fgRef.current.cameraPosition(
+                    {x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio}, // new position
+                    {x: 0, y: 0, z: 0}, // node  // lookAt ({ x, y, z })
+                    2000  // ms transition duration
+                )
             }
-        })
-
-        node.fx = node.x;
-        node.fy = node.y;
-        node.fz = node.z;
-    }
+        },
+        [isRotationActive, handleDragEnd]
+    );
 
     const handleRightClick = (node: any) => {
         console.log(`Node ${node.id}: x = ${node.x}, y = ${node.y}, z = ${node.z}, fx = ${node.fx}, fy = ${node.fy}, fz = ${node.fz}`);
@@ -254,12 +276,15 @@ function FocusGraph({data,}: { data: string }) {
             if (isRotationActive) {
                 disableRotate()
             }
-            fgRef.current?.zoomToFit()
+            fgRef.current?.zoomToFit(1000)
             // const threeControls = (fgRef.current?.controls() as OrbitControls)
             // threeControls.reset()
-            if (isRotationActive) {
-                rotate()
-            }
+            setTimeout(() => {
+                if (isRotationActive) {
+                    rotate()
+                }
+            }, 1001)
+
 
             // const threeControls = (fgRef.current?.controls() as OrbitControls)
             // const threeCamera = fgRef.current?.camera() as PerspectiveCamera
@@ -284,7 +309,7 @@ function FocusGraph({data,}: { data: string }) {
             // threeCamera.up = threeCamera.position.clone();
 
             // threeControls.update();
-        }, [isRotationActive]
+        }, [isRotationActive, rotate]
     )
 
 
@@ -318,7 +343,7 @@ function FocusGraph({data,}: { data: string }) {
                 // }, 3500)
             }
         }
-    }, [isRotationActive])
+    }, [isRotationActive, rotate])
 
 
     useEffect(() => {
@@ -332,7 +357,7 @@ function FocusGraph({data,}: { data: string }) {
     }, [isAxisVisible])
 
 
-    const Graph = <ForceGraph3D
+    Graph = <ForceGraph3D
         ref={fgRef}
         controlType="trackball"
         backgroundColor="#000003"
@@ -344,7 +369,7 @@ function FocusGraph({data,}: { data: string }) {
         showNavInfo={true}
         nodeAutoColorBy="group"
         nodeResolution={64}
-        warmupTicks={50}
+        warmupTicks={110}
         // cooldownTicks={0}
         // cooldownTime={2000}
         onNodeClick={handleClick}
