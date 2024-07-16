@@ -21,7 +21,9 @@ import {TrackballControls} from "three-stdlib";
 function FocusGraph({data,}: { data: string }) {
     const fgRef = useRef<ForceGraphMethods>();
     const counter = useRef<number>(0);
+    const [clickEnabled, setClickEnabled] = useState<boolean>(false);
 
+    // eslint-disable-next-line prefer-const
     let Graph: any;
 
     let parsedData: {nodes: never[], links: never[]}
@@ -41,7 +43,7 @@ function FocusGraph({data,}: { data: string }) {
     const rotateTimer = useRef<NodeJS.Timeout>();
     // const angle = useRef<number>(0);
     const [isAxisVisible, setIsAxisVisible] = useState<boolean>(false);
-    const [isRotationActive, setIsRotationActive] = useState<boolean>(false);
+    const [isRotationActive, setIsRotationActive] = useState<boolean>(true);
 
     // const cameraX = useRef<number>(0);
     // const cameraY = useRef<number>(0);
@@ -194,12 +196,16 @@ function FocusGraph({data,}: { data: string }) {
                     (fgRef.current?.controls() as TrackballControls).update();
                 }, 5)
 
-                if (!isRotationActive) {
-                    disableRotate()
-                } else {
-                    console.log("Initial useEffect camera pos ", fgRef.current?.camera().position)
-                    rotate()
+                threeControls.enabled = false
+                if (isRotationActive) {
+                    setTimeout(() => {
+                        rotate()
+                    }, 200)
                 }
+                setTimeout(() => {
+                    threeControls.enabled = true
+                    setClickEnabled(true)
+                }, 8000)
 
                 const threeScene = (fgRef.current.scene() as Scene)
                 const axesHelper = new AxesHelper( 5000 );
@@ -212,51 +218,60 @@ function FocusGraph({data,}: { data: string }) {
 
     const handleDragEnd = useCallback(
         (node: any) => {
-            Graph?.props.graphData.nodes.forEach((origNode: any) => {
-                if (origNode.fx !== undefined) {
-                    console.log(`Node ${origNode.id}: x = ${origNode.x}, y = ${origNode.y}, z = ${origNode.z}, fx = ${origNode.fx}, fy = ${origNode.fy}, fz = ${origNode.fz}`);
-                    origNode.fx = undefined
-                    origNode.fy = undefined
-                    origNode.fz = undefined
-                }
-            })
+            if (clickEnabled) {
+                Graph?.props.graphData.nodes.forEach((origNode: any) => {
+                    if (origNode.fx !== undefined) {
+                        console.log(`Node ${origNode.id}: x = ${origNode.x}, y = ${origNode.y}, z = ${origNode.z}, fx = ${origNode.fx}, fy = ${origNode.fy}, fz = ${origNode.fz}`);
+                        origNode.fx = undefined
+                        origNode.fy = undefined
+                        origNode.fz = undefined
+                    }
+                })
 
-            node.fx = node.x;
-            node.fy = node.y;
-            node.fz = node.z;
+                node.fx = node.x;
+                node.fy = node.y;
+                node.fz = node.z;
+            }
         },
-        [Graph?.props.graphData.nodes]
+        [Graph?.props.graphData.nodes, clickEnabled]
     );
 
     const handleClick = useCallback(
         (node: any) => {
-            // clearInterval(rotateTimer.current)
-            if (isRotationActive) {
-                // disableRotate()
-                setIsRotationActive(false)
+            if (clickEnabled) {
+                // clearInterval(rotateTimer.current)
+                if (isRotationActive) {
+                    // disableRotate()
+                    setIsRotationActive(false)
 
-            }
-            // angle.current = 0
-            handleDragEnd(node)
-            const viewDistance = 80;
-            const distRatio = 1 + viewDistance / Math.hypot(node.x, node.y, node.z);
-            // fgRef.current.getGraphBbox()
-            // const distMulti = Math.sqrt((node.x - fgRef.current.camera().x)**2 + (node.y - fgRef.current.camera().y)**2 + (node.z - fgRef.current.camera().z)**2)
-            // fgRef.current?.zoomToFit(10, 0, (x) => (x.id === node.id));
-            if (fgRef.current !== undefined) {
-                fgRef.current.cameraPosition(
-                    {x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio}, // new position
-                    {x: 0, y: 0, z: 0}, // node  // lookAt ({ x, y, z })
-                    2000  // ms transition duration
-                )
+                }
+                // angle.current = 0
+                handleDragEnd(node)
+                const viewDistance = 80;
+                const distRatio = 1 + viewDistance / Math.hypot(node.x, node.y, node.z);
+                // fgRef.current.getGraphBbox()
+                // const distMulti = Math.sqrt((node.x - fgRef.current.camera().x)**2 + (node.y - fgRef.current.camera().y)**2 + (node.z - fgRef.current.camera().z)**2)
+                // fgRef.current?.zoomToFit(10, 0, (x) => (x.id === node.id));
+                if (fgRef.current !== undefined) {
+                    fgRef.current.cameraPosition(
+                        {x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio}, // new position
+                        {x: 0, y: 0, z: 0}, // node  // lookAt ({ x, y, z })
+                        2000  // ms transition duration
+                    )
+                }
             }
         },
-        [isRotationActive, handleDragEnd]
+        [isRotationActive, handleDragEnd, clickEnabled]
     );
 
-    const handleRightClick = (node: any) => {
-        console.log(`Node ${node.id}: x = ${node.x}, y = ${node.y}, z = ${node.z}, fx = ${node.fx}, fy = ${node.fy}, fz = ${node.fz}`);
-    }
+    const handleRightClick = useCallback(
+        (node: any) => {
+            if (clickEnabled) {
+                console.log(`Node ${node.id}: x = ${node.x}, y = ${node.y}, z = ${node.z}, fx = ${node.fx}, fy = ${node.fy}, fz = ${node.fz}`);
+            }
+        },
+        [clickEnabled]
+    );
 
     const handleAxisClick = useCallback(
         () => {
@@ -356,7 +371,6 @@ function FocusGraph({data,}: { data: string }) {
         }
     }, [isAxisVisible])
 
-
     Graph = <ForceGraph3D
         ref={fgRef}
         controlType="trackball"
@@ -366,10 +380,10 @@ function FocusGraph({data,}: { data: string }) {
         nodeLabel="id"
         enableNavigationControls={true}
         enableNodeDrag={true}
-        showNavInfo={true}
+        showNavInfo={false}
         nodeAutoColorBy="group"
         nodeResolution={64}
-        warmupTicks={110}
+        // warmupTicks={110}
         // cooldownTicks={0}
         // cooldownTime={2000}
         onNodeClick={handleClick}
