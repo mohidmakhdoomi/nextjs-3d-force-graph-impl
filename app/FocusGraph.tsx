@@ -21,7 +21,7 @@ import {TrackballControls} from "three-stdlib";
 function FocusGraph({data,}: { data: string }) {
     const fgRef = useRef<ForceGraphMethods>();
     const counter = useRef<number>(0);
-    const mainEffectCounter = 2
+    const mainEffectCounter = 1
     const [clickEnabled, setClickEnabled] = useState<boolean>(false);
 
     // eslint-disable-next-line prefer-const
