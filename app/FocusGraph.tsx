@@ -190,6 +190,7 @@ function FocusGraph({data,}: { data: string }) {
             if (counter.current == mainEffectCounter) {
                 console.log("MAIN USE EFFECT!")
                 setGraphData(parsedData);
+                fgRef.current.refresh();
 
                 const threeCamera = (fgRef.current.camera() as PerspectiveCamera)
                 const threeControls = (fgRef.current.controls() as TrackballControls)
