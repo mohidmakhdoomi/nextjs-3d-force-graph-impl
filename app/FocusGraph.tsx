@@ -22,7 +22,7 @@ function FocusGraph({data,}: { data: string }) {
         if (err instanceof Error) {
             errorMessage = err.cause;
         }
-        console.log(`-- JSON Parsing error --\n${err}\n-- Cause --\n${errorMessage}`)
+        console.error(`-- JSON Parsing error --\n${err}\n-- Cause --\n${errorMessage}`)
         parsedData = {nodes: [], links: []}
     }
 
@@ -40,14 +40,14 @@ function FocusGraph({data,}: { data: string }) {
         if (rotateTimer.current === undefined) {
             const threeControls = (fgRef.current?.controls() as TrackballControls)
             const threeCamera = fgRef.current?.camera() as PerspectiveCamera
-            console.log("--------------------------------")
-            console.log("camera pos ", threeCamera.position)
-            console.log("camera up ", threeCamera.up)
+            console.debug("--------------------------------")
+            console.debug("camera pos ", threeCamera.position)
+            console.debug("camera up ", threeCamera.up)
             const worldDir = new Vector3();
             threeCamera.getWorldDirection(worldDir)
-            console.log("world dir ", worldDir)
-            console.log("control target  ", threeControls.target)
-            console.log("--------------------------------")
+            console.debug("world dir ", worldDir)
+            console.debug("control target  ", threeControls.target)
+            console.debug("--------------------------------")
 
 
             rotateTimer.current = setInterval(() => {
@@ -60,7 +60,7 @@ function FocusGraph({data,}: { data: string }) {
                 }
             }, 20);
         } else {
-            console.log("ROTATE rotation already on")
+            console.debug("ROTATE rotation already on")
         }
     }
 
@@ -88,9 +88,9 @@ function FocusGraph({data,}: { data: string }) {
     useEffect(() => {
         if (fgRef.current !== undefined) {
             counter.current += 1;
-            console.log("!!! updated counter:", counter.current)
+            console.debug("!!! updated counter:", counter.current)
             if (counter.current == mainEffectCounter) {
-                console.log("MAIN USE EFFECT!")
+                console.info("MAIN USE EFFECT!")
                 setGraphData(parsedData);
                 fgRef.current.refresh();
 
@@ -99,12 +99,12 @@ function FocusGraph({data,}: { data: string }) {
                 threeControls.noPan = true
                 threeControls.zoomSpeed = 1.0
 
-                console.log("Starting PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
+                console.debug("Starting PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
                 threeCamera.fov = 40
                 threeCamera.near = 1
                 threeCamera.far = 200
                 threeCamera.updateProjectionMatrix()
-                console.log("Changed PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
+                console.info("Changed PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
 
                 const threeScene = (fgRef.current.scene() as Scene)
                 const axesHelper = new AxesHelper( 5000 );
@@ -112,22 +112,22 @@ function FocusGraph({data,}: { data: string }) {
                 axesHelper.visible = defaultAxisVisible;
                 threeScene.add( axesHelper );
 
-                console.log("!!! STARTING timers")
+                console.debug("!!! STARTING timers")
                 if (defaultStartRotation) {
                     setTimeout(() => {
                         setIsRotationActive(true);
-                        console.log("SET isRotationActive to true!");
+                        console.info("SET isRotationActive to true!");
                     }, 200)
                 }
                 setTimeout(() => {
                     setClickEnabled(true);
-                    console.log("SET clickEnabled to true!");
+                    console.info("SET clickEnabled to true!");
                     fgRef.current?.refresh();
                 }, 8000)
             }
             if (counter.current >= mainEffectCounter) {
                 (fgRef.current.controls() as TrackballControls).update();
-                console.log("!!! updated controls !!!");
+                console.debug("!!! updated controls !!!");
             }
         }
     }, [defaultAxisVisible, defaultStartRotation, parsedData]);
@@ -142,18 +142,18 @@ function FocusGraph({data,}: { data: string }) {
             if (clickEnabled) {
                 Graph?.props.graphData.nodes.forEach((origNode: any) => {
                     if (origNode.fx !== undefined && origNode.x !== node.x && origNode.y !== node.y && origNode.z !== node.z) {
-                        console.log("UNFIXED previously dragged node - before", printNode(origNode));
+                        console.debug("UNFIXED previously dragged node - before", printNode(origNode));
                         origNode.fx = undefined
                         origNode.fy = undefined
                         origNode.fz = undefined
-                        console.log("UNFIXED previously dragged node - after", printNode(origNode));
+                        console.debug("UNFIXED previously dragged node - after", printNode(origNode));
                     }
                 })
-                console.log("NODE DRAG END - current", printNode(node))
+                console.debug("NODE DRAG END - current", printNode(node))
                 node.fx = node.x;
                 node.fy = node.y;
                 node.fz = node.z;
-                console.log("NODE DRAG END - set fx, fy, fz to x, y, z", printNode(node))
+                console.debug("NODE DRAG END - set fx, fy, fz to x, y, z", printNode(node))
             }
         },
         [Graph?.props.graphData.nodes, clickEnabled]
@@ -168,7 +168,7 @@ function FocusGraph({data,}: { data: string }) {
                 }
 
                 handleDragEnd(node)
-                console.log("LEFT CLICK - current", printNode(node))
+                console.debug("LEFT CLICK - current", printNode(node))
                 const viewDistance = 80;
                 const distRatio = 1 + viewDistance / Math.hypot(node.x, node.y, node.z);
 
@@ -187,11 +187,11 @@ function FocusGraph({data,}: { data: string }) {
     const handleRightClick = useCallback(
         (node: any) => {
             if (clickEnabled && node.fx !== undefined) {
-                console.log("RIGHT CLICK - current", printNode(node))
+                console.debug("RIGHT CLICK - current", printNode(node))
                 node.fx = undefined
                 node.fy = undefined
                 node.fz = undefined
-                console.log("RIGHT CLICK - set fx, fy, fz to undefined", printNode(node))
+                console.debug("RIGHT CLICK - set fx, fy, fz to undefined", printNode(node))
             }
         },
         [clickEnabled]
@@ -214,13 +214,13 @@ function FocusGraph({data,}: { data: string }) {
         () => {
             if (fgRef.current !== undefined) {
                 if (isRotationActive) {
-                    console.log("RESET camera turn OFF rotation ")
+                    console.debug("RESET camera turn OFF rotation ")
                     disableRotate()
                 }
                 fgRef.current.zoomToFit(1000)
                 setTimeout(() => {
                     if (isRotationActive) {
-                        console.log("RESET camera turn ON rotation ")
+                        console.debug("RESET camera turn ON rotation ")
                         rotate()
                     }
                 }, 1001)
@@ -232,10 +232,10 @@ function FocusGraph({data,}: { data: string }) {
     useEffect(() => {
         if (fgRef.current !== undefined && counter.current >= mainEffectCounter) {
             if (!isRotationActive) {
-                console.log("USE EFFECT turn OFF rotation ")
+                console.debug("USE EFFECT turn OFF rotation ")
                 disableRotate()
             } else {
-                console.log("USE EFFECT turn ON rotation ")
+                console.debug("USE EFFECT turn ON rotation ")
                 rotate()
             }
         }
@@ -245,10 +245,10 @@ function FocusGraph({data,}: { data: string }) {
     useEffect(() => {
         if (fgRef.current !== undefined && counter.current >= mainEffectCounter) {
             if (!isAxisVisible) {
-                console.log("USE EFFECT axis HIDE")
+                console.debug("USE EFFECT axis HIDE")
                 hideAxis()
             } else {
-                console.log("USE EFFECT axis SHOW")
+                console.debug("USE EFFECT axis SHOW")
                 showAxis()
             }
         }
