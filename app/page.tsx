@@ -42,19 +42,19 @@ export default async function Index() {
     }
 
     if ((process.env.CI !== undefined) && (process.env.CI.trim() === "1")) {
-      console.log(`-- Build in progress cannot access /graph endpoint --\n-- URL --\n${dataURL}`)
+      console.info(`-- Build in progress cannot access /graph endpoint --\n-- URL --\n${dataURL}`)
     } else {
-      console.log(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
-      console.log(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
+      console.error(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
+      console.error(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
       if (cloneReq !== undefined) {
-        console.log(`-- JSON Fetching error --\n${err}\n-- Data --\n${await cloneReq.text()}`)
+        console.error(`-- JSON Fetching error --\n${err}\n-- Data --\n${await cloneReq.text()}`)
       }
     }
     initialFetch = JSON.stringify({nodes: [], links: []})
   }
   // const initialFetch = await GetData()
   const end = new Date()
-  console.log(dataURL + " graph data loaded in "+(end.valueOf()-start.valueOf())+" ms.")
+  console.info(dataURL + " graph data loaded in "+(end.valueOf()-start.valueOf())+" ms.")
   // console.log("page", JSON.parse(initialFetch)['links'][5])
     
   return (
