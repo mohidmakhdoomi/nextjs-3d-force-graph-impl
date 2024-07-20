@@ -1,6 +1,6 @@
 import dynamic from "next/dynamic";
 
-const FocusGraph = dynamic(() => import("@/app/components/FocusGraph"), {
+const FocusGraph = dynamic(() => import("./FocusGraph"), {
     ssr: false
 });
 
