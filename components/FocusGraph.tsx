@@ -9,12 +9,11 @@ function FocusGraph({data,}: { data: string }) {
     const fgRef = useRef<ForceGraphMethods>();
     const counter = useRef<number>(0);
     const mainEffectCounter = 1
-    const [clickEnabled, setClickEnabled] = useState<boolean>(false);
 
     // eslint-disable-next-line prefer-const
     let Graph: any;
 
-    let parsedData: {nodes: never[], links: never[]}
+    let parsedData: { nodes: never[], links: never[] }
     try {
         parsedData = JSON.parse(data)
     } catch (err) {
@@ -29,6 +28,8 @@ function FocusGraph({data,}: { data: string }) {
     const [graphData, setGraphData] = useState({nodes: [], links: []});
 
     const rotateTimer = useRef<NodeJS.Timeout>();
+
+    const [clickEnabled, setClickEnabled] = useState<boolean>(false);
 
     const defaultAxisVisible = false;
     const [isAxisVisible, setIsAxisVisible] = useState<boolean>(defaultAxisVisible.valueOf());
@@ -92,7 +93,6 @@ function FocusGraph({data,}: { data: string }) {
             if (counter.current == mainEffectCounter) {
                 console.info("MAIN USE EFFECT!")
                 setGraphData(parsedData);
-                fgRef.current.refresh();
 
                 const threeCamera = (fgRef.current.camera() as PerspectiveCamera)
                 const threeControls = (fgRef.current.controls() as TrackballControls)
@@ -107,10 +107,12 @@ function FocusGraph({data,}: { data: string }) {
                 console.info("Changed PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
 
                 const threeScene = (fgRef.current.scene() as Scene)
-                const axesHelper = new AxesHelper( 5000 );
+                const axesHelper = new AxesHelper(5000);
                 axesHelper.name = "myAxesHelper";
                 axesHelper.visible = defaultAxisVisible;
-                threeScene.add( axesHelper );
+                threeScene.add(axesHelper);
+
+                fgRef.current.refresh();
 
                 console.debug("!!! STARTING timers")
                 if (defaultStartRotation) {

@@ -6,7 +6,7 @@ import SignUpUserSteps from "@/components/tutorial/SignUpUserSteps";
 import Header from "@/components/Header";
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from "@vercel/analytics/react";
-import FocusGraph from "./FocusGraphWrapper";
+import FocusGraph from "@/components/FocusGraphWrapper";
 
 // import { GetData } from "./DataGetter"
 
