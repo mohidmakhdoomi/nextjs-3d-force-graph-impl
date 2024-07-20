@@ -31,8 +31,8 @@ function FocusGraph({data,}: { data: string }) {
 
     const [clickEnabled, setClickEnabled] = useState<boolean>(false);
 
-    const defaultAxisVisible = false;
-    const [isAxisVisible, setIsAxisVisible] = useState<boolean>(defaultAxisVisible.valueOf());
+    const defaultAxesVisible = false;
+    const [areAxesVisible, setAreAxesVisible] = useState<boolean>(defaultAxesVisible.valueOf());
 
     const defaultStartRotation = true;
     const [isRotationActive, setIsRotationActive] = useState<boolean>(defaultStartRotation.valueOf());
@@ -70,7 +70,7 @@ function FocusGraph({data,}: { data: string }) {
         rotateTimer.current = undefined
     }
 
-    function showAxis() {
+    function showAxes() {
         if (fgRef.current !== undefined) {
             const threeScene = (fgRef.current.scene() as Scene)
             const axesHelper = threeScene.getObjectByName("myAxesHelper")!
@@ -78,7 +78,7 @@ function FocusGraph({data,}: { data: string }) {
         }
     }
 
-    function hideAxis() {
+    function hideAxes() {
         if (fgRef.current !== undefined) {
             const threeScene = (fgRef.current.scene() as Scene)
             const axesHelper = threeScene.getObjectByName("myAxesHelper")!
@@ -109,7 +109,7 @@ function FocusGraph({data,}: { data: string }) {
                 const threeScene = (fgRef.current.scene() as Scene)
                 const axesHelper = new AxesHelper(5000);
                 axesHelper.name = "myAxesHelper";
-                axesHelper.visible = defaultAxisVisible;
+                axesHelper.visible = defaultAxesVisible;
                 threeScene.add(axesHelper);
 
                 fgRef.current.refresh();
@@ -132,7 +132,7 @@ function FocusGraph({data,}: { data: string }) {
                 console.debug("!!! updated controls !!!");
             }
         }
-    }, [defaultAxisVisible, defaultStartRotation, parsedData]);
+    }, [defaultAxesVisible, defaultStartRotation, parsedData]);
 
 
     function printNode(node: any) {
@@ -199,10 +199,10 @@ function FocusGraph({data,}: { data: string }) {
         [clickEnabled]
     );
 
-    const handleAxisClick = useCallback(
+    const handleAxesClick = useCallback(
         () => {
-            setIsAxisVisible(!isAxisVisible)
-        }, [isAxisVisible]
+            setAreAxesVisible(!areAxesVisible)
+        }, [areAxesVisible]
     )
 
 
@@ -246,15 +246,15 @@ function FocusGraph({data,}: { data: string }) {
 
     useEffect(() => {
         if (fgRef.current !== undefined && counter.current >= mainEffectCounter) {
-            if (!isAxisVisible) {
-                console.debug("USE EFFECT axis HIDE")
-                hideAxis()
+            if (!areAxesVisible) {
+                console.debug("USE EFFECT axes HIDE")
+                hideAxes()
             } else {
-                console.debug("USE EFFECT axis SHOW")
-                showAxis()
+                console.debug("USE EFFECT axes SHOW")
+                showAxes()
             }
         }
-    }, [isAxisVisible])
+    }, [areAxesVisible])
 
     Graph = <ForceGraph3D
         ref={fgRef}
@@ -278,14 +278,14 @@ function FocusGraph({data,}: { data: string }) {
     return <div className="bg-background text-foreground">
         {Graph}
         <div className="absolute top-[5px] right-[5px]">
-            <button id="axisToggle" className="m-[8px] h-[25px] w-[150px]" onClick={handleAxisClick}>
-                {(isAxisVisible ? 'Hide' : 'Show')} Axis
+            <button id="axesToggle" className="m-[8px] h-[25px] w-[150px]" onClick={handleAxesClick}>
+                {(areAxesVisible ? 'Hide' : 'Show')} Axes
             </button>
             <button id="resetToggle" className="m-[8px] h-[25px] w-[150px]" onClick={handleResetClick}>
                 Reset Camera
             </button>
-            <button id="rotationToggle" className="m-[8px] h-[25px] w-[150px]" onClick={handleRotationClick}>
-                {(isRotationActive ? 'Pause' : 'Resume')} Rotation
+            <button id="rotationToggle" className="m-[8px] h-[25px] w-[200px]" onClick={handleRotationClick}>
+                {(isRotationActive ? 'Pause' : 'Resume')} Auto Rotation
             </button>
         </div>
     </div>
