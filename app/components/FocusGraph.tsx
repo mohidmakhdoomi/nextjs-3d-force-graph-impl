@@ -292,4 +292,3 @@ function FocusGraph({data,}: { data: string }) {
 }
 
 export default FocusGraph;
-
