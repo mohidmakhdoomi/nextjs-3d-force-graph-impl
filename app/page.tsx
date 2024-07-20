@@ -1,100 +1,18 @@
-import DeployButton from "../components/DeployButton";
-import AuthButton from "../components/AuthButton";
-import { createClient } from "@/utils/supabase/server";
-import ConnectSupabaseSteps from "@/components/tutorial/ConnectSupabaseSteps";
-import SignUpUserSteps from "@/components/tutorial/SignUpUserSteps";
-import Header from "@/components/Header";
-import { SpeedInsights } from '@vercel/speed-insights/react';
-import { Analytics } from "@vercel/analytics/react";
-import FocusGraph from "@/components/FocusGraphWrapper";
+import {SpeedInsights} from '@vercel/speed-insights/react';
+import {Analytics} from "@vercel/analytics/react";
+import FocusGraph from "./components/FocusGraphWrapper";
+import dataFile from "@/app/graph/data";
 
-// import { GetData } from "./DataGetter"
 
 export default async function Index() {
-  const isSupabaseConnected = true //canInitSupabaseClient();
-  // console.log('ok')
-  const dataURL = ((process.env.NEXT_PUBLIC_VERCEL_ENV == 'local') ? "http://" : "https://") + process.env.NEXT_PUBLIC_VERCEL_URL + "/graph"
-  // console.log("!!! CI: ", process.env.CI)
-  const start = new Date()
 
-  let initialFetch
-  let initialReq
-  let cloneReq
-  try {
-    const autoBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
-    const revalidateSeconds = 300
-    if (autoBypass !== undefined) {
-      const requestHeaders = new Headers();
-      requestHeaders.set('x-vercel-protection-bypass', autoBypass);
-      initialReq = await fetch(dataURL, {
-        headers: requestHeaders,
-        next: { revalidate: revalidateSeconds } 
-      })
-    } else {
-      initialReq = await fetch(dataURL, { next: { revalidate: revalidateSeconds } })
-    }
-    cloneReq = initialReq.clone()
-    initialFetch = JSON.stringify(await initialReq.json())
-  } catch(err) {
-    let errorMessage
-    if (err instanceof Error) {
-      errorMessage = err.cause;
-    }
+    const fgData = JSON.stringify(dataFile)
 
-    if ((process.env.CI !== undefined) && (process.env.CI.trim() === "1")) {
-      console.info(`-- Build in progress cannot access /graph endpoint --\n-- URL --\n${dataURL}`)
-    } else {
-      console.error(`-- JSON Fetching error --\n-- URL --\n${dataURL}`)
-      console.error(`-- JSON Fetching error --\n${err}\n-- Cause --\n${errorMessage}`)
-      if (cloneReq !== undefined) {
-        console.error(`-- JSON Fetching error --\n${err}\n-- Data --\n${await cloneReq.text()}`)
-      }
-    }
-    initialFetch = JSON.stringify({nodes: [], links: []})
-  }
-  // const initialFetch = await GetData()
-  const end = new Date()
-  console.info(dataURL + " graph data loaded in "+(end.valueOf()-start.valueOf())+" ms.")
-  // console.log("page", JSON.parse(initialFetch)['links'][5])
-    
-  return (
-      <div className="flex-1 w-full flex flex-col gap-20 items-center">
-        <FocusGraph data={initialFetch}/>
-        <SpeedInsights/>
-        <Analytics/>
-      </div>
-      // <div className="flex-1 w-full flex flex-col gap-20 items-center">
-    //   <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-    //     <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
-    //       <DeployButton />
-    //       {isSupabaseConnected && <AuthButton />}
-    //     </div>
-    //   </nav>
-    //
-    //   <div className="flex-1 flex flex-col gap-20 max-w-4xl px-3">
-    //     <Header />
-    //     <FocusGraph data={initialFetch} />
-    //     <main className="flex-1 flex flex-col gap-6">
-    //       <h2 className="font-bold text-4xl mb-4">Next steps</h2>
-    //       {isSupabaseConnected ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-    //     </main>
-    //   </div>
-    //
-    //   <footer className="w-full border-t border-t-foreground/10 p-8 flex justify-center text-center text-xs">
-    //     <p>
-    //       Powered by{" "}
-    //       <a
-    //         href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-    //         target="_blank"
-    //         className="font-bold hover:underline"
-    //         rel="noreferrer"
-    //       >
-    //         Supabase
-    //       </a>
-    //     </p>
-    //   </footer>
-    //   <SpeedInsights />
-    //   <Analytics />
-    // </div>
-  );
+    return (
+        <div>
+            <FocusGraph data={fgData}/>
+            <SpeedInsights/>
+            <Analytics/>
+        </div>
+    );
 }

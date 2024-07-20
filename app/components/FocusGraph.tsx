@@ -3,7 +3,7 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import ForceGraph3D, {ForceGraphMethods} from "react-force-graph-3d";
 import {PerspectiveCamera, Scene, Vector3, AxesHelper} from "three";
-import {TrackballControls} from "three-stdlib";
+import {TrackballControls} from 'three/examples/jsm/controls/TrackballControls.js';
 
 function FocusGraph({data,}: { data: string }) {
     const fgRef = useRef<ForceGraphMethods>();
@@ -275,7 +275,7 @@ function FocusGraph({data,}: { data: string }) {
     />
 
 
-    return <div>
+    return <div className="bg-background text-foreground">
         {Graph}
         <div className="absolute top-[5px] right-[5px]">
             <button id="axisToggle" className="m-[8px] h-[25px] w-[150px]" onClick={handleAxisClick}>
