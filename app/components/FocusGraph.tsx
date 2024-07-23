@@ -5,7 +5,7 @@ import ForceGraph3D, {ForceGraphMethods} from "react-force-graph-3d";
 import {PerspectiveCamera, Scene, Vector3, AxesHelper} from "three";
 import {TrackballControls} from 'three/examples/jsm/controls/TrackballControls.js';
 
-function FocusGraph({data,}: { data: string }) {
+function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay: number }) {
     const fgRef = useRef<ForceGraphMethods>();
     const counter = useRef<number>(0);
     const mainEffectCounter = 1
@@ -125,7 +125,7 @@ function FocusGraph({data,}: { data: string }) {
                     setClickEnabled(true);
                     console.info("SET clickEnabled to true!");
                     fgRef.current?.refresh();
-                }, 8000)
+                }, enableDelay)
             }
             if (counter.current >= mainEffectCounter) {
                 (fgRef.current.controls() as TrackballControls).update();
