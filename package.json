@@ -29,7 +29,8 @@
     "encoding": "~0.1.13",
     "eslint": "~9.7.0",
     "eslint-plugin-react": "~7.35.0",
-    "eslint-plugin-react-hooks": "~4.6.2",
+    "eslint-plugin-react-hooks": "5.1.0-rc-d025ddd3-20240722",
+    "@next/eslint-plugin-next": "15.0.0-rc.0",
     "globals": "~15.8.0",
     "typescript": "~5.3.3",
     "typescript-eslint": "~8.0.0-alpha.51"

@@ -5,7 +5,7 @@ import ForceGraph3D, {ForceGraphMethods} from "react-force-graph-3d";
 import {PerspectiveCamera, Scene, Vector3, AxesHelper} from "three";
 import {TrackballControls} from 'three/examples/jsm/controls/TrackballControls.js';
 
-function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay: number }) {
+function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: number }) {
     const fgRef = useRef<ForceGraphMethods>();
     const counter = useRef<number>(0);
     const mainEffectCounter = 1
@@ -132,7 +132,7 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay: numbe
                 console.debug("!!! updated controls !!!");
             }
         }
-    }, [defaultAxesVisible, defaultStartRotation, parsedData]);
+    }, [defaultAxesVisible, defaultStartRotation, parsedData, enableDelay]);
 
 
     function printNode(node: any) {
