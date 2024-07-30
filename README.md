@@ -24,4 +24,4 @@ Data used for the graph is a subset of the Neo4j StackOverflow Dataset.
 
 
 #### NOTE:
-In the first 8 seconds mouse interaction is disabled after which it is enabled. <br>This applies only to non button interaction listed in above table (buttons are bolded).   
+In the first 4 seconds mouse interaction is disabled after which it is enabled. <br>This applies only to non button interaction listed in above table (buttons are bolded).   
