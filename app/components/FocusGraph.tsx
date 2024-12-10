@@ -6,7 +6,7 @@ import {PerspectiveCamera, Scene, Vector3, AxesHelper} from "three";
 import {TrackballControls} from 'three/examples/jsm/controls/TrackballControls.js';
 
 function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: number }) {
-    const fgRef = useRef<ForceGraphMethods>();
+    const fgRef = useRef<ForceGraphMethods>(undefined);
     const counter = useRef<number>(0);
     const mainEffectCounter = 1
 
@@ -27,7 +27,7 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
 
     const [graphData, setGraphData] = useState({nodes: [], links: []});
 
-    const rotateTimer = useRef<NodeJS.Timeout>();
+    const rotateTimer = useRef<NodeJS.Timeout>(undefined);
 
     const [clickEnabled, setClickEnabled] = useState<boolean>(false);
 

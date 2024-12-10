@@ -20,6 +20,12 @@ const nextConfig = {
 
 
 export default [
+    {settings: {
+        "react": {
+          "version": "detect"
+        }
+      }
+    },
     {files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]},
     {languageOptions: {parserOptions: {ecmaFeatures: {jsx: true}}, globals: {...globals.commonjs}}}, // ...globals.browser,
     pluginJs.configs.recommended,
