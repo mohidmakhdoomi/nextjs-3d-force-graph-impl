@@ -1,0 +1,20 @@
+id: '4'
+title: research-architecture-and-depe
+protocol: research
+phase: verified
+plan_phases: []
+current_plan_phase: null
+gates:
+  scope-approval:
+    status: approved
+    requested_at: '2026-07-17T04:54:01.009Z'
+    approved_at: '2026-07-17T04:54:35.249Z'
+  research-complete:
+    status: approved
+    requested_at: '2026-07-17T16:50:36.852Z'
+    approved_at: '2026-07-17T16:52:01.554Z'
+iteration: 1
+build_complete: false
+history: []
+started_at: '2026-07-17T04:52:16.952Z'
+updated_at: '2026-07-17T16:52:09.864Z'
