@@ -10,10 +10,11 @@ gates:
     requested_at: '2026-07-17T04:54:01.009Z'
     approved_at: '2026-07-17T04:54:35.249Z'
   research-complete:
-    status: pending
+    status: approved
     requested_at: '2026-07-17T16:50:36.852Z'
+    approved_at: '2026-07-17T16:52:01.554Z'
 iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-17T04:52:16.952Z'
-updated_at: '2026-07-17T16:50:36.853Z'
+updated_at: '2026-07-17T16:52:01.554Z'
