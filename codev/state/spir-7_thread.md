@@ -9,3 +9,5 @@
 - Incorporated all feedback: `main` CI trigger, `.nvmrc`, stable audit artifacts plus durable review format, explicit UI readiness/WebGL evidence, generated-output lint ignores, named scripts, advisory-only Corepack/engine policy, and fail-fast validation semantics.
 - Architect approved the specification; entered SPIR `plan` iteration 1.
 - Drafted three implementation phases for (1) exact toolchain/direct commands, (2) production Playwright WebGL smoke/unified validation, and (3) GitHub Actions/audit artifacts/documentation. All phases are atomic commits in one PR.
+- Plan iteration 1 consultation: Gemini APPROVE, Codex REQUEST_CHANGES, Claude APPROVE.
+- Accepted Codex's browser-install correction: `npm ci` installs Playwright tooling but not Chromium, so Phase 2 now includes `browser:install` as an explicit local prerequisite and CI uses the `--with-deps` variant.

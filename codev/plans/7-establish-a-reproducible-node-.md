@@ -35,9 +35,9 @@ the final review document rather than weakening a gate.
       excluding only generated output.
 - [ ] `npm run typecheck` invokes `tsc --noEmit`.
 - [ ] `npm run build` and `npm run start` produce and serve the production app.
-- [ ] `npm run test:smoke` builds, starts the production server, observes the
-      initialized WebGL canvas, exercises axes/reset/rotation, and fails on
-      unexpected console/page errors.
+- [ ] After `npm run browser:install`, `npm run test:smoke` builds, starts the
+      production server, observes the initialized WebGL canvas, exercises
+      axes/reset/rotation, and fails on unexpected console/page errors.
 - [ ] `npm run validate` runs the complete fail-fast green gate.
 - [ ] Full and production audit JSON plus original exit codes are captured; all
       advisories have root-to-package paths ready for the review document.
@@ -208,7 +208,7 @@ matching lockfile.
       Chromium project, base URL, timeout, and failure diagnostics.
 - [ ] `tests/e2e/smoke.spec.ts` covering page, WebGL, axes, reset, rotation, and
       error collection.
-- [ ] `test:smoke` and `validate` scripts.
+- [ ] `browser:install`, `test:smoke`, and `validate` scripts.
 - [ ] Generated Playwright output ignored by Git and ESLint.
 - [ ] Passing production browser smoke under the pinned toolchain.
 
@@ -238,15 +238,21 @@ matching lockfile.
 3. If the bundled Chromium needs explicit software-rendering launch arguments
    on Linux CI, use only the documented Chromium/Playwright flags necessary to
    provide WebGL. Do not suppress browser console errors.
-4. Define `test:smoke` to build then invoke Playwright, so it works directly
-   after `npm ci`. Define `validate` as a sequential `&&` chain:
+4. Define `browser:install` as the local, package-version-bound
+   `playwright install chromium` entry point. Browser binaries are intentionally
+   a separate prerequisite because `npm ci` installs the test runner but not its
+   Chromium binary. CI uses `playwright install --with-deps chromium` to add
+   Linux system dependencies as well.
+5. Define `test:smoke` to build then invoke Playwright, so it works without a
+   pre-existing `.next` build after `npm ci` plus `npm run browser:install`.
+   Define `validate` as a sequential `&&` chain:
 
    ```text
    lint → typecheck → test:smoke (build → production server → browser test)
    ```
 
    This satisfies the required build gate without performing two builds.
-5. In the smoke:
+6. In the smoke:
    - register `pageerror` and `console` listeners before navigation;
    - require a successful root response;
    - locate the three buttons by accessible role/name;
@@ -260,13 +266,14 @@ matching lockfile.
      `Pause Auto Rotation`;
    - fail at the end with collected messages if any uncaught page error or
      `console.error` occurred.
-6. Do not mock the graph, Three.js, WebGL, timers, or application modules. Do not
+7. Do not mock the graph, Three.js, WebGL, timers, or application modules. Do not
    change `app/**` to facilitate testing.
 
 #### Acceptance Criteria
 
-- [ ] `npm run test:smoke` works after clean install without a pre-existing
-      `.next` build.
+- [ ] `npm run test:smoke` works after clean dependency install plus the
+      documented `npm run browser:install`, without a pre-existing `.next`
+      build.
 - [ ] The production server is started and stopped by Playwright without an
       orphan process.
 - [ ] The smoke proves visible/nonzero canvas and WebGL drawing-buffer state.
@@ -281,7 +288,8 @@ matching lockfile.
 #### Test Plan
 
 - **Browser integration**: run the complete Playwright smoke in headless
-  Chromium against the production server.
+  Chromium against the production server after exercising the documented
+  browser-install command.
 - **Failure-path validation**:
   - locally confirm missing browser/build/server failures are diagnostic;
   - use a temporary, uncommitted error injection or focused listener test to
@@ -363,7 +371,8 @@ Phase 3 must also be reverted first if it already depends on these commands.
    verify both runtime versions in workflow output.
 3. Run:
    - `npm ci`;
-   - Playwright Chromium installation with required Linux dependencies;
+   - the local Playwright CLI's Chromium installation with required Linux
+     dependencies (`npx playwright install --with-deps chromium`);
    - `npm run validate`.
 4. Ensure later evidence/artifact steps use `if: always()` so they run even when
    a green gate fails; never apply `continue-on-error` to validation.
@@ -381,7 +390,8 @@ Phase 3 must also be reverted first if it already depends on these commands.
    only when the test did not produce it.
 7. Document in README:
    - `nvm install` / `nvm use` and exact version verification;
-   - `npm ci` and Chromium installation;
+   - `npm ci`, local `npm run browser:install`, and the CI-specific
+     `--with-deps` variant;
    - every direct command from FR2;
    - `npm run validate` semantics;
    - audit evidence-only semantics and dependency-path follow-up with
@@ -581,9 +591,21 @@ user guide change is required.
 
 ## Expert Review
 
-No plan consultation has run yet. Porch will run Gemini, Codex, and Claude after
-the initial plan is signaled complete. Feedback and plan adjustments will be
-recorded here.
+### Iteration 1 — 2026-07-17
+
+- **Gemini — APPROVE (high confidence):** found the phase ordering, build
+  composition, scope controls, and audit evidence handling executable as
+  written.
+- **Codex — REQUEST_CHANGES (high confidence):** identified that `npm ci`
+  installs `@playwright/test` but not its Chromium binary, making the original
+  "directly after npm ci" acceptance language incorrect. Phase 2 now adds a
+  package-version-bound `browser:install` command, treats it as an explicit local
+  prerequisite, and distinguishes CI's `--with-deps` installation.
+- **Claude — APPROVE (high confidence):** verified the plan against the current
+  scripts, ESLint flat configuration, controls, and console levels, and found
+  all specification requirements covered.
+
+All material feedback has been incorporated.
 
 ## Approval
 
@@ -596,6 +618,7 @@ recorded here.
 | Date | Change | Reason | Author |
 | --- | --- | --- | --- |
 | 2026-07-17 | Initial implementation plan | Convert approved specification into three atomic phases | Builder |
+| 2026-07-17 | Clarify browser installation prerequisite | Address 3-way plan review | Builder |
 
 ## Notes
 
