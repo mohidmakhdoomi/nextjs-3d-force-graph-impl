@@ -7,10 +7,11 @@ current_plan_phase: null
 gates:
   scope-approval:
     status: pending
+    requested_at: '2026-07-17T04:54:01.009Z'
   research-complete:
     status: pending
 iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-17T04:52:16.952Z'
-updated_at: '2026-07-17T04:52:16.953Z'
+updated_at: '2026-07-17T04:54:01.009Z'
