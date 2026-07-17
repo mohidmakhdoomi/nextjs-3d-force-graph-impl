@@ -64,7 +64,7 @@ the final review document rather than weakening a gate.
 
 | Phase | Status | Commit |
 | --- | --- | --- |
-| Pin Toolchain and Direct Commands | pending | — |
+| Pin Toolchain and Direct Commands | completed | `[Spec 7][Phase: toolchain-commands] chore: Pin Node and npm baseline` |
 | Add Production WebGL Browser Smoke | pending | — |
 | Automate and Document the Baseline | pending | — |
 
@@ -72,7 +72,7 @@ the final review document rather than weakening a gate.
 
 ### Phase 1: Pin Toolchain and Direct Commands
 
-**Status**: pending  
+**Status**: completed
 **Dependencies**: Approved specification  
 **Planned commit**:
 `[Spec 7][Phase: toolchain-commands] chore: Pin Node and npm baseline`
@@ -86,14 +86,14 @@ the final review document rather than weakening a gate.
 
 #### Deliverables
 
-- [ ] `.nvmrc` containing `22.23.1`.
-- [ ] `package.json` with `engines.node: "22.23.1"` and
+- [x] `.nvmrc` containing `22.23.1`.
+- [x] `package.json` with `engines.node: "22.23.1"` and
       `packageManager: "npm@10.9.8"`.
-- [ ] Direct `lint`, `typecheck`, `audit:full`, and `audit:production` scripts.
-- [ ] ESLint flat-config global ignores limited to `.next/**`,
+- [x] Direct `lint`, `typecheck`, `audit:full`, and `audit:production` scripts.
+- [x] ESLint flat-config global ignores limited to `.next/**`,
       `playwright-report/**`, and `test-results/**`.
-- [ ] Lockfile v3 root metadata refreshed by npm `10.9.8`.
-- [ ] Baseline command output recorded for phase evaluation.
+- [x] Lockfile v3 root metadata refreshed by npm `10.9.8`.
+- [x] Baseline command output recorded for phase evaluation.
 
 #### Files
 
@@ -137,16 +137,16 @@ the final review document rather than weakening a gate.
 
 #### Acceptance Criteria
 
-- [ ] `node --version` prints `v22.23.1`.
-- [ ] `npm --version` prints `10.9.8`.
-- [ ] `package-lock.json` reports lockfile version 3.
-- [ ] `npm ci` completes under the pinned toolchain.
-- [ ] A second clean `npm ci` causes no tracked manifest/lockfile diff.
-- [ ] `npm run lint` invokes direct ESLint and reports its true outcome.
-- [ ] `npm run typecheck` invokes `tsc --noEmit` and reports its true outcome.
-- [ ] Both audit scripts run without mutating the dependency graph; advisory
+- [x] `node --version` prints `v22.23.1`.
+- [x] `npm --version` prints `10.9.8`.
+- [x] `package-lock.json` reports lockfile version 3.
+- [x] `npm ci` completes under the pinned toolchain.
+- [x] A second clean `npm ci` causes no tracked manifest/lockfile diff.
+- [x] `npm run lint` invokes direct ESLint and reports its true outcome.
+- [x] `npm run typecheck` invokes `tsc --noEmit` and reports its true outcome.
+- [x] Both audit scripts run without mutating the dependency graph; advisory
       exits are recorded rather than treated as Phase 1 validation failures.
-- [ ] A package-tree comparison shows no existing dependency version drift.
+- [x] A package-tree comparison shows no existing dependency version drift.
 
 #### Test Plan
 
@@ -184,6 +184,26 @@ matching lockfile.
   and 3-way phase consultation.
 - Mark the phase completed in this plan and create the single planned commit
   only after porch verification permits it.
+
+#### Evaluation Results
+
+- Exact runtime: Node `22.23.1`, npm `10.9.8`.
+- Clean install, direct ESLint, typecheck, production build, and 4/4 Node
+  contract tests passed.
+- All 428 pre-existing lockfile package entries retained identical
+  version/resolved/integrity metadata.
+- Full audit: 14 findings (2 low, 6 moderate, 5 high, 1 critical).
+- Production audit: 9 findings (4 moderate, 4 high, 1 critical).
+- Audit exits remained nonzero evidence, not green-gate failures.
+- Consultation iteration 1: Gemini/Claude approved; Codex requested that the
+  untracked `.nvmrc` be included in the canonical diff.
+- Consultation iteration 2 after explicit file inclusion: Gemini, Codex, and
+  Claude unanimously approved.
+- **Plan deviation**: Added `tests/toolchain.test.mjs` and a minimal Node `test`
+  script because porch requires automated tests for every implementation phase.
+  During re-iteration, porch committed the explicitly staged new `.nvmrc` and
+  test file in its state-transition commit; the named phase commit contains the
+  remaining manifest, lockfile, ESLint, plan, and thread changes.
 
 ---
 
