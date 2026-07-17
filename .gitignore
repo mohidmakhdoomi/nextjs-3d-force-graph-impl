@@ -40,3 +40,10 @@ next-env.d.ts
 
 # idea
 /.idea/
+
+# Codev (added by codev update 2026-07-17)
+.agent-farm/
+.consult/
+codev/.update-hashes.json
+.builders/
+.architect-role.md
