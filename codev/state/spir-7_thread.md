@@ -5,3 +5,5 @@
 - The issue contains no `Baked Decisions` section. Its fixed scope is a Node 22/npm reproducibility baseline, direct validation commands, Playwright smoke coverage, audit evidence, and an automated execution path without dependency/framework modernization.
 - Architect confirmed the exact-patch policy, GitHub Actions, evidence-only audits, scope boundaries, and required canvas/control coverage.
 - Verified the current Node 22 Maintenance LTS baseline from official Node.js sources as Node `22.23.1` with bundled npm `10.9.8`; drafted the initial specification around that exact toolchain.
+- Specify iteration 1 consultation completed after waiting for the mandatory Claude quota reset: Gemini APPROVE, Codex REQUEST_CHANGES, Claude COMMENT.
+- Incorporated all feedback: `main` CI trigger, `.nvmrc`, stable audit artifacts plus durable review format, explicit UI readiness/WebGL evidence, generated-output lint ignores, named scripts, advisory-only Corepack/engine policy, and fail-fast validation semantics.

@@ -79,7 +79,7 @@ The selected toolchain is:
 ### In scope
 
 - Declare the exact Node and npm baseline in package metadata.
-- Add a runtime version file usable by common local version managers.
+- Add `.nvmrc` containing the exact Node version for local version managers.
 - Refresh lockfile v3 with the declared npm version without intentionally
   upgrading the existing application dependency graph.
 - Add direct commands for ESLint, TypeScript checking, production build,
@@ -109,6 +109,10 @@ The selected toolchain is:
 - Runtime and CI must use Node `22.23.1`; package metadata must declare that
   exact supported baseline rather than an unbounded `>=22` policy.
 - `packageManager` must identify npm `10.9.8`.
+- The manifest fields and `.nvmrc` are the repository's declared toolchain
+  contract. This spec does not require enabling Corepack or adding
+  `engine-strict`; exact versions are verified explicitly in documentation and
+  CI.
 - `npm ci` must remain the clean-install command; CI must not substitute
   `npm install`.
 - The committed lockfile must remain lockfile v3.
@@ -116,6 +120,9 @@ The selected toolchain is:
   Any incidental lockfile change must be explained.
 - Lint must invoke the existing ESLint 9 flat configuration through the ESLint
   CLI, not `next lint`.
+- ESLint flat configuration must globally ignore generated/tool-owned output
+  such as `.next/`, Playwright reports, and Playwright test results. Ignoring
+  generated output is not permission to exclude application or test source.
 - Typecheck must invoke `tsc --noEmit` directly.
 - Browser smoke must use the production build and production server, not the
   development server.
@@ -209,7 +216,7 @@ timeouts, and a focused single-browser test.
 
 - `package.json` MUST declare `engines.node` as exactly `22.23.1`.
 - `package.json` MUST declare `packageManager` as `npm@10.9.8`.
-- A runtime version file MUST contain the exact Node version for local tooling.
+- `.nvmrc` MUST contain `22.23.1`.
 - Documentation MUST show commands that verify both `node --version` and
   `npm --version`.
 - The lockfile MUST be generated/refreshed with npm `10.9.8` and MUST remain
@@ -217,16 +224,16 @@ timeouts, and a focused single-browser test.
 
 ### FR2 — Direct commands
 
-The package scripts and documentation MUST provide direct commands for:
+The package scripts and documentation MUST provide these direct commands:
 
 - clean install (`npm ci`);
-- lint using `eslint .`;
-- typecheck using `tsc --noEmit`;
-- production build;
-- production start;
-- Playwright browser smoke;
-- full dependency audit; and
-- production dependency audit using `--omit=dev`.
+- lint (`npm run lint`) using `eslint .`;
+- typecheck (`npm run typecheck`) using `tsc --noEmit`;
+- production build (`npm run build`);
+- production start (`npm run start`);
+- Playwright browser smoke (`npm run test:smoke`);
+- full dependency audit (`npm run audit:full`); and
+- production dependency audit (`npm run audit:production`) using `--omit=dev`.
 
 Command names MUST be unambiguous and stable enough for CI and later
 modernization stages to reuse.
@@ -235,6 +242,10 @@ modernization stages to reuse.
 
 - A single documented `npm run validate` command MUST run lint, typecheck,
   production build, and the browser smoke.
+- `validate` MUST run sequentially and fail fast on the first failing green-gate
+  command. Complete baseline evidence is obtained by also running and recording
+  each direct command independently; validation does not need a custom
+  run-all/aggregate-result wrapper.
 - The smoke MUST start and stop the production server deterministically.
 - Validation MUST return nonzero when any included check fails.
 - Audits MUST remain separate evidence commands, as confirmed by the architect.
@@ -245,9 +256,12 @@ Using a real headless Chromium browser against the built production application,
 the smoke MUST:
 
 1. load the root page successfully;
-2. wait for the graph UI to become ready;
+2. wait for the graph UI to become ready, defined as all three required controls
+   being visible together with a visible canvas whose CSS and backing-store
+   dimensions are nonzero;
 3. observe a visible canvas with nonzero rendered dimensions and evidence of an
-   initialized WebGL rendering context;
+   initialized WebGL rendering context whose drawing buffer dimensions are
+   nonzero;
 4. exercise the axes control and observe its label/state transition;
 5. exercise Reset Camera;
 6. exercise the auto-rotation control and observe its label/state transition;
@@ -257,17 +271,21 @@ the smoke MUST:
    error, or console error is observed.
 
 Selectors SHOULD prefer accessible roles/names. The smoke MAY use stable
-existing IDs where a control has no better observable contract.
+existing IDs where a control has no better observable contract. Playwright MAY
+execute JavaScript in the page to inspect the canvas WebGL context and drawing
+buffer.
 
 ### FR5 — GitHub Actions
 
-- A workflow MUST run for pull requests and pushes to the integration branch.
+- A workflow MUST run for pull requests and pushes to `main`.
 - It MUST use Node `22.23.1`, run `npm ci`, install the required Playwright
   Chromium browser/system dependencies, and invoke the same unified validation
   command documented for contributors.
 - It MUST collect full and production-only audit snapshots even when advisories
   cause npm to exit nonzero.
-- Audit output and browser failure artifacts MUST remain available to reviewers.
+- Audit output MUST be uploaded under stable `audit-full` and
+  `audit-production` artifact names. Browser failure output MUST be uploaded
+  under stable Playwright report/test-result artifact names.
 - Audit evidence handling MUST NOT mask failures from lint, typecheck, build, or
   browser smoke.
 
@@ -275,7 +293,11 @@ existing IDs where a control has no better observable contract.
 
 - Run `npm audit` and `npm audit --omit=dev` under the declared toolchain.
 - Preserve machine-readable output for both views.
-- For every reported advisory, the review/PR MUST identify:
+- Raw machine-readable audit outputs MUST be CI artifacts rather than committed
+  volatile snapshots. Durable findings and dispositions MUST be committed in an
+  `Audit Baseline` section of
+  `codev/reviews/7-establish-a-reproducible-node-.md`.
+- For every reported advisory, that review section MUST identify:
   - affected package and severity;
   - advisory identifier or URL where available;
   - whether the package is in the production or development graph;
@@ -403,7 +425,7 @@ product UI, graph lifecycle, or rendering implementation change is present.
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Headless CI lacks usable WebGL | False smoke failures or untested rendering | Install supported Chromium dependencies, verify an initialized WebGL context, and retain Playwright artifacts |
+| Headless CI lacks usable WebGL | False smoke failures or untested rendering | Install supported Chromium dependencies, require nonzero canvas/drawing-buffer dimensions from an initialized context, and retain Playwright artifacts |
 | Playwright server lifecycle races | Flaky readiness or orphan processes | Use Playwright-managed `webServer`, an explicit URL, bounded timeout, and deterministic teardown |
 | Lockfile refresh changes resolved packages | Accidental dependency modernization | Compare lockfile package entries, explain every change, and reject unrelated version drift |
 | Existing console errors surface | Baseline cannot be green | Reproduce and disposition; fix only if in scope, never ignore the error |
@@ -442,6 +464,25 @@ decisions required to proceed.
 
 ## Consultation Log
 
-No consultation has run yet. Porch will perform the mandatory Gemini, Codex, and
-Claude specification review after this draft is signaled complete. Reviewer
-feedback and resulting changes will be recorded here in the next iteration.
+### Iteration 1
+
+- **Gemini — APPROVE (high confidence):** confirmed the current-state analysis,
+  control availability, and Playwright feasibility. It noted that direct
+  `eslint .` requires generated-output ignores; the spec now requires global
+  ignores for `.next/` and Playwright output while explicitly prohibiting source
+  exclusions.
+- **Codex — REQUEST_CHANGES (high confidence):** requested an explicit CI branch,
+  named runtime file, durable audit-evidence contract, and concrete UI-ready
+  condition. The spec now names `main`, `.nvmrc`, stable CI artifact names plus
+  the review document's `Audit Baseline` section, and readiness based on all
+  controls plus nonzero canvas/backing-store dimensions.
+- **Claude — COMMENT (high confidence):** found no blocking feasibility issue
+  and requested clarity on toolchain enforcement and validation error behavior.
+  The spec now states that Corepack/`engine-strict` activation is not required,
+  exact versions are explicitly verified in docs/CI, and `validate` is
+  sequential/fail-fast while direct commands provide complete baseline evidence.
+  It also suggested stable script names and in-page WebGL inspection; both are
+  now explicit.
+
+All material feedback has been incorporated; no reviewer recommendation was
+rejected.
