@@ -45,3 +45,5 @@
   verified/complete; preparing the final brief, synthesis, rebuttals, and this
   thread for integration review. Raw investigation and critique outputs remain
   disposable process artifacts and are not included in the PR.
+- Committed the four approved deliverables and opened PR #5 for architect
+  integration review.
