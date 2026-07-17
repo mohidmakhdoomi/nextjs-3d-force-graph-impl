@@ -5,14 +5,14 @@ phase: implement
 plan_phases:
   - id: toolchain_commands
     title: Pin Toolchain and Direct Commands
-    status: in_progress
+    status: complete
   - id: browser_smoke
     title: Add Production WebGL Browser Smoke
-    status: pending
+    status: in_progress
   - id: ci_documentation
     title: Automate and Document the Baseline
     status: pending
-current_plan_phase: toolchain_commands
+current_plan_phase: browser_smoke
 gates:
   spec-approval:
     status: approved
@@ -26,8 +26,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 2
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: toolchain_commands
@@ -46,4 +46,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-7/codev/projects/7-establish-a-reproducible-node-/7-toolchain_commands-iter1-claude.txt
 started_at: '2026-07-17T21:26:41.120Z'
-updated_at: '2026-07-17T21:57:08.018Z'
+updated_at: '2026-07-17T21:58:55.084Z'
