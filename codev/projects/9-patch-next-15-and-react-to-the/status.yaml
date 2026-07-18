@@ -1,7 +1,7 @@
 id: '9'
 title: patch-next-15-and-react-to-the
 protocol: spir
-phase: specify
+phase: plan
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -19,4 +19,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-18T08:28:18.104Z'
-updated_at: '2026-07-18T17:55:03.481Z'
+updated_at: '2026-07-18T17:55:07.864Z'
