@@ -27,3 +27,74 @@ Data used for the graph is a subset of the Neo4j StackOverflow Dataset.
 
 #### NOTE:
 In the first 4 seconds mouse interaction is disabled after which it is enabled. <br>This applies only to non button interaction listed in above table (buttons are bolded).   
+
+## Reproducible development baseline
+
+This repository supports exactly Node.js `22.23.1` with npm `10.9.8`. The
+runtime is declared in `.nvmrc` and `package.json`; npm `10.9.8` generated the
+committed lockfile v3.
+
+With [nvm](https://github.com/nvm-sh/nvm), install and verify the toolchain:
+
+```sh
+nvm install
+nvm use
+node --version # v22.23.1
+npm --version  # 10.9.8
+```
+
+Install dependencies strictly from the lockfile, then install the Chromium
+binary used by the browser smoke:
+
+```sh
+npm ci
+npm run browser:install
+```
+
+### Validation commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm run lint` | Run the ESLint CLI across tracked source and configuration. |
+| `npm run typecheck` | Run `tsc --noEmit`. |
+| `npm test` | Check the toolchain, automation, and audit-evidence contracts. |
+| `npm run build` | Create the production Next.js build. |
+| `npm run start` | Start a previously built production application. |
+| `npm run test:smoke` | Build, start the production server, and run the Chromium WebGL smoke. |
+| `npm run validate` | Fail fast through lint, typecheck, build, production start, and browser smoke. |
+| `npm run audit:full` | Report findings in the complete dependency graph. |
+| `npm run audit:production` | Report findings with development dependencies omitted. |
+
+`npm run validate` is the documented green gate. The browser smoke observes a
+real WebGL drawing buffer and exercises the axes, camera-reset, and rotation
+controls against `next start`; Playwright owns server startup and teardown.
+
+### Audit evidence
+
+Audits are evidence snapshots, not a zero-finding green gate. Either audit
+command normally exits nonzero when it reports advisories; do not suppress that
+status or run an automatic/forced fix as part of baseline validation. To inspect
+why an affected package is installed, use:
+
+```sh
+npm explain <package>
+```
+
+The validation workflow preserves each audit's JSON and original exit code as
+the `audit-full` and `audit-production` artifacts. It rejects malformed output,
+registry errors, and inconsistent exit metadata instead of treating them as
+valid advisory evidence.
+
+### Continuous integration
+
+GitHub Actions runs on pull requests and pushes to `main` using the same exact
+Node/npm contract, `npm ci`, `npm test`, and `npm run validate`. CI installs
+Chromium plus its Linux dependencies with:
+
+```sh
+npm exec -- playwright install --with-deps chromium
+```
+
+On every run it uploads the two audit artifacts. When Playwright produces
+diagnostics, the workflow also uploads stable `playwright-report` and
+`playwright-test-results` artifacts.

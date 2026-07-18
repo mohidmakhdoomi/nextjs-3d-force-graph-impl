@@ -66,7 +66,7 @@ the final review document rather than weakening a gate.
 | --- | --- | --- |
 | Pin Toolchain and Direct Commands | completed | `[Spec 7][Phase: toolchain-commands] chore: Pin Node and npm baseline` |
 | Add Production WebGL Browser Smoke | completed | `[Spec 7][Phase: browser-smoke] test: Add production WebGL smoke validation` |
-| Automate and Document the Baseline | pending | — |
+| Automate and Document the Baseline | completed | `[Spec 7][Phase: ci-documentation] ci: Automate and document validation baseline` |
 
 ## Phase Breakdown
 
@@ -381,7 +381,7 @@ Phase 3 must also be reverted first if it already depends on these commands.
 
 ### Phase 3: Automate and Document the Baseline
 
-**Status**: pending  
+**Status**: completed
 **Dependencies**: Phase 2 committed  
 **Planned commit**:
 `[Spec 7][Phase: ci-documentation] ci: Automate and document validation baseline`
@@ -395,17 +395,17 @@ Phase 3 must also be reverted first if it already depends on these commands.
 
 #### Deliverables
 
-- [ ] `.github/workflows/validation.yml` for pull requests and pushes to `main`.
-- [ ] Read-only workflow permissions and npm cache.
-- [ ] Exact Node setup, `npm ci`, Chromium/system dependency install, and
+- [x] `.github/workflows/validation.yml` for pull requests and pushes to `main`.
+- [x] Read-only workflow permissions and npm cache.
+- [x] Exact Node setup, `npm ci`, Chromium/system dependency install, and
       `npm run validate`.
-- [ ] Always-run audit capture that distinguishes valid advisory reports from
+- [x] Always-run audit capture that distinguishes valid advisory reports from
       registry/tool failures.
-- [ ] Stable `audit-full`, `audit-production`, `playwright-report`, and
+- [x] Stable `audit-full`, `audit-production`, `playwright-report`, and
       `playwright-test-results` artifacts as applicable.
-- [ ] README toolchain, clean-install, direct-command, unified-validation, audit,
+- [x] README toolchain, clean-install, direct-command, unified-validation, audit,
       and CI documentation.
-- [ ] Final clean baseline evidence collected for the review phase.
+- [x] Final clean baseline evidence collected for the review phase.
 
 #### Files
 
@@ -456,17 +456,17 @@ Phase 3 must also be reverted first if it already depends on these commands.
 
 #### Acceptance Criteria
 
-- [ ] Workflow syntax is valid and triggers only as specified.
-- [ ] Workflow green-gate steps use the same scripts as README/local usage.
-- [ ] Workflow validation cannot be made green by audit evidence handling.
-- [ ] A valid audit with advisories is preserved without failing the green gate.
-- [ ] An invalid/non-report audit result fails the evidence collection step.
-- [ ] Full and production audit artifacts include JSON and original exit code.
-- [ ] Playwright reports/test results upload on relevant runs.
-- [ ] README direct commands exactly match `package.json`.
-- [ ] Clean local validation and production start succeed, or any genuine
+- [x] Workflow syntax is valid and triggers only as specified.
+- [x] Workflow green-gate steps use the same scripts as README/local usage.
+- [x] Workflow validation cannot be made green by audit evidence handling.
+- [x] A valid audit with advisories is preserved without failing the green gate.
+- [x] An invalid/non-report audit result fails the evidence collection step.
+- [x] Full and production audit artifacts include JSON and original exit code.
+- [x] Playwright reports/test results upload on relevant runs.
+- [x] README direct commands exactly match `package.json`.
+- [x] Clean local validation and production start succeed, or any genuine
       pre-existing failure is fully reproduced and dispositioned.
-- [ ] Every audit finding has installed dependency-path evidence ready for the
+- [x] Every audit finding has installed dependency-path evidence ready for the
       final review document.
 
 #### Test Plan
@@ -511,6 +511,37 @@ reverse dependency order, keeping each manifest paired with its lockfile.
   consultation.
 - Mark the phase completed and create the planned commit only after porch
   verification permits it.
+
+#### Evaluation Results
+
+- Added GitHub Actions automation for pull requests and pushes to `main` with
+  read-only repository permissions, exact Node/npm verification, `npm ci`,
+  contract tests, package-local Playwright installation with Linux
+  dependencies, and the unchanged unified validation command.
+- Validation has no bypass. Always-run evidence steps retain the original audit
+  status and JSON, and later uploads cannot replace a failed green-gate result.
+- Added a checked-in audit report validator plus integration tests. Valid clean
+  and advisory reports pass; malformed JSON, missing vulnerability metadata,
+  registry-style error objects, severity-total mismatches, and inconsistent
+  exit codes fail.
+- A clean `npm ci` left `package.json` and `package-lock.json` hashes unchanged.
+  The final local matrix passed 12/12 Node tests, direct lint, typecheck, build,
+  production start/Chromium WebGL smoke, and `npm run validate`.
+- Full audit evidence remained 14 findings (2 low, 6 moderate, 5 high,
+  1 critical), exit 1. Production evidence remained 9 findings (4 moderate,
+  4 high, 1 critical), exit 1. Both real JSON reports passed the evidence
+  validator, and `npm explain` supplied installed-tree paths for every affected
+  package.
+- Workflow/documentation contract tests verify triggers, permissions, exact
+  toolchain, locked install, browser dependency installation, absence of a
+  validation bypass, always-run audit handling, stable artifact names, and
+  README/package-script parity.
+- Gemini, Codex, and Claude unanimously approved Phase 3 with high confidence
+  and no requested changes.
+- **Plan deviation**: added `scripts/validate-audit-report.mjs` and focused Node
+  tests rather than leaving report validation as opaque inline shell. CI also
+  runs `npm test` before the required `npm run validate`; this adds a contract
+  gate without changing or weakening the documented unified validation path.
 
 ## Dependency Map
 
