@@ -1,7 +1,7 @@
 id: '7'
 title: establish-a-reproducible-node-
 protocol: spir
-phase: verify
+phase: verified
 plan_phases:
   - id: toolchain_commands
     title: Pin Toolchain and Direct Commands
@@ -34,5 +34,5 @@ iteration: 1
 build_complete: true
 history: []
 started_at: '2026-07-17T21:26:41.120Z'
-updated_at: '2026-07-18T03:43:07.464Z'
+updated_at: '2026-07-18T03:43:08.592Z'
 pr_ready_for_human: false
