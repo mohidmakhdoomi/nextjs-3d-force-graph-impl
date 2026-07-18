@@ -14,3 +14,7 @@ gotcha, or constraint.
   normalize status blindly. Preserve the original exit and validate the
   machine-readable report structure so advisory evidence remains distinct from
   registry, tool, or malformed-output failures.
+- When an upgrade-sensitive browser interaction fails, replay the same physical
+  input against the rollback baseline before attributing it to dependency drift.
+  Record the exact input and renderer that were exercised instead of broadening
+  an environment-limited result into a full-pass claim.
