@@ -1,0 +1,14 @@
+id: bugfix-8
+title: harden-focusgraph-lifecycle-an
+protocol: bugfix
+phase: investigate
+plan_phases: []
+current_plan_phase: null
+gates:
+  pr:
+    status: pending
+iteration: 1
+build_complete: false
+history: []
+started_at: '2026-07-18T03:44:48.480Z'
+updated_at: '2026-07-18T03:44:48.481Z'
