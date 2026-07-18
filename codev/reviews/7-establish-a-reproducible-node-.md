@@ -319,6 +319,19 @@ two exact Vercel external instrumentation scripts described above.
 - Gemini, Codex, and Claude raised no concerns and unanimously approved the
   workflow, audit validation, artifacts, tests, and README.
 
+### Review Phase — Round 1
+
+- Gemini, Codex, and Claude raised no concerns and unanimously approved PR #19
+  with high confidence.
+
+### Architect Integration Review
+
+- **Concern:** The always-on hot architecture fact copied volatile Node/npm
+  patch numbers instead of referring to the authoritative declarations.
+  - **Addressed:** `arch-critical.md` now points to the exact versions declared
+    in `package.json` and `.nvmrc`. Exact values remain in configuration,
+    README, and cold architecture reference, where baseline details belong.
+
 ## Flaky Tests
 
 No flaky tests were encountered or skipped.
@@ -328,8 +341,10 @@ No flaky tests were encountered or skipped.
 - Added the current validation system shape to the cold
   `codev/resources/arch.md`.
 - Added two behavior-changing invariants to hot
-  `codev/resources/arch-critical.md`: the exact install contract and separation
-  of the green validation gate from audit evidence.
+  `codev/resources/arch-critical.md`: the authoritative install-contract
+  references and separation of the green validation gate from audit evidence.
+  Volatile patch values remain in configuration, README, and cold architecture
+  reference rather than the always-on hot tier.
 - Updated the hot file's map to the new cold `Validation Baseline` section.
 
 ## Lessons Learned Updates

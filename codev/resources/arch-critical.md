@@ -7,7 +7,7 @@ and keeps the map in sync with arch.md's top-level sections.
 STARTER: replace the examples below with YOUR project's facts and arch.md sections. -->
 
 ## Critical facts (consult before deciding)
-- The reproducibility contract is exact Node `22.23.1` / npm `10.9.8`, lockfile v3, and `npm ci`; do not regenerate dependencies under another toolchain.
+- The reproducibility contract is the exact Node/npm versions declared in `package.json` and `.nvmrc`, lockfile v3, and `npm ci`; do not regenerate dependencies under another toolchain.
 - `npm run validate` is the green gate; full and production audits are separately validated evidence and existing advisories are not a zero-findings gate.
 
 ## Map of arch.md (consult when…)
