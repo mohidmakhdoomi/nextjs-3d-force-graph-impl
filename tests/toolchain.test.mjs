@@ -13,6 +13,18 @@ const expectedGeneratedIgnores = [
     "playwright-report/**",
     "test-results/**",
 ];
+const expectedDependencyBaseline = {
+    dependencies: {
+        next: "15.5.20",
+        react: "19.2.7",
+        "react-dom": "19.2.7",
+    },
+    devDependencies: {
+        "@next/eslint-plugin-next": "15.5.20",
+        "@types/react": "19.2.17",
+        "@types/react-dom": "19.2.3",
+    },
+};
 
 const packageJson = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),
@@ -43,6 +55,57 @@ test("keeps package metadata and lockfile v3 synchronized", () => {
     assert.deepEqual(lockRoot.engines, packageJson.engines);
     assert.deepEqual(lockRoot.dependencies, packageJson.dependencies);
     assert.deepEqual(lockRoot.devDependencies, packageJson.devDependencies);
+});
+
+test("pins the supported Next and React dependency baseline exactly", () => {
+    for (const [dependencyGroup, expectedPackages] of Object.entries(
+        expectedDependencyBaseline,
+    )) {
+        for (const [packageName, expectedVersion] of Object.entries(
+            expectedPackages,
+        )) {
+            const manifestVersion =
+                packageJson[dependencyGroup][packageName];
+
+            assert.equal(manifestVersion, expectedVersion);
+            assert.match(manifestVersion, /^\d+\.\d+\.\d+$/);
+            assert.equal(
+                packageLock.packages[`node_modules/${packageName}`].version,
+                expectedVersion,
+            );
+        }
+    }
+
+    assert.equal(
+        packageJson.dependencies.react,
+        packageJson.dependencies["react-dom"],
+    );
+    assert.equal(
+        packageJson.dependencies.next,
+        packageJson.devDependencies["@next/eslint-plugin-next"],
+    );
+});
+
+test("locks exactly one stable React runtime", () => {
+    const reactRuntimeRecords = Object.entries(packageLock.packages).filter(
+        ([packagePath]) =>
+            packagePath === "node_modules/react" ||
+            packagePath.endsWith("/node_modules/react"),
+    );
+
+    assert.deepEqual(
+        reactRuntimeRecords.map(([packagePath]) => packagePath),
+        ["node_modules/react"],
+    );
+    assert.equal(
+        reactRuntimeRecords[0][1].version,
+        packageJson.dependencies.react,
+    );
+    assert.equal(
+        packageLock.packages["node_modules/react-dom"].peerDependencies.react,
+        `^${packageJson.dependencies.react}`,
+    );
+    assert.doesNotMatch(reactRuntimeRecords[0][1].version, /[-+]/);
 });
 
 test("exposes direct validation and audit commands", () => {

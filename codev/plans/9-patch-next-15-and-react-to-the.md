@@ -78,14 +78,14 @@ will be written only to the review document during the Review phase.
 
 | Phase | Status | Planned commit |
 | --- | --- | --- |
-| Apply the Atomic Supported Dependency Baseline | pending | `[Spec 9][Phase: dependency-baseline] chore: Patch Next and React baseline` |
-| Qualify Production Behavior and Residual Risk | pending | `[Spec 9][Phase: production-qualification] test: Qualify supported dependency baseline` |
+| Apply the Atomic Supported Dependency Baseline | completed | `[Spec 9][Phase: dependency-baseline] chore: Patch Next and React baseline` |
+| Qualify Production Behavior and Residual Risk | in-progress | `[Spec 9][Phase: production-qualification] test: Qualify supported dependency baseline` |
 
 ## Phase Breakdown
 
 ### Phase 1: Apply the Atomic Supported Dependency Baseline
 
-**Status**: pending  
+**Status**: completed
 **Dependencies**: Approved specification  
 **Planned commit**:
 `[Spec 9][Phase: dependency-baseline] chore: Patch Next and React baseline`
@@ -271,11 +271,20 @@ one dependency file.
 - Mark the phase completed in this plan and create the single planned commit
   only after Porch verification permits it.
 
+**Evaluation**: Node `v22.23.1` / npm `10.9.8` registry verification found no
+target drift. Plain `npm ci`, the clean peer tree, the single React runtime
+contract, tests, and production build passed. All changed lock records were
+attributed to Next/SWC/Sharp or React/types support subtrees; no unexpected
+major or non-registry source appeared. Validated audits show all 20 prior
+direct Next advisories removed while both PostCSS paths remain explicit.
+Gemini, Codex, and Claude unanimously approved the completed phase with high
+confidence.
+
 ---
 
 ### Phase 2: Qualify Production Behavior and Residual Risk
 
-**Status**: pending  
+**Status**: in-progress
 **Dependencies**: Phase 1 completed and committed  
 **Planned commit**:
 `[Spec 9][Phase: production-qualification] test: Qualify supported dependency baseline`
