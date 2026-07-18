@@ -297,7 +297,8 @@ one dependency file.
 - [ ] Passing unit/contracts, lint, typecheck, direct build/start, Playwright
       Chromium smoke, and aggregate validation.
 - [ ] Source-diff proof that the App Router server components, client wrapper,
-      and `{ssr: false}` WebGL island remain unchanged.
+      `{ssr: false}` WebGL island, and compiler configuration surfaces remain
+      unchanged.
 - [ ] Completed twelve-step manual Chromium interaction matrix against
       `next start`, with errors monitored through the sequence.
 - [ ] Final full/production audit and installed-path verification ready for the
@@ -336,8 +337,10 @@ one dependency file.
    `app/page.tsx`, `app/layout.tsx`, and
    `app/components/FocusGraphWrapper.tsx`. Confirm the page/layout remain server
    components, the wrapper remains the client boundary, and the dynamic
-   `FocusGraph` import still has `ssr: false`. Confirm no React Compiler
-   configuration was introduced.
+   `FocusGraph` import still has `ssr: false`. Also inspect `next.config.js`,
+   `package.json`, and any present `.babelrc*` / `babel.config.*` surface.
+   Confirm no `reactCompiler` option, `babel-plugin-react-compiler` dependency
+   or transform, or other React Compiler-enabling configuration was introduced.
 4. Against the production build in Chromium, perform and record the complete
    manual matrix:
    1. visible, populated, nonzero WebGL graph canvas;
@@ -380,6 +383,8 @@ one dependency file.
 - [ ] All twelve manual interaction checks pass and record only behaviors
       actually exercised.
 - [ ] Server/client boundaries and `ssr: false` remain unchanged.
+- [ ] `next.config.js`, `package.json`, and every present Babel configuration
+      surface prove React Compiler remains disabled.
 - [ ] Final audit evidence is valid, path-complete, and honest about all
       residuals.
 - [ ] No unrelated source, dependency, generated JSON, or cleanup enters the
@@ -389,7 +394,7 @@ one dependency file.
 
 - **Unit/contracts**: Existing Node tests plus the Phase 1 dependency contract.
 - **Static integration**: ESLint, TypeScript `--noEmit`, clean Next production
-  build, and explicit source-boundary inspection.
+  build, explicit source-boundary inspection, and compiler-config inspection.
 - **Production integration**: Direct `next start` root response and the existing
   Playwright-managed production WebGL smoke.
 - **Manual behavior**: Complete Chromium interaction matrix with representative
@@ -494,6 +499,8 @@ Review document and single pull request
 - `app/page.tsx`, `app/layout.tsx`, and
   `app/components/FocusGraphWrapper.tsx`: architecture invariants inspected but
   not modified.
+- `next.config.js`, `package.json`, and any present Babel configuration:
+  compiler-enabling surfaces inspected but not modified.
 
 ## Risk Analysis
 
@@ -549,11 +556,18 @@ Review document and single pull request
 - [ ] After merge, verify the integrated branch under the protocol's Verify
       phase unless the architect explicitly skips it.
 
-## Expert Review
+## Consultation Log
 
 ### Initial plan review
 
-Pending Porch-managed Gemini, Codex, and Claude consultation.
+Gemini and Claude approved the plan with high confidence and found the
+two-phase ordering, file references, requirements coverage, validation
+strategy, and rollback controls complete. Codex returned a high-confidence
+COMMENT that otherwise endorsed the plan but asked that the React Compiler
+invariant explicitly cover configuration surfaces, not only application
+components. Phase 2 now requires inspection of `next.config.js`, `package.json`,
+and any present Babel configuration for React Compiler options, dependencies,
+or transforms.
 
 ### Post-feedback plan review
 
@@ -571,6 +585,7 @@ Pending architect feedback and any Porch-managed re-review.
 | Date | Change | Reason | Author |
 | --- | --- | --- | --- |
 | 2026-07-18 | Initial two-phase implementation plan | Translate the approved atomic dependency and production-qualification requirements into committable work | Builder |
+| 2026-07-18 | Added explicit React Compiler configuration inspection and recorded all three reviews | Incorporate Codex feedback and the successful Gemini retry before human approval | Builder |
 
 ## Notes
 
