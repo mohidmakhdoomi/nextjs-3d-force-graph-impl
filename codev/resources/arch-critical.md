@@ -7,11 +7,8 @@ and keeps the map in sync with arch.md's top-level sections.
 STARTER: replace the examples below with YOUR project's facts and arch.md sections. -->
 
 ## Critical facts (consult before deciding)
-- <A system-shape fact that should change implementation choices — e.g. "all persistent state lives in X; never write it directly.">
-- <An invariant a contributor must not violate — e.g. "service A only talks to service B through the queue.">
-- <Keep to <=10, one line each; demote weaker facts into arch.md.>
+- The reproducibility contract is the exact Node/npm versions declared in `package.json` and `.nvmrc`, lockfile v3, and `npm ci`; do not regenerate dependencies under another toolchain.
+- `npm run validate` is the green gate; full and production audits are separately validated evidence and existing advisories are not a zero-findings gate.
 
 ## Map of arch.md (consult when…)
-- <Top-level arch.md section> — consult when <situation>.
-- <Top-level arch.md section> — consult when <situation>.
-- <List your arch.md's top-level sections here; keep <=12, top-level only.>
+- Validation Baseline — consult when changing toolchains, dependencies, CI, browser validation, or audit handling.

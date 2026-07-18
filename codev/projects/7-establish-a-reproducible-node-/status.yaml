@@ -1,0 +1,36 @@
+id: '7'
+title: establish-a-reproducible-node-
+protocol: spir
+phase: verify
+plan_phases:
+  - id: toolchain_commands
+    title: Pin Toolchain and Direct Commands
+    status: complete
+  - id: browser_smoke
+    title: Add Production WebGL Browser Smoke
+    status: complete
+  - id: ci_documentation
+    title: Automate and Document the Baseline
+    status: complete
+current_plan_phase: null
+gates:
+  spec-approval:
+    status: approved
+    requested_at: '2026-07-17T21:42:38.663Z'
+    approved_at: '2026-07-17T21:43:31.896Z'
+  plan-approval:
+    status: approved
+    requested_at: '2026-07-17T21:49:24.193Z'
+    approved_at: '2026-07-17T21:49:43.822Z'
+  pr:
+    status: approved
+    requested_at: '2026-07-18T03:33:26.273Z'
+    approved_at: '2026-07-18T03:39:53.420Z'
+  verify-approval:
+    status: pending
+iteration: 1
+build_complete: false
+history: []
+started_at: '2026-07-17T21:26:41.120Z'
+updated_at: '2026-07-18T03:40:01.394Z'
+pr_ready_for_human: false

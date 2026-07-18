@@ -20,6 +20,7 @@ const nextConfig = {
 
 
 export default [
+    {ignores: [".next/**", "playwright-report/**", "test-results/**"]},
     {settings: {
         "react": {
           "version": "detect"

@@ -1,9 +1,16 @@
 # Lessons Learned
 
-<!-- STARTER: replace the "_No lessons captured yet._" line below with durable, cross-cutting
-lessons as they emerge (usually during a review phase). Delete this comment once the file has
-real content. -->
+Durable engineering wisdom captured across the project's work. Update it during
+the review phase of any work that surfaces a generally-applicable pattern,
+gotcha, or constraint.
 
-Durable engineering wisdom captured across the project's work. Update it during the review phase of any work that surfaces a generally-applicable pattern, gotcha, or constraint.
+## Validation Evidence
 
-_No lessons captured yet._
+- A continuously rendered software-WebGL canvas can make Playwright actionability
+  waits expensive. Pause animation first; if the initial pause requires a forced
+  click, prove the control's center receives pointer events and keep later
+  interactions on ordinary Playwright clicks.
+- When a diagnostic command intentionally returns nonzero for findings, do not
+  normalize status blindly. Preserve the original exit and validate the
+  machine-readable report structure so advisory evidence remains distinct from
+  registry, tool, or malformed-output failures.
