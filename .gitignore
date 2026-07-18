@@ -49,3 +49,4 @@ next-env.d.ts
 codev/.update-hashes.json
 .builders/
 .architect-role.md
+.codev/config.json
