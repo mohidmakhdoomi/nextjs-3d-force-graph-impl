@@ -14,3 +14,4 @@
 
 - Replaced the counter guard with symmetric effect setup/cleanup, stable memoized graph data, owned timer/helper refs, and direct node-data callbacks. Removed the ambient Three declaration and handled the typed material union during disposal.
 - Added `tests/focus-graph-lifecycle.test.mjs`. Lint, clean typecheck, unit tests (14/14), production build/start, Playwright smoke, and a development-mode control/error check pass.
+- Initial CMAP: Gemini approved; Codex requested a behavioral resource-ownership regression instead of source-only assertions; Claude was unavailable due quota. Extracted the timer/axes owner into `focusGraphResources.ts` and replaced the cleanup regex test with an injected-scheduler/scene test covering replay, replacement, idempotency, and teardown.

@@ -8,12 +8,11 @@ import ForceGraph3D, {
 } from "react-force-graph-3d";
 import {AxesHelper, PerspectiveCamera} from "three";
 import {TrackballControls} from 'three/examples/jsm/controls/TrackballControls.js';
+import {createFocusGraphResources} from "./focusGraphResources";
 
 function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: number }) {
     const fgRef = useRef<ForceGraphMethods>(undefined);
-    const axesHelperRef = useRef<AxesHelper>(undefined);
-    const rotateTimer = useRef<ReturnType<typeof setInterval>>(undefined);
-    const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const resources = useMemo(() => createFocusGraphResources(), []);
 
     const graphData = useMemo<GraphData>(() => {
         try {
@@ -30,19 +29,16 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
     const [isRotationActive, setIsRotationActive] = useState(true);
 
     const stopRotation = useCallback(() => {
-        if (rotateTimer.current !== undefined) {
-            clearInterval(rotateTimer.current);
-            rotateTimer.current = undefined;
-        }
-    }, []);
+        resources.stopRotation();
+    }, [resources]);
 
     const startRotation = useCallback(() => {
         const graph = fgRef.current;
-        if (graph === undefined || rotateTimer.current !== undefined) {
+        if (graph === undefined) {
             return;
         }
 
-        rotateTimer.current = setInterval(() => {
+        resources.startRotation(() => {
             const currentGraph = fgRef.current;
             if (currentGraph === undefined) {
                 return;
@@ -52,8 +48,8 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
             const up = currentCamera.up.clone();
             currentCamera.position.applyAxisAngle(up, -Math.PI / 300);
             currentCamera.rotateOnAxis(up, -Math.PI / 300);
-        }, 20);
-    }, []);
+        });
+    }, [resources]);
 
     useEffect(() => {
         const graph = fgRef.current;
@@ -74,36 +70,19 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
         const axesHelper = new AxesHelper(5000);
         axesHelper.name = "myAxesHelper";
         axesHelper.visible = false;
-        axesHelperRef.current = axesHelper;
-        scene.add(axesHelper);
+        resources.attachAxes(scene, axesHelper);
 
         controls.update();
         graph.refresh();
         setClickEnabled(false);
 
-        const interactionTimer = setTimeout(() => {
+        resources.scheduleInteraction(() => {
             setClickEnabled(true);
             fgRef.current?.refresh();
         }, enableDelay);
 
-        return () => {
-            clearTimeout(interactionTimer);
-            if (resetTimer.current !== undefined) {
-                clearTimeout(resetTimer.current);
-                resetTimer.current = undefined;
-            }
-            stopRotation();
-            scene.remove(axesHelper);
-            axesHelper.geometry.dispose();
-            const materials = Array.isArray(axesHelper.material)
-                ? axesHelper.material
-                : [axesHelper.material];
-            materials.forEach((material) => material.dispose());
-            if (axesHelperRef.current === axesHelper) {
-                axesHelperRef.current = undefined;
-            }
-        };
-    }, [enableDelay, graphData, stopRotation]);
+        return resources.cleanup;
+    }, [enableDelay, graphData, resources]);
 
     const handleDragEnd = useCallback(
         (node: NodeObject) => {
@@ -177,22 +156,17 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
         () => {
             const graph = fgRef.current;
             if (graph !== undefined) {
-                if (resetTimer.current !== undefined) {
-                    clearTimeout(resetTimer.current);
-                    resetTimer.current = undefined;
-                }
                 if (isRotationActive) {
                     stopRotation()
                 }
                 graph.zoomToFit(1000)
-                resetTimer.current = setTimeout(() => {
-                    resetTimer.current = undefined;
+                resources.scheduleReset(() => {
                     if (isRotationActive) {
                         startRotation()
                     }
                 }, 1001)
             }
-        }, [isRotationActive, startRotation, stopRotation]
+        }, [isRotationActive, resources, startRotation, stopRotation]
     )
 
     useEffect(() => {
@@ -204,18 +178,13 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
 
         return () => {
             stopRotation();
-            if (resetTimer.current !== undefined) {
-                clearTimeout(resetTimer.current);
-                resetTimer.current = undefined;
-            }
+            resources.cancelReset();
         };
-    }, [graphData, isRotationActive, startRotation, stopRotation])
+    }, [graphData, isRotationActive, resources, startRotation, stopRotation])
 
     useEffect(() => {
-        if (axesHelperRef.current !== undefined) {
-            axesHelperRef.current.visible = areAxesVisible;
-        }
-    }, [areAxesVisible, graphData])
+        resources.setAxesVisible(areAxesVisible);
+    }, [areAxesVisible, graphData, resources])
 
     const Graph = <ForceGraph3D
         ref={fgRef}
