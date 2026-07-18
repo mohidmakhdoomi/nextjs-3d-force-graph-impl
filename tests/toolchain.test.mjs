@@ -10,6 +10,7 @@ const expectedNodeVersion = "22.23.1";
 const expectedNpmVersion = "10.9.8";
 const expectedGeneratedIgnores = [
     ".next/**",
+    "next-env.d.ts",
     "playwright-report/**",
     "test-results/**",
 ];

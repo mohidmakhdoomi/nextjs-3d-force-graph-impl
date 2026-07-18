@@ -79,7 +79,7 @@ will be written only to the review document during the Review phase.
 | Phase | Status | Planned commit |
 | --- | --- | --- |
 | Apply the Atomic Supported Dependency Baseline | completed | `[Spec 9][Phase: dependency-baseline] chore: Patch Next and React baseline` |
-| Qualify Production Behavior and Residual Risk | in-progress | `[Spec 9][Phase: production-qualification] test: Qualify supported dependency baseline` |
+| Qualify Production Behavior and Residual Risk | completed | `[Spec 9][Phase: production-qualification] test: Qualify supported dependency baseline` |
 
 ## Phase Breakdown
 
@@ -284,7 +284,7 @@ confidence.
 
 ### Phase 2: Qualify Production Behavior and Residual Risk
 
-**Status**: in-progress
+**Status**: completed
 **Dependencies**: Phase 1 completed and committed  
 **Planned commit**:
 `[Spec 9][Phase: production-qualification] test: Qualify supported dependency baseline`
@@ -301,23 +301,27 @@ confidence.
 
 #### Deliverables
 
-- [ ] A second clean `npm ci` proving the committed manifest/lock graph is
+- [x] A second clean `npm ci` proving the committed manifest/lock graph is
       reproducible and unchanged.
-- [ ] Passing unit/contracts, lint, typecheck, direct build/start, Playwright
+- [x] Passing unit/contracts, lint, typecheck, direct build/start, Playwright
       Chromium smoke, and aggregate validation.
-- [ ] Source-diff proof that the App Router server components, client wrapper,
+- [x] Source-diff proof that the App Router server components, client wrapper,
       `{ssr: false}` WebGL island, and compiler configuration surfaces remain
       unchanged.
 - [ ] Completed twelve-step manual Chromium interaction matrix against
       `next start`, with errors monitored through the sequence.
-- [ ] Final full/production audit and installed-path verification ready for the
+- [x] Final full/production audit and installed-path verification ready for the
       review document, including the nested PostCSS residual.
-- [ ] Phase evaluation recorded in this plan without committing generated audit
+- [x] Phase evaluation recorded in this plan without committing generated audit
       JSON.
 
 #### Files
 
-- No application, manifest, lockfile, test, or configuration change is planned.
+- Modify `eslint.config.mjs` and `tests/toolchain.test.mjs` only to exclude
+  Next-generated `next-env.d.ts` from lint traversal and preserve that
+  generated-output contract.
+- No application, manifest, lockfile, browser test, or other configuration
+  change is planned.
 - Update this plan and `codev/state/spir-9_thread.md` for phase status and
   evaluation tracking.
 - Create `codev/reviews/9-patch-next-15-and-react-to-the.md` only after Porch
@@ -330,7 +334,11 @@ confidence.
 1. Verify Phase 1's named commit exists and the only remaining working-tree
    files are known Porch/builder artifacts. Run clean `npm ci`; confirm it does
    not alter `package.json` or `package-lock.json`.
-2. Run and record each direct gate:
+2. Next `15.5.20` adds a generated `.next/types/routes.d.ts` triple-slash
+   reference to ignored `next-env.d.ts`; ensure the flat ESLint configuration
+   excludes that generated entry point, while the contract test continues to
+   prove that no application source or test path is ignored.
+3. Run and record each direct gate:
    - `npm test`;
    - `npm run lint`;
    - `npm run typecheck`;
@@ -342,7 +350,7 @@ confidence.
    The Playwright path must use the real production server, Chromium, an
    initialized nonzero WebGL drawing buffer, axes/reset/rotation transitions,
    and strict console/page-error collection.
-3. Compare the implementation diff against the rollback baseline and inspect
+4. Compare the implementation diff against the rollback baseline and inspect
    `app/page.tsx`, `app/layout.tsx`, and
    `app/components/FocusGraphWrapper.tsx`. Confirm the page/layout remain server
    components, the wrapper remains the client boundary, and the dynamic
@@ -350,7 +358,7 @@ confidence.
    `package.json`, and any present `.babelrc*` / `babel.config.*` surface.
    Confirm no `reactCompiler` option, `babel-plugin-react-compiler` dependency
    or transform, or other React Compiler-enabling configuration was introduced.
-4. Against the production build in Chromium, perform and record the complete
+5. Against the production build in Chromium, perform and record the complete
    manual matrix:
    1. visible, populated, nonzero WebGL graph canvas;
    2. pointer interaction disabled initially and enabled after its delay;
@@ -368,12 +376,12 @@ confidence.
        hydration, WebGL, or timer error.
    Representative nodes are sufficient. Record exactly which mouse-button
    variants were exercised rather than infer unobserved behavior.
-5. Rerun the validated full and production audit captures after the final clean
+6. Rerun the validated full and production audit captures after the final clean
    install and reconcile them with Phase 1 evidence. Prepare the Review-phase
    table with advisory URL/identifier, severity/range, before/after root paths,
    prod/dev classification, delta, exercising mechanism, repository evidence,
    applicability/confidence, and owner/disposition.
-6. Confirm the review evidence will state that Next `15.5.20` owns nested
+7. Confirm the review evidence will state that Next `15.5.20` owns nested
    `postcss@8.4.31`, that the installed path remains in
    GHSA-qx2v-qp2m-jg93/CVE-2026-41305, that no supported Next 15 selection in
    scope removes it, that no blanket override was used, and that the temporary
@@ -382,26 +390,27 @@ confidence.
 
 #### Acceptance Criteria
 
-- [ ] The previous phase commit is present before qualification begins.
-- [ ] A new clean install reproduces the committed lockfile without mutation,
+- [x] The previous phase commit is present before qualification begins.
+- [x] A new clean install reproduces the committed lockfile without mutation,
       warnings, peer bypasses, or duplicate React.
-- [ ] Every direct validation command and `npm run validate` passes.
-- [ ] Production start serves the root page and terminates cleanly.
-- [ ] The automated Chromium smoke observes real WebGL and no unexpected
+- [x] Every direct validation command and `npm run validate` passes.
+- [x] Production start serves the root page and terminates cleanly.
+- [x] The automated Chromium smoke observes real WebGL and no unexpected
       console/page errors.
 - [ ] All twelve manual interaction checks pass and record only behaviors
       actually exercised.
-- [ ] Server/client boundaries and `ssr: false` remain unchanged.
-- [ ] `next.config.js`, `package.json`, and every present Babel configuration
+- [x] Server/client boundaries and `ssr: false` remain unchanged.
+- [x] `next.config.js`, `package.json`, and every present Babel configuration
       surface prove React Compiler remains disabled.
-- [ ] Final audit evidence is valid, path-complete, and honest about all
+- [x] Final audit evidence is valid, path-complete, and honest about all
       residuals.
-- [ ] No unrelated source, dependency, generated JSON, or cleanup enters the
+- [x] No unrelated source, dependency, generated JSON, or cleanup enters the
       implementation diff.
 
 #### Test Plan
 
-- **Unit/contracts**: Existing Node tests plus the Phase 1 dependency contract.
+- **Unit/contracts**: Existing Node tests, the Phase 1 dependency contract, and
+  the generated-output lint-ignore contract including `next-env.d.ts`.
 - **Static integration**: ESLint, TypeScript `--noEmit`, clean Next production
   build, explicit source-boundary inspection, and compiler-config inspection.
 - **Production integration**: Direct `next start` root response and the existing
@@ -448,6 +457,69 @@ because it contains no dependency state.
   readiness, and 3-way phase consultation.
 - Mark the phase completed in this plan and create the single planned commit
   only after Porch verification permits it.
+
+**Approved deviation (2026-07-18)**: The original phase expected no
+configuration or test change. Direct lint after the upgraded production build
+showed that Next `15.5.20` now generates an ignored `next-env.d.ts` containing
+a route-types triple-slash reference that flat ESLint nevertheless traversed.
+The architect approved adding only that generated root file to the existing
+global ignore and exact-ignore contract. Application files, dependencies, and
+the lockfile remain unchanged.
+
+**Implementation evidence (2026-07-18)**: The named Phase 1
+commit `0c57149` is present. A second plain `npm ci` reproduced identical
+manifest/lock hashes and a problem-free peer tree with one React `19.2.7`
+runtime. The direct test, lint, typecheck, build, production start/root request,
+Playwright smoke, and aggregate `npm run validate` gates passed. The production
+server terminated through the expected SIGTERM path. The only build/start
+warning is the known isolated-builder warning caused by this worktree and the
+parent checkout both containing lockfiles.
+
+The rollback-baseline diff contains no change to `app/page.tsx`,
+`app/layout.tsx`, or `app/components/FocusGraphWrapper.tsx`: page/layout remain
+server components and the wrapper remains the client boundary with
+`dynamic(..., {ssr: false})`. `next.config.js` is still empty, no Babel
+configuration exists, and no application/config/package surface enables React
+Compiler.
+
+Chromium production verification passed matrix items 1–10 and 12: the populated
+nonzero WebGL canvas, delayed pointer enablement, horizontal rotation,
+pause/resume, axes, paused/active reset behavior, both wheel directions,
+Trackball background drag, successive node drags, and active-state node
+left-click behavior were observed with continuous console/page-error
+collection. Node left-click required the software-WebGL harness to freeze the
+20 ms camera timer between pointer-down and pointer-up so the library's
+asynchronous raycast retained the visibly hovered node; the resulting real
+handler stopped rotation, focused the camera, fixed the clicked node, and
+released the prior node.
+
+Matrix item 11 did **not** pass and is not represented as 12/12. A physical
+right-click on a visibly hovered fixed node left `fx`/`fy`/`fz` unchanged in
+headless SwiftShader Chromium. The exact same result reproduced from rollback
+baseline `fef4da9` with Next `15.1.11` / React `19.0.0`, so it is not upgrade
+drift. The bounded headed attempt used the available WSL display but reported
+the same SwiftShader renderer and stalled before completing the interaction.
+Per the specification's mouse-button caveat, only the variants actually
+distinguished are claimed. The architect classified this baseline-identical
+environment/pre-existing result as an out-of-scope follow-up and directed the
+phase not to change application code or block solely on it.
+
+Final full and production audit JSON validated with original exit 1 and is
+byte-identical to Phase 1: full remains 17 affected packages (2 low,
+10 moderate, 5 high), production remains 12 (8 moderate, 4 high), and neither
+is described as clean. Installed-path evidence reconfirms
+`next@15.5.20 > postcss@8.4.31` alongside direct `postcss@8.5.1`; no override
+was added, the framework-owned residual remains accepted temporarily, and
+issue #10 owns the direct PostCSS update.
+
+**Evaluation**: Gemini and Claude approved the first completed-phase review.
+Codex initially requested that the baseline-identical right-click result block
+completion; the builder rebutted with the specification caveat and the
+architect's explicit scope decision. In the second review, Gemini and Claude
+approved with high confidence and Codex returned a high-confidence COMMENT
+with no requested code change, agreeing that the implementation is correct and
+the plan must continue to avoid a literal 12/12 claim. Porch then advanced the
+completed plan to Review.
 
 ## Dependency Map
 
