@@ -164,9 +164,10 @@ The issue and the architect's 2026-07-18 clarification fix these decisions:
   unit. Neither may be committed or reverted independently.
 - `npm ci` is the clean-install proof. A successful pre-existing
   `node_modules` tree is not evidence.
-- React and React DOM must be exact, identical versions. A caret, tilde,
-  mismatched pair, prerelease, canary, or experimental React build is not
-  acceptable.
+- All six target entries must remain exact versions, preserving the manifest's
+  existing no-range convention. React and React DOM must additionally be
+  identical; a mismatched pair, prerelease, canary, or experimental React build
+  is not acceptable.
 - The intended Next and lint-plugin versions must match.
 - Version drift discovered at implementation time must be documented. Do not
   silently substitute a newer major, prerelease, unsupported release, or a
@@ -296,7 +297,8 @@ under the drift constraint before installation.
 
 ### FR2 — Atomic manifest and lockfile update
 
-- `package.json` MUST express the verified six-package group.
+- `package.json` MUST express the verified six-package group as exact versions
+  without carets or tildes.
 - `react` and `react-dom` MUST use exact identical versions.
 - `next` and `@next/eslint-plugin-next` MUST use the same supported Next 15
   version.
@@ -588,13 +590,14 @@ be preserved.
 
 ### Initial three-way review
 
-Codex and Claude both approved the specification with high confidence. They
-found the requirements complete, technically feasible, factually consistent
-with the repository, and sufficiently explicit about peer resolution,
-production/UX validation, audit-path analysis, rollback, and the known PostCSS
-residual. Neither approval identified a required change. The Gemini lane was
-skipped after its backend returned no output, so it supplied no feedback to
-incorporate.
+Gemini, Codex, and Claude all approved the specification with high confidence.
+They found the requirements complete, technically feasible, factually
+consistent with the repository, and sufficiently explicit about peer
+resolution, production/UX validation, audit-path analysis, rollback, and the
+known PostCSS residual. Codex and Claude identified no required changes.
+Gemini's sole minor suggestion was to make the repository's existing exact-pin
+convention explicit for all six target entries, not only React and React DOM;
+the Constraints and FR2 now state that requirement.
 
 ### Post-feedback three-way review
 
