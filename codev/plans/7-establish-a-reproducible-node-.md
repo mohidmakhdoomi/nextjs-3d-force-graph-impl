@@ -65,7 +65,7 @@ the final review document rather than weakening a gate.
 | Phase | Status | Commit |
 | --- | --- | --- |
 | Pin Toolchain and Direct Commands | completed | `[Spec 7][Phase: toolchain-commands] chore: Pin Node and npm baseline` |
-| Add Production WebGL Browser Smoke | pending | — |
+| Add Production WebGL Browser Smoke | completed | `[Spec 7][Phase: browser-smoke] test: Add production WebGL smoke validation` |
 | Automate and Document the Baseline | pending | — |
 
 ## Phase Breakdown
@@ -209,7 +209,7 @@ matching lockfile.
 
 ### Phase 2: Add Production WebGL Browser Smoke
 
-**Status**: pending  
+**Status**: completed
 **Dependencies**: Phase 1 committed  
 **Planned commit**:
 `[Spec 7][Phase: browser-smoke] test: Add production WebGL smoke validation`
@@ -222,15 +222,15 @@ matching lockfile.
 
 #### Deliverables
 
-- [ ] Exact stable `@playwright/test` development dependency and corresponding
+- [x] Exact stable `@playwright/test` development dependency and corresponding
       lockfile entries.
-- [ ] `playwright.config.ts` with deterministic production server lifecycle,
+- [x] `playwright.config.ts` with deterministic production server lifecycle,
       Chromium project, base URL, timeout, and failure diagnostics.
-- [ ] `tests/e2e/smoke.spec.ts` covering page, WebGL, axes, reset, rotation, and
+- [x] `tests/e2e/smoke.spec.ts` covering page, WebGL, axes, reset, rotation, and
       error collection.
-- [ ] `browser:install`, `test:smoke`, and `validate` scripts.
-- [ ] Generated Playwright output ignored by Git and ESLint.
-- [ ] Passing production browser smoke under the pinned toolchain.
+- [x] `browser:install`, `test:smoke`, and `validate` scripts.
+- [x] Generated Playwright output ignored by Git and ESLint.
+- [x] Passing production browser smoke under the pinned toolchain.
 
 #### Files
 
@@ -291,19 +291,19 @@ matching lockfile.
 
 #### Acceptance Criteria
 
-- [ ] `npm run test:smoke` works after clean dependency install plus the
+- [x] `npm run test:smoke` works after clean dependency install plus the
       documented `npm run browser:install`, without a pre-existing `.next`
       build.
-- [ ] The production server is started and stopped by Playwright without an
+- [x] The production server is started and stopped by Playwright without an
       orphan process.
-- [ ] The smoke proves visible/nonzero canvas and WebGL drawing-buffer state.
-- [ ] Axes and rotation labels transition in both directions.
-- [ ] Reset executes and the rendered canvas remains ready.
-- [ ] Synthetic console/page-error checks demonstrate that either channel fails
+- [x] The smoke proves visible/nonzero canvas and WebGL drawing-buffer state.
+- [x] Axes and rotation labels transition in both directions.
+- [x] Reset executes and the rendered canvas remains ready.
+- [x] Synthetic console/page-error checks demonstrate that either channel fails
       the test, without committing synthetic failures.
-- [ ] `npm run validate` runs lint, typecheck, build, start, and smoke in the
+- [x] `npm run validate` runs lint, typecheck, build, start, and smoke in the
       specified fail-fast order.
-- [ ] No application source changes are present.
+- [x] No application source changes are present.
 
 #### Test Plan
 
@@ -344,6 +344,38 @@ Phase 3 must also be reverted first if it already depends on these commands.
   process-cleanup proof, overmocking assessment, and 3-way phase consultation.
 - Mark the phase completed and create the single planned commit only after porch
   verification permits it.
+
+#### Evaluation Results
+
+- Pinned `@playwright/test` `1.61.1`; the lock delta is limited to Playwright,
+  Playwright Core, the Playwright test package, and its platform-optional
+  `fsevents`.
+- Browser installation, clean-install integrity, lint, typecheck, 5/5 Node
+  contract tests, production build/start, the Chromium smoke, and unified
+  validation passed under Node `22.23.1` / npm `10.9.8`.
+- The smoke exercised both axes and rotation label transitions, reset the
+  camera, and observed a real WebGL context with a nonzero drawing buffer. Port
+  3000 was free after both passing and earlier failing runs.
+- An uncommitted synthetic probe confirmed both `console.error` and `pageerror`
+  event channels are captured. No graph, WebGL, browser, timer, or internal
+  application module is mocked.
+- Only the two Vercel instrumentation script routes that do not exist under a
+  local production server are fulfilled with empty external-service responses;
+  application console/page error collection remains strict.
+- SwiftShader initially made Playwright's actionability wait expensive while
+  the graph continuously rotated. The final smoke proves the initial pause
+  button's center receives pointer events before its sole forced click; after
+  pausing, every remaining control interaction uses an ordinary Playwright
+  click.
+- Consultation iteration 1: Gemini and Codex approved the initial implementation.
+  After architect-requested pointer evidence and ordinary-click tightening,
+  Claude reviewed the final tree and approved with high confidence. Porch
+  synthesized the three approvals and advanced to Phase 3.
+- **Plan deviation**: control interaction order pauses rotation first to make
+  the real software-WebGL path deterministic. The test also isolates the two
+  named external Vercel scripts rather than accepting their local 404 console
+  errors; neither deviation changes application code or weakens application
+  error assertions.
 
 ---
 

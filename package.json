@@ -11,6 +11,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/toolchain.test.mjs",
+    "browser:install": "playwright install chromium",
+    "test:smoke": "npm run build && playwright test",
+    "validate": "npm run lint && npm run typecheck && npm run test:smoke",
     "audit:full": "npm audit",
     "audit:production": "npm audit --omit=dev"
   },
@@ -31,6 +34,8 @@
   "devDependencies": {
     "@eslint/compat": "~1.2.5",
     "@eslint/js": "~9.18.0",
+    "@next/eslint-plugin-next": "15.1.6",
+    "@playwright/test": "1.61.1",
     "@types/node": "~22.10.7",
     "@types/react": "19.0.7",
     "@types/react-dom": "19.0.3",
@@ -38,7 +43,6 @@
     "eslint": "~9.18.0",
     "eslint-plugin-react": "~7.37.4",
     "eslint-plugin-react-hooks": "5.1.0",
-    "@next/eslint-plugin-next": "15.1.6",
     "globals": "~15.14.0",
     "typescript": "~5.7.3",
     "typescript-eslint": "~8.21.0"

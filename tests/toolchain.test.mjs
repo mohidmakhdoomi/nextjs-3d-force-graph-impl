@@ -48,10 +48,30 @@ test("keeps package metadata and lockfile v3 synchronized", () => {
 test("exposes direct validation and audit commands", () => {
     assert.equal(packageJson.scripts.lint, "eslint .");
     assert.equal(packageJson.scripts.typecheck, "tsc --noEmit");
+    assert.equal(
+        packageJson.scripts["browser:install"],
+        "playwright install chromium",
+    );
+    assert.equal(
+        packageJson.scripts["test:smoke"],
+        "npm run build && playwright test",
+    );
+    assert.equal(
+        packageJson.scripts.validate,
+        "npm run lint && npm run typecheck && npm run test:smoke",
+    );
     assert.equal(packageJson.scripts["audit:full"], "npm audit");
     assert.equal(
         packageJson.scripts["audit:production"],
         "npm audit --omit=dev",
+    );
+});
+
+test("pins the Playwright runner exactly", () => {
+    assert.equal(packageJson.devDependencies["@playwright/test"], "1.61.1");
+    assert.equal(
+        packageLock.packages["node_modules/@playwright/test"].version,
+        "1.61.1",
     );
 });
 
