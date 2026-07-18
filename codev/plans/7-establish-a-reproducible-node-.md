@@ -649,13 +649,13 @@ one pull request unless the architect explicitly requests otherwise.
 
 ## Documentation Updates Required
 
-- [ ] README toolchain and setup.
-- [ ] README direct commands and unified validation.
-- [ ] README audit semantics and CI artifacts.
-- [ ] Plan phase status/evaluation notes after each phase.
-- [ ] Final review with baseline outcomes, audit paths, dispositions, deviations,
+- [x] README toolchain and setup.
+- [x] README direct commands and unified validation.
+- [x] README audit semantics and CI artifacts.
+- [x] Plan phase status/evaluation notes after each phase.
+- [x] Final review with baseline outcomes, audit paths, dispositions, deviations,
       and lessons learned.
-- [ ] Architecture/lessons hot/cold documents only if Review determines a
+- [x] Architecture/lessons hot/cold documents only if Review determines a
       durable cross-cutting fact or lesson exists.
 
 No API documentation, architecture diagram, deployment guide, or application
@@ -663,11 +663,11 @@ user guide change is required.
 
 ## Post-Implementation Tasks
 
-- [ ] Run final clean install and complete validation matrix.
-- [ ] Record exact Playwright version and any Chromium launch requirement.
-- [ ] Record full and production audit totals, advisories, exit codes, and
+- [x] Run final clean install and complete validation matrix.
+- [x] Record exact Playwright version and any Chromium launch requirement.
+- [x] Record full and production audit totals, advisories, exit codes, and
       dependency paths.
-- [ ] Write `codev/reviews/7-establish-a-reproducible-node-.md`.
+- [x] Write `codev/reviews/7-establish-a-reproducible-node-.md`.
 - [ ] Run 3-way PR review and address all concerns.
 - [ ] Open one PR containing all phase commits.
 - [ ] After architect approval, merge and execute the protocol verify phase.
@@ -693,8 +693,8 @@ All material feedback has been incorporated.
 ## Approval
 
 - [x] Specification approved by architect (2026-07-17)
-- [ ] Expert AI plan consultation complete
-- [ ] Technical lead plan approval
+- [x] Expert AI plan consultation complete
+- [x] Technical lead plan approval (2026-07-17)
 
 ## Change Log
 
