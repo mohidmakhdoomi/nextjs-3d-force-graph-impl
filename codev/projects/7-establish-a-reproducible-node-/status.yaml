@@ -24,26 +24,12 @@ gates:
     approved_at: '2026-07-17T21:49:43.822Z'
   pr:
     status: pending
+    requested_at: '2026-07-18T03:33:26.273Z'
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
-history:
-  - iteration: 1
-    plan_phase: toolchain_commands
-    build_output: ''
-    reviews:
-      - model: gemini
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-7/codev/projects/7-establish-a-reproducible-node-/7-toolchain_commands-iter1-gemini.txt
-      - model: codex
-        verdict: REQUEST_CHANGES
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-7/codev/projects/7-establish-a-reproducible-node-/7-toolchain_commands-iter1-codex.txt
-      - model: claude
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-7/codev/projects/7-establish-a-reproducible-node-/7-toolchain_commands-iter1-claude.txt
+build_complete: false
+history: []
 started_at: '2026-07-17T21:26:41.120Z'
-updated_at: '2026-07-18T03:31:06.452Z'
+updated_at: '2026-07-18T03:33:26.273Z'
+pr_ready_for_human: true
