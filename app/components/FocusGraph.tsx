@@ -1,176 +1,119 @@
 'use client'
 
-import {useCallback, useEffect, useRef, useState} from "react";
-import ForceGraph3D, {ForceGraphMethods} from "react-force-graph-3d";
-import {PerspectiveCamera, Scene, Vector3, AxesHelper} from "three";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import ForceGraph3D, {
+    ForceGraphMethods,
+    GraphData,
+    NodeObject,
+} from "react-force-graph-3d";
+import {AxesHelper, PerspectiveCamera} from "three";
 import {TrackballControls} from 'three/examples/jsm/controls/TrackballControls.js';
+import {createFocusGraphResources} from "./focusGraphResources";
 
 function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: number }) {
     const fgRef = useRef<ForceGraphMethods>(undefined);
-    const counter = useRef<number>(0);
-    const mainEffectCounter = 1
+    const resources = useMemo(() => createFocusGraphResources(), []);
 
-    // eslint-disable-next-line prefer-const
-    let Graph: any;
-
-    let parsedData: { nodes: never[], links: never[] }
-    try {
-        parsedData = JSON.parse(data)
-    } catch (err) {
-        let errorMessage
-        if (err instanceof Error) {
-            errorMessage = err.cause;
+    const graphData = useMemo<GraphData>(() => {
+        try {
+            return JSON.parse(data) as GraphData;
+        } catch (error) {
+            const cause = error instanceof Error ? error.cause : undefined;
+            console.error(`-- JSON Parsing error --\n${error}\n-- Cause --\n${cause}`)
+            return {nodes: [], links: []};
         }
-        console.error(`-- JSON Parsing error --\n${err}\n-- Cause --\n${errorMessage}`)
-        parsedData = {nodes: [], links: []}
-    }
+    }, [data]);
 
-    const [graphData, setGraphData] = useState({nodes: [], links: []});
+    const [clickEnabled, setClickEnabled] = useState(false);
+    const [areAxesVisible, setAreAxesVisible] = useState(false);
+    const [isRotationActive, setIsRotationActive] = useState(true);
 
-    const rotateTimer = useRef<NodeJS.Timeout>(undefined);
+    const stopRotation = useCallback(() => {
+        resources.stopRotation();
+    }, [resources]);
 
-    const [clickEnabled, setClickEnabled] = useState<boolean>(false);
-
-    const defaultAxesVisible = false;
-    const [areAxesVisible, setAreAxesVisible] = useState<boolean>(defaultAxesVisible.valueOf());
-
-    const defaultStartRotation = true;
-    const [isRotationActive, setIsRotationActive] = useState<boolean>(defaultStartRotation.valueOf());
-
-    function rotate() {
-        if (rotateTimer.current === undefined) {
-            const threeControls = (fgRef.current?.controls() as TrackballControls)
-            const threeCamera = fgRef.current?.camera() as PerspectiveCamera
-            console.debug("--------------------------------")
-            console.debug("camera pos ", threeCamera.position)
-            console.debug("camera up ", threeCamera.up)
-            const worldDir = new Vector3();
-            threeCamera.getWorldDirection(worldDir)
-            console.debug("world dir ", worldDir)
-            console.debug("control target  ", threeControls.target)
-            console.debug("--------------------------------")
-
-
-            rotateTimer.current = setInterval(() => {
-                if (fgRef.current !== undefined) {
-                    const threeCam = fgRef.current.camera() as PerspectiveCamera
-                    const upVec = threeCam.up.clone()
-                    threeCam.position.applyAxisAngle(upVec, -Math.PI / 300);
-
-                    threeCam.rotateOnAxis(upVec, -Math.PI / 300); // rotate the OBJECT
-                }
-            }, 20);
-        } else {
-            console.debug("ROTATE rotation already on")
+    const startRotation = useCallback(() => {
+        const graph = fgRef.current;
+        if (graph === undefined) {
+            return;
         }
-    }
 
-    function disableRotate() {
-        clearInterval(rotateTimer.current)
-        rotateTimer.current = undefined
-    }
+        resources.startRotation(() => {
+            const currentGraph = fgRef.current;
+            if (currentGraph === undefined) {
+                return;
+            }
 
-    function showAxes() {
-        if (fgRef.current !== undefined) {
-            const threeScene = (fgRef.current.scene() as Scene)
-            const axesHelper = threeScene.getObjectByName("myAxesHelper")!
-            axesHelper.visible = true;
-        }
-    }
-
-    function hideAxes() {
-        if (fgRef.current !== undefined) {
-            const threeScene = (fgRef.current.scene() as Scene)
-            const axesHelper = threeScene.getObjectByName("myAxesHelper")!
-            axesHelper.visible = false;
-        }
-    }
+            const currentCamera = currentGraph.camera() as PerspectiveCamera;
+            const up = currentCamera.up.clone();
+            currentCamera.position.applyAxisAngle(up, -Math.PI / 300);
+            currentCamera.rotateOnAxis(up, -Math.PI / 300);
+        });
+    }, [resources]);
 
     useEffect(() => {
-        if (fgRef.current !== undefined) {
-            counter.current += 1;
-            console.debug("!!! updated counter:", counter.current)
-            if (counter.current == mainEffectCounter) {
-                console.info("MAIN USE EFFECT!")
-                setGraphData(parsedData);
-
-                const threeCamera = (fgRef.current.camera() as PerspectiveCamera)
-                const threeControls = (fgRef.current.controls() as TrackballControls)
-                threeControls.noPan = true
-                threeControls.zoomSpeed = 1.0
-
-                console.debug("Starting PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
-                threeCamera.fov = 40
-                threeCamera.near = 1
-                threeCamera.far = 200
-                threeCamera.updateProjectionMatrix()
-                console.info("Changed PerspectiveCamera", threeCamera.fov, threeCamera.aspect, threeCamera.near, threeCamera.far)
-
-                const threeScene = (fgRef.current.scene() as Scene)
-                const axesHelper = new AxesHelper(5000);
-                axesHelper.name = "myAxesHelper";
-                axesHelper.visible = defaultAxesVisible;
-                threeScene.add(axesHelper);
-
-                fgRef.current.refresh();
-
-                console.debug("!!! STARTING timers")
-                if (defaultStartRotation) {
-                    setTimeout(() => {
-                        setIsRotationActive(true);
-                        console.info("SET isRotationActive to true!");
-                    }, 200)
-                }
-                setTimeout(() => {
-                    setClickEnabled(true);
-                    console.info("SET clickEnabled to true!");
-                    fgRef.current?.refresh();
-                }, enableDelay)
-            }
-            if (counter.current >= mainEffectCounter) {
-                (fgRef.current.controls() as TrackballControls).update();
-                console.debug("!!! updated controls !!!");
-            }
+        const graph = fgRef.current;
+        if (graph === undefined) {
+            return;
         }
-    }, [defaultAxesVisible, defaultStartRotation, parsedData, enableDelay]);
 
+        const camera = graph.camera() as PerspectiveCamera;
+        const controls = graph.controls() as TrackballControls;
+        controls.noPan = true;
+        controls.zoomSpeed = 1.0;
+        camera.fov = 40;
+        camera.near = 1;
+        camera.far = 200;
+        camera.updateProjectionMatrix();
 
-    function printNode(node: any) {
-        return `Node ${node.id}: x = ${node.x}, y = ${node.y}, z = ${node.z}, fx = ${node.fx}, fy = ${node.fy}, fz = ${node.fz}`;
-    }
+        const scene = graph.scene();
+        const axesHelper = new AxesHelper(5000);
+        axesHelper.name = "myAxesHelper";
+        axesHelper.visible = false;
+        resources.attachAxes(scene, axesHelper);
+
+        controls.update();
+        graph.refresh();
+        setClickEnabled(false);
+
+        resources.scheduleInteraction(() => {
+            setClickEnabled(true);
+            fgRef.current?.refresh();
+        }, enableDelay);
+
+        return resources.cleanup;
+    }, [enableDelay, graphData, resources]);
 
     const handleDragEnd = useCallback(
-        (node: any) => {
+        (node: NodeObject) => {
             if (clickEnabled) {
-                Graph?.props.graphData.nodes.forEach((origNode: any) => {
+                graphData.nodes.forEach((origNode) => {
                     if (origNode.fx !== undefined && origNode.x !== node.x && origNode.y !== node.y && origNode.z !== node.z) {
-                        console.debug("UNFIXED previously dragged node - before", printNode(origNode));
                         origNode.fx = undefined
                         origNode.fy = undefined
                         origNode.fz = undefined
-                        console.debug("UNFIXED previously dragged node - after", printNode(origNode));
                     }
                 })
-                console.debug("NODE DRAG END - current", printNode(node))
                 node.fx = node.x;
                 node.fy = node.y;
                 node.fz = node.z;
-                console.debug("NODE DRAG END - set fx, fy, fz to x, y, z", printNode(node))
             }
         },
-        [Graph?.props.graphData.nodes, clickEnabled]
+        [clickEnabled, graphData.nodes]
     );
 
-
     const handleClick = useCallback(
-        (node: any) => {
+        (node: NodeObject) => {
             if (clickEnabled) {
                 if (isRotationActive) {
                     setIsRotationActive(false)
                 }
 
                 handleDragEnd(node)
-                console.debug("LEFT CLICK - current", printNode(node))
+                if (node.x === undefined || node.y === undefined || node.z === undefined) {
+                    return;
+                }
+
                 const viewDistance = 80;
                 const distRatio = 1 + viewDistance / Math.hypot(node.x, node.y, node.z);
 
@@ -187,13 +130,11 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
     );
 
     const handleRightClick = useCallback(
-        (node: any) => {
+        (node: NodeObject) => {
             if (clickEnabled && node.fx !== undefined) {
-                console.debug("RIGHT CLICK - current", printNode(node))
                 node.fx = undefined
                 node.fy = undefined
                 node.fz = undefined
-                console.debug("RIGHT CLICK - set fx, fy, fz to undefined", printNode(node))
             }
         },
         [clickEnabled]
@@ -201,62 +142,51 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
 
     const handleAxesClick = useCallback(
         () => {
-            setAreAxesVisible(!areAxesVisible)
-        }, [areAxesVisible]
+            setAreAxesVisible((visible) => !visible)
+        }, []
     )
-
 
     const handleRotationClick = useCallback(
         () => {
-            setIsRotationActive(!isRotationActive)
-        }, [isRotationActive]
+            setIsRotationActive((active) => !active)
+        }, []
     )
 
     const handleResetClick = useCallback(
         () => {
-            if (fgRef.current !== undefined) {
+            const graph = fgRef.current;
+            if (graph !== undefined) {
                 if (isRotationActive) {
-                    console.debug("RESET camera turn OFF rotation ")
-                    disableRotate()
+                    stopRotation()
                 }
-                fgRef.current.zoomToFit(1000)
-                setTimeout(() => {
+                graph.zoomToFit(1000)
+                resources.scheduleReset(() => {
                     if (isRotationActive) {
-                        console.debug("RESET camera turn ON rotation ")
-                        rotate()
+                        startRotation()
                     }
                 }, 1001)
             }
-        }, [isRotationActive]
+        }, [isRotationActive, resources, startRotation, stopRotation]
     )
 
+    useEffect(() => {
+        if (isRotationActive) {
+            startRotation();
+        } else {
+            stopRotation();
+        }
+
+        return () => {
+            stopRotation();
+            resources.cancelReset();
+        };
+    }, [graphData, isRotationActive, resources, startRotation, stopRotation])
 
     useEffect(() => {
-        if (fgRef.current !== undefined && counter.current >= mainEffectCounter) {
-            if (!isRotationActive) {
-                console.debug("USE EFFECT turn OFF rotation ")
-                disableRotate()
-            } else {
-                console.debug("USE EFFECT turn ON rotation ")
-                rotate()
-            }
-        }
-    }, [isRotationActive])
+        resources.setAxesVisible(areAxesVisible);
+    }, [areAxesVisible, graphData, resources])
 
-
-    useEffect(() => {
-        if (fgRef.current !== undefined && counter.current >= mainEffectCounter) {
-            if (!areAxesVisible) {
-                console.debug("USE EFFECT axes HIDE")
-                hideAxes()
-            } else {
-                console.debug("USE EFFECT axes SHOW")
-                showAxes()
-            }
-        }
-    }, [areAxesVisible])
-
-    Graph = <ForceGraph3D
+    const Graph = <ForceGraph3D
         ref={fgRef}
         controlType="trackball"
         backgroundColor="#000003"
@@ -273,7 +203,6 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
         onNodeDragEnd={handleDragEnd}
         onNodeRightClick={handleRightClick}
     />
-
 
     return <div className="bg-background text-foreground">
         {Graph}
