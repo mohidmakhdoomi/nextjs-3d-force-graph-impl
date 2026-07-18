@@ -1,9 +1,15 @@
 id: '9'
 title: patch-next-15-and-react-to-the
 protocol: spir
-phase: plan
-plan_phases: []
-current_plan_phase: null
+phase: implement
+plan_phases:
+  - id: dependency_baseline
+    title: Apply the Atomic Supported Dependency Baseline
+    status: in_progress
+  - id: production_qualification
+    title: Qualify Production Behavior and Residual Risk
+    status: pending
+current_plan_phase: dependency_baseline
 gates:
   spec-approval:
     status: approved
@@ -21,4 +27,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-18T08:28:18.104Z'
-updated_at: '2026-07-18T18:07:40.368Z'
+updated_at: '2026-07-18T18:07:56.920Z'
