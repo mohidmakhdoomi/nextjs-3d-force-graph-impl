@@ -1,0 +1,54 @@
+id: '10'
+title: patch-and-reclassify-css-build
+protocol: spir
+phase: review
+plan_phases:
+  - id: dependency_baseline
+    title: Apply the Atomic CSS/Build and ESLint 9 Dependency Baseline
+    status: complete
+  - id: production_qualification
+    title: Qualify Production Behavior and Residual Risk
+    status: complete
+current_plan_phase: null
+gates:
+  spec-approval:
+    status: approved
+    requested_at: '2026-07-19T02:00:50.194Z'
+    approved_at: '2026-07-19T02:01:47.000Z'
+  plan-approval:
+    status: approved
+    requested_at: '2026-07-19T02:09:54.784Z'
+    approved_at: '2026-07-19T02:10:32.293Z'
+  pr:
+    status: approved
+    requested_at: '2026-07-19T04:49:51.233Z'
+    approved_at: '2026-07-19T04:59:47.824Z'
+  verify-approval:
+    status: pending
+iteration: 1
+build_complete: true
+history:
+  - iteration: 1
+    plan_phase: production_qualification
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-10/codev/projects/10-patch-and-reclassify-css-build/10-production_qualification-iter1-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-10/codev/projects/10-patch-and-reclassify-css-build/10-production_qualification-iter1-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-10/codev/projects/10-patch-and-reclassify-css-build/10-production_qualification-iter1-claude.txt
+started_at: '2026-07-19T01:45:31.615Z'
+updated_at: '2026-07-19T04:59:47.824Z'
+pr_history:
+  - phase: review
+    pr_number: 24
+    branch: builder/spir-10
+    created_at: '2026-07-19T04:44:06.658Z'
+pr_ready_for_human: false

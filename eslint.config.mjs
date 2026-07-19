@@ -2,7 +2,6 @@ import globals from "globals";
 import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
 
-import {fixupPluginRules} from '@eslint/compat';
 import pluginReactConfig from "eslint-plugin-react/configs/recommended.js";
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks';
 import nextPlugin from '@next/eslint-plugin-next';
@@ -41,7 +40,7 @@ export default [
     pluginReactConfig,
     {
         plugins: {
-            'react-hooks': fixupPluginRules(eslintPluginReactHooks),
+            'react-hooks': eslintPluginReactHooks,
         },
     },
     {
@@ -49,7 +48,11 @@ export default [
             "react/react-in-jsx-scope": "off",
             "react/jsx-uses-react": "off",
             "@typescript-eslint/no-explicit-any": "off",
-            ...eslintPluginReactHooks.configs.recommended.rules,
+            // Pin the pre-upgrade effective Hooks rule set. eslint-plugin-react-hooks 7's
+            // `recommended` bundles many additional rules; spreading it would silently
+            // expand coverage, so retain exactly the rules enforced before the major bump.
+            "react-hooks/rules-of-hooks": "error",
+            "react-hooks/exhaustive-deps": "warn",
         }
     },
     nextConfig,

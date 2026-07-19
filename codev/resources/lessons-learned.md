@@ -18,3 +18,14 @@ gotcha, or constraint.
   input against the rollback baseline before attributing it to dependency drift.
   Record the exact input and renderer that were exercised instead of broadening
   an environment-limited result into a full-pass claim.
+- Verify react-force-graph interactions numerically through the imperative handle,
+  not screenshots: reach it by walking the React fiber up from the three.js-created
+  canvas (which has no fiber key) to the first React-managed ancestor, then to the
+  ref whose `.current` exposes `graph2ScreenCoords`/`camera`/`scene`. Read
+  `camera().position` for motion and node `__data.fx` for fixed-state. A rotating
+  or inertia-settling camera stales projected node coordinates, so pause and let
+  TrackballControls settle before aiming clicks at a node's exact
+  `graph2ScreenCoords` center. In headless SwiftShader, Playwright synthetic node
+  LEFT-clicks register (`onNodeClick`) but node DRAG (`onNodeDragEnd`) and
+  RIGHT-clicks (`onNodeRightClick`) do not, even aimed at the confirmed on-screen
+  node — treat those two as the known environment limitation, not an app defect.
