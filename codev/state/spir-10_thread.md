@@ -37,3 +37,12 @@ matrix, audit comparison, PostCSS residual disposition, contract tests,
 rollback). Committing as initial draft, then `porch done 10` for the
 3-way consultation cycle. Gate: spec-approval — will stop and notify
 architect.
+
+## 2026-07-19 — spec-approval gate reached
+
+3-way consultation on the spec: Gemini / Codex / Claude all APPROVE (high
+confidence, no blocking issues). Incorporated minor feedback (FR4
+source-of-truth wording, @eslint/compat as conditional decision point,
+encoding dev-dependency phrasing, globals two-major clarification) and
+committed as `[Spec 10] Specification with multi-agent review`. Porch now at
+GATE: spec-approval. Notified architect; stopped pending human approval.
