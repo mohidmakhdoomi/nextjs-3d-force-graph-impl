@@ -100,6 +100,10 @@ restores the qualified baseline while keeping the improved harness.
 - `README.md` — browser-validation wording covers both engines.
 - `tests/automation.test.mjs` — workflow-step name/regex assertions updated
   to the new truthful enumeration.
+- `tests/toolchain.test.mjs` — the "exposes direct validation and audit
+  commands" test asserts the exact `browser:install` script string
+  (`"playwright install chromium"` today); update that assertion in the same
+  commit so `npm test` stays green at the Phase 1 commit.
 
 #### Implementation Details
 - The `firefox` project mirrors the chromium project's viewport (800×600) via
@@ -118,8 +122,9 @@ restores the qualified baseline while keeping the improved harness.
 
 #### Acceptance Criteria
 - [ ] `npm run test:smoke` exits 0 running **both** projects.
-- [ ] `npm run validate` green; `npm test` green (automation contract test
-      updated in the same commit as the workflow change).
+- [ ] `npm run validate` green; `npm test` green at the Phase 1 commit (both
+      the automation contract test for the workflow change and the toolchain
+      contract test for the `browser:install` string updated in this commit).
 - [ ] ≥5 consecutive green two-project browser runs recorded.
 - [ ] No changes to dependencies, application code, or smoke assertions in
       this phase.
@@ -205,10 +210,15 @@ the porch-driven 3-way phase review passes.
   it is validating harness + current behavior, deliberately not depending on
   the upgrade.
 - Class B scripted procedure (not committed, per house precedent from
-  #9/#10): drive real drag/right-click at a confirmed on-screen node via
-  Playwright/CDP, read `fx` state through the handle, record exactly what
-  registered per engine. These transcripts are the FR9 Class B baseline
-  half of the replay comparison.
+  #9/#10): drive real drag/right-click at a confirmed on-screen node using
+  **Playwright's cross-engine trusted input APIs** (`page.mouse.move/down/up`
+  and `page.mouse.click(..., {button: "right"})`), which work identically in
+  Chromium and Firefox; read `fx` state through the handle via
+  `page.evaluate` (engine-neutral). A CDP-session input dispatch may be used
+  **only as an optional Chromium-side supplementary diagnostic** — CDP is
+  Chromium-specific and must not be the Firefox method or the primary
+  procedure. These transcripts are the FR9 Class B baseline half of the
+  replay comparison.
 - Stability: same 5× consecutive-green bar as Phase 1, now with the matrix
   suite included.
 
@@ -262,7 +272,10 @@ complete, gates green, and the porch-driven 3-way phase review passes.
 - [ ] `app/components/FocusGraph.tsx` TrackballControls import moved to
       `three/addons/controls/TrackballControls.js`.
 - [ ] Contract tests updated/added in `tests/toolchain.test.mjs`: new exact
-      pins; single-Three-runtime lockfile assertion (mirroring the
+      pins in **both** locations that assert Three versions today (the
+      dedicated `dependencies.three === "~0.172.0"` assertion and the
+      `@types/three` entry in the `expectedDevReclassifiedBuildPackages`
+      map); single-Three-runtime lockfile assertion (mirroring the
       single-React-runtime test); `three`/`@types/three` string-equality.
 - [ ] FR1 formal reverification record; FR6 chain review + supply-chain
       verification; FR13 after-audits and path-by-path comparison notes.
@@ -297,18 +310,28 @@ Ordered steps:
    summarize meaningful changes from release notes (FR6 review half).
 5. Switch the TrackballControls import (FR4); `npm run typecheck` with no new
    suppressions.
-6. Update contract tests (FR12); `npm test` green.
-7. **Full gates** (FR7): lint, typecheck, `npm test`, build, direct
+6. **FR5 no-drift check** (explicit, mechanical): `git diff` for
+   `app/components/` must show **exactly one changed line** — the
+   TrackballControls import specifier in `FocusGraph.tsx`.
+   `FocusGraphWrapper.tsx` (the `dynamic(..., {ssr: false})` boundary),
+   `focusGraphResources.ts`, `app/page.tsx`, `app/layout.tsx`, and
+   `app/graph/data.ts` are byte-identical to the pre-phase state. If the
+   upgrade genuinely forces any additional application-code change, stop and
+   surface it explicitly (spec FR5) rather than absorbing it — the matrix
+   passing is not permission for incidental edits.
+7. Update contract tests (FR12); `npm test` green.
+8. **Full gates** (FR7): lint, typecheck, `npm test`, build, direct
    production `npm run start` HTTP 200 check, two-engine `test:smoke`
    (smoke + matrix), aggregate `validate`; same 5× stability bar on the
    upgraded stack.
-8. **Class B replay** (FR9): rerun the scripted procedure in both engines on
+9. **Class B replay** (FR9): rerun the scripted procedure (same
+   cross-engine Playwright input method as Phase 2) in both engines on
    the upgraded stack; compare against Phase 2 baseline transcripts. Real
    input that registers must behave correctly (else blocking); identical
    non-registration to baseline is recorded as the harness property.
-9. **FR13 audits**: full + production audits after; path-by-path comparison
-   with before; identify 3D-chain advisory paths resolved/remaining.
-10. Any behavioral difference in either engine → replay against baseline
+10. **FR13 audits**: full + production audits after; path-by-path comparison
+    with before; identify 3D-chain advisory paths resolved/remaining.
+11. Any behavioral difference in either engine → replay against baseline
     (Phase 2 evidence or a temporary checkout of the pre-Phase-3 commit)
     before attribution; if attributed to the upgrade → **blocked**, escalate
     with evidence (FR14). No partial pins, never mismatched runtime/types.
@@ -321,6 +344,9 @@ document follows in the Review phase on the same branch.
 - [ ] Spec Scenarios 1, 2, 3, 4 fully evidenced; Scenario 5 property holds
       (single revert of the PR restores baseline; Phase 3-only revert also
       restores the qualified baseline with harness retained).
+- [ ] FR5 no-drift check passes: the `app/components/` diff is exactly the
+      one-line import change in `FocusGraph.tsx`; wrapper, resources, page,
+      layout, and graph data files are byte-identical.
 - [ ] All FR3/FR6 checks clean; contract tests enforce them going forward.
 - [ ] Two-engine gates and matrix green on the upgraded stack with 5×
       stability; Class B evidence chain complete per engine.
@@ -435,7 +461,25 @@ Phase 3 (dependency unit + qualification)  →  single PR (rollback unit)
 
 ## Consultation Log
 
-_(Populated by the porch-driven 3-way plan consultation.)_
+### Iteration 1 — initial three-way review (2026-07-19)
+
+- **Claude: APPROVE (high confidence).** Verified file references and
+  sequencing; noted the second `@types/three` assertion location in
+  `toolchain.test.mjs` (now explicit in Phase 3 deliverables) and confirmed
+  the helper-file naming keeps Playwright from executing it as a test.
+- **Gemini: REQUEST_CHANGES (high confidence).** Caught that
+  `toolchain.test.mjs` asserts the exact `browser:install` string, so Phase 1
+  as drafted would fail `npm test` at its own commit → `tests/toolchain.test.mjs`
+  added to Phase 1's file list and acceptance criteria. Praised the
+  baseline-first sequencing.
+- **Codex: REQUEST_CHANGES (high confidence).** Two points, both accepted:
+  (1) CDP is Chromium-specific — the Class B procedure now mandates
+  Playwright's cross-engine trusted input APIs (`page.mouse.*`) for both
+  engines, CDP demoted to an optional Chromium-only supplementary
+  diagnostic (Phases 2 and 3); (2) FR5 needed an explicit no-drift check —
+  Phase 3 gains a mechanical step 6 (the `app/components/` diff must be
+  exactly the one-line import change; wrapper/resources/page/layout/data
+  byte-identical) plus a matching acceptance criterion.
 
 ## Approval
 - [ ] Architect approval at `plan-approval` gate.

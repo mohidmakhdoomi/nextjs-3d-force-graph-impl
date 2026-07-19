@@ -42,3 +42,19 @@
   (registry-only sources, install-script delta, clean `npm ci`).
 - Rebuttal at `codev/projects/11-upgrade-and-behaviorally-quali/11-specify-iter1-rebuttals.md`;
   spec Consultation Log updated. Awaiting porch re-verification.
+
+## 2026-07-19 — Spec approved; Plan phase
+
+- Architect approved spec-approval with all three elections confirmed (exact
+  rfg3d pin, three/addons path, Firefox inside the required CI gate).
+- Plan drafted: 3 phases, baseline-first — (1) Firefox second engine on
+  current deps, (2) Class A matrix automation + baseline evidence capture
+  (incl. Class B transcripts per engine), (3) dependency flip + qualification.
+  Single PR = rollback unit.
+- Plan iteration 1: Claude APPROVE; Gemini caught that `toolchain.test.mjs`
+  pins the exact `browser:install` string (Phase 1 would have broken
+  `npm test` at its own commit — file added to Phase 1); Codex caught the
+  CDP-is-Chromium-only trap for Firefox Class B evidence (now Playwright
+  cross-engine `page.mouse` APIs as primary for both engines) and asked for
+  an explicit FR5 no-drift step (added: app/components diff must be exactly
+  the one-line import change). All points accepted.
