@@ -1,7 +1,7 @@
 id: '11'
 title: upgrade-and-behaviorally-quali
 protocol: spir
-phase: specify
+phase: plan
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -16,7 +16,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-07-19T18:32:47.973Z'
-updated_at: '2026-07-19T18:46:35.688Z'
+updated_at: '2026-07-19T18:46:40.367Z'
