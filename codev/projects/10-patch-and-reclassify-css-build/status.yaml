@@ -21,6 +21,7 @@ gates:
     approved_at: '2026-07-19T02:10:32.293Z'
   pr:
     status: pending
+    requested_at: '2026-07-19T04:49:51.233Z'
   verify-approval:
     status: pending
 iteration: 1
@@ -43,9 +44,10 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-10/codev/projects/10-patch-and-reclassify-css-build/10-production_qualification-iter1-claude.txt
 started_at: '2026-07-19T01:45:31.615Z'
-updated_at: '2026-07-19T04:44:12.934Z'
+updated_at: '2026-07-19T04:49:51.234Z'
 pr_history:
   - phase: review
     pr_number: 24
     branch: builder/spir-10
     created_at: '2026-07-19T04:44:06.658Z'
+pr_ready_for_human: true
