@@ -233,3 +233,18 @@ the devDependency reclassification doesn't break the actual deployment build (FR
 
 Porch now at GATE: pr. Requested via `porch gate 10`; notified architect. STOPPED,
 waiting for `porch approve 10 pr`.
+
+## 2026-07-19 — Merged; verify phase
+
+Architect approved the pr gate and posted an integration review (no issues),
+instructing a squash-merge (which also resolves Codex's porch-commit-format
+concern by collapsing history). PR #24 squash-merged into main as dd86425; the
+`validation` CI check passed (3m1s) on the PR head. Notified architect.
+
+Verify: fetched origin/main (dd86425); confirmed the merged tree is byte-identical
+to my validated branch content for package.json / package-lock.json (name correctly
+"primary") / eslint.config.mjs / tests/toolchain.test.mjs. Ran a clean verification
+on the integrated content: `npm ci` exit 0 (no lock mutation), `npm test` 19/19,
+`npm run typecheck` exit 0, `npm run build` compiled, `npm run lint` exit 0 (harness
+file aside). CI's validation (incl. Playwright WebGL smoke) already green on the same
+merged content. Signaling verification ready → architect approves verify-approval.
