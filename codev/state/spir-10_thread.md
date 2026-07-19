@@ -46,3 +46,13 @@ source-of-truth wording, @eslint/compat as conditional decision point,
 encoding dev-dependency phrasing, globals two-major clarification) and
 committed as `[Spec 10] Specification with multi-agent review`. Porch now at
 GATE: spec-approval. Notified architect; stopped pending human approval.
+
+## 2026-07-19 — plan-approval gate reached
+
+Plan written (two phases: dependency_baseline → production_qualification,
+single PR, commits per phase). 3-way consultation: Gemini / Codex / Claude all
+APPROVE (high confidence, zero key issues, no requested changes). Claude
+independently verified the FR→phase mapping and the fixupPluginRules /
+globals.commonjs decision points. Plan committed as
+`[Spec 10] Plan with multi-agent review`. Porch now at GATE: plan-approval.
+Notified architect; stopped pending human approval.
