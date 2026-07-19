@@ -3,7 +3,7 @@
 ## Metadata
 
 - **ID**: plan-2026-07-19-css-build-lint-baseline
-- **Status**: in-progress
+- **Status**: completed
 - **Specification**:
   [`codev/specs/10-patch-and-reclassify-css-build.md`](../specs/10-patch-and-reclassify-css-build.md)
 - **Created**: 2026-07-19
@@ -80,7 +80,7 @@ only to the review document during the Review phase.
 | Phase | Status | Planned commit |
 | --- | --- | --- |
 | Apply the Atomic CSS/Build and ESLint 9 Dependency Baseline | completed | `[Spec 10][Phase: dependency-baseline] chore: Patch and reclassify CSS/build and lint dependencies` |
-| Qualify Production Behavior and Residual Risk | in-progress | `[Spec 10][Phase: production-qualification] test: Qualify CSS/build and lint dependency baseline` |
+| Qualify Production Behavior and Residual Risk | completed | `[Spec 10][Phase: production-qualification] test: Qualify CSS/build and lint dependency baseline` |
 
 ## Phase Breakdown
 
