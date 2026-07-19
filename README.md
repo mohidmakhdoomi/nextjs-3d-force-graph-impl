@@ -44,7 +44,7 @@ npm --version  # 10.9.8
 ```
 
 Install dependencies strictly from the lockfile, then install the Chromium
-binary used by the browser smoke:
+and Firefox binaries used by the browser smoke:
 
 ```sh
 npm ci
@@ -60,14 +60,15 @@ npm run browser:install
 | `npm test` | Check the toolchain, automation, and audit-evidence contracts. |
 | `npm run build` | Create the production Next.js build. |
 | `npm run start` | Start a previously built production application. |
-| `npm run test:smoke` | Build, start the production server, and run the Chromium WebGL smoke. |
+| `npm run test:smoke` | Build, start the production server, and run the Chromium and Firefox WebGL smoke. |
 | `npm run validate` | Fail fast through lint, typecheck, build, production start, and browser smoke. |
 | `npm run audit:full` | Report findings in the complete dependency graph. |
 | `npm run audit:production` | Report findings with development dependencies omitted. |
 
 `npm run validate` is the documented green gate. The browser smoke observes a
 real WebGL drawing buffer and exercises the axes, camera-reset, and rotation
-controls against `next start`; Playwright owns server startup and teardown.
+controls against `next start` in both Chromium and Firefox; Playwright owns
+server startup and teardown.
 
 ### Audit evidence
 
@@ -89,10 +90,10 @@ valid advisory evidence.
 
 GitHub Actions runs on pull requests and pushes to `main` using the same exact
 Node/npm contract, `npm ci`, `npm test`, and `npm run validate`. CI installs
-Chromium plus its Linux dependencies with:
+Chromium and Firefox plus their Linux dependencies with:
 
 ```sh
-npm exec -- playwright install --with-deps chromium
+npm exec -- playwright install --with-deps chromium firefox
 ```
 
 On every run it uploads the two audit artifacts. When Playwright produces

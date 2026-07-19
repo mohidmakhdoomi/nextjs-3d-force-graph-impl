@@ -58,3 +58,25 @@
   cross-engine `page.mouse` APIs as primary for both engines) and asked for
   an explicit FR5 no-drift step (added: app/components diff must be exactly
   the one-line import change). All points accepted.
+
+## 2026-07-19 — Plan approved; Implement Phase 1 (firefox-second-engine)
+
+- Architect approved plan-approval; baseline-first sequencing endorsed; Class B
+  scripted procedure stays uncommitted per #9/#10 precedent.
+- Phase 1 findings:
+  - Registry drift check: zero drift; 0.185.1/1.29.1 still exactly latest.
+  - **Firefox headless WebGL works** with a single pref:
+    `firefoxUserPrefs: {"webgl.force-enabled": true}` (no Chromium flags
+    inherited). First two-project smoke: chromium 32.7 s, firefox 43.4 s,
+    both green on the current baseline deps.
+  - Contract tests updated in lockstep (automation: workflow step renamed
+    "Install Chromium, Firefox, and system dependencies"; toolchain:
+    browser:install string) — 19/19 green at this phase's tree.
+  - Lint caveat carried from review 10: `eslint .` traverses the untracked
+    Claude Code harness file `.claude/hooks/worktree-write-guard.cjs` (18
+    errors, all from that file); gate run with the harness dir moved aside →
+    exit 0, then restored. Not project source; absent from CI and commits.
+  - Typecheck exit 0.
+  - Stability bar: 5/5 consecutive green two-project runs (1× full
+    `test:smoke` incl. build + 4× `playwright test` on the same build).
+    Firefox per-run range 39.0–43.4 s, zero flakes, zero unexpected errors.

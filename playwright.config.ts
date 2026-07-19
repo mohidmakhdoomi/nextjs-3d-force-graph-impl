@@ -35,6 +35,20 @@ export default defineConfig({
                 },
             },
         },
+        {
+            name: "firefox",
+            use: {
+                ...devices["Desktop Firefox"],
+                viewport: {width: 800, height: 600},
+                launchOptions: {
+                    firefoxUserPrefs: {
+                        // No GPU is available in headless CI; force software
+                        // WebGL rather than failing context creation.
+                        "webgl.force-enabled": true,
+                    },
+                },
+            },
+        },
     ],
     webServer: {
         command:

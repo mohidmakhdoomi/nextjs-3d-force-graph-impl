@@ -36,8 +36,8 @@ jobs:
       - name: Test baseline contracts
         run: npm test
 
-      - name: Install Chromium and system dependencies
-        run: npm exec -- playwright install --with-deps chromium
+      - name: Install Chromium, Firefox, and system dependencies
+        run: npm exec -- playwright install --with-deps chromium firefox
 
       - name: Validate
         run: npm run validate

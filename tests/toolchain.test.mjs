@@ -161,7 +161,7 @@ test("exposes direct validation and audit commands", () => {
     assert.equal(packageJson.scripts.typecheck, "tsc --noEmit");
     assert.equal(
         packageJson.scripts["browser:install"],
-        "playwright install chromium",
+        "playwright install chromium firefox",
     );
     assert.equal(
         packageJson.scripts["test:smoke"],

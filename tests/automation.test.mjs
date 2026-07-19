@@ -36,8 +36,8 @@ test("runs the exact locked validation path in GitHub Actions", () => {
     assert.match(workflowStep("Install locked dependencies"), /run: npm ci/);
     assert.match(workflowStep("Test baseline contracts"), /run: npm test/);
     assert.match(
-        workflowStep("Install Chromium and system dependencies"),
-        /playwright install --with-deps chromium/,
+        workflowStep("Install Chromium, Firefox, and system dependencies"),
+        /playwright install --with-deps chromium firefox/,
     );
 
     const validation = workflowStep("Validate");
@@ -84,6 +84,7 @@ test("documents every direct package command and CI artifact", () => {
     }
 
     assert.match(readme, /Node\.js `22\.23\.1` with npm `10\.9\.8`/);
+    assert.match(readme, /playwright install --with-deps chromium firefox/);
     assert.match(readme, /Audits are evidence snapshots, not a zero-finding green gate/);
     assert.match(readme, /`audit-full` and `audit-production` artifacts/);
     assert.match(readme, /`playwright-report` and\s+`playwright-test-results` artifacts/);
