@@ -197,3 +197,16 @@ PARTIAL. Findings that took several iterations:
 Also fixed: Phase 1 consultation Claude output was produced fine before; the
 Phase 2 Claude consult was interrupted (tool 2-min timeout killed the backgrounded
 process). Will rerun the Phase 2 3-way consult with all three completing.
+
+## 2026-07-19 — Review phase: PR #24 opened
+
+Both implement phases approved (Phase 1 unanimous APPROVE; Phase 2 iter2:
+Gemini APPROVE, Codex COMMENT [addressed: inline phase-status lines], Claude
+APPROVE). Committed Phase 2 (a09d246) and the review doc + cold-tier arch/lessons
+updates (53e45a0). Created review doc with the FR9 path-by-path audit table
+(full 17→13, prod 12→7; direct PostCSS fixed, next>postcss@8.4.31 documented
+residual), FR10 disposition, manual-matrix results (10/12 numerically verified),
+and consultation feedback for every phase. Routed dependency-classification/
+lint-config to cold arch.md and the react-force-graph interaction-verification
+lesson to cold lessons-learned.md (nothing HOT-tier-worthy). Opened PR #24
+(Closes #10, base main). Review-phase 3-way consult running; architect notified.
