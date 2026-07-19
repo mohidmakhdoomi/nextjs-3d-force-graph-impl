@@ -5,14 +5,14 @@ phase: implement
 plan_phases:
   - id: firefox_second_engine
     title: Add Firefox as a Required Second Smoke Engine on the Current Baseline
-    status: in_progress
+    status: complete
   - id: matrix_suite_baseline
     title: Automate the Class A Interaction Matrix and Capture Baseline Evidence
-    status: pending
+    status: in_progress
   - id: dependency_upgrade_qualification
     title: Upgrade the Three.js Force-Graph Unit and Qualify Behavior
     status: pending
-current_plan_phase: firefox_second_engine
+current_plan_phase: matrix_suite_baseline
 gates:
   spec-approval:
     status: approved
@@ -26,8 +26,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 2
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: firefox_second_engine
@@ -46,4 +46,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-11/codev/projects/11-upgrade-and-behaviorally-quali/11-firefox_second_engine-iter1-claude.txt
 started_at: '2026-07-19T18:32:47.973Z'
-updated_at: '2026-07-19T19:10:42.583Z'
+updated_at: '2026-07-19T19:12:20.159Z'
