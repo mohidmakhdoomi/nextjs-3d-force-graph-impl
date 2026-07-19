@@ -79,7 +79,7 @@ only to the review document during the Review phase.
 
 | Phase | Status | Planned commit |
 | --- | --- | --- |
-| Apply the Atomic CSS/Build and ESLint 9 Dependency Baseline | pending | `[Spec 10][Phase: dependency-baseline] chore: Patch and reclassify CSS/build and lint dependencies` |
+| Apply the Atomic CSS/Build and ESLint 9 Dependency Baseline | in-progress | `[Spec 10][Phase: dependency-baseline] chore: Patch and reclassify CSS/build and lint dependencies` |
 | Qualify Production Behavior and Residual Risk | pending | `[Spec 10][Phase: production-qualification] test: Qualify CSS/build and lint dependency baseline` |
 
 ## Phase Breakdown
@@ -321,7 +321,25 @@ Never restore or revert only one dependency file.
 - Mark the phase completed in this plan and create the single planned commit
   only after Porch verification permits it.
 
-**Evaluation**: _Pending._
+**Evaluation**: Implemented. All thirteen scoped package actions applied as one
+atomic `package.json` / `package-lock.json` (v3, npm 10.9.8) unit; the four
+reclassifications and the `encoding` removal are exactly as specified and the
+runtime `three` stack stays in `dependencies`. Registry reverify confirmed every
+target on its intended support line with compatible engines/peers. Hooks
+decision: `eslint-plugin-react-hooks@7.1.1` supports flat config natively, so
+`fixupPluginRules` and the `@eslint/compat` dependency were removed; the
+pre-upgrade effective Hooks rule set (`rules-of-hooks`/`exhaustive-deps`) is
+pinned explicitly because v7 `recommended` bundles ~16 rules — before/after
+`eslint --print-config` shows 133 rules both sides with byte-identical
+react-hooks coverage, and the only deltas are upstream `@eslint/js` recommended
+defaults from the intentional eslint 9.18→9.39.5 patch. Clean `npm ci` (exit 0,
+no peer warnings), `npm ls` clean with both PostCSS copies visible, extended
+contract tests pass (19/19), build passes, lint/typecheck pass. Audits: full
+17→13, prod 12→7; the direct PostCSS advisory GHSA-qx2v-qp2m-jg93 now flags only
+the nested `next > postcss@8.4.31` residual (no override). Environment note: the
+farm runs under pnpm, whose leaked `npm_config_user_agent` must be stripped when
+invoking porch so the untouched npm-baseline reproducibility test evaluates real
+npm 10.9.8 (see thread).
 
 ---
 

@@ -18,33 +18,31 @@
     "audit:production": "npm audit --omit=dev"
   },
   "dependencies": {
-    "@types/three": "~0.172.0",
     "@vercel/analytics": "~1.4.1",
     "@vercel/speed-insights": "~1.1.0",
-    "autoprefixer": "10.4.20",
     "geist": "~1.3.1",
     "next": "15.5.20",
-    "postcss": "8.5.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-force-graph-3d": "~1.26.0",
-    "tailwindcss": "3.4.17",
     "three": "~0.172.0"
   },
   "devDependencies": {
-    "@eslint/compat": "~1.2.5",
-    "@eslint/js": "~9.18.0",
+    "@eslint/js": "~9.39.5",
     "@next/eslint-plugin-next": "15.5.20",
     "@playwright/test": "1.61.1",
-    "@types/node": "~22.10.7",
+    "@types/node": "~22.20.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "encoding": "~0.1.13",
-    "eslint": "~9.18.0",
-    "eslint-plugin-react": "~7.37.4",
-    "eslint-plugin-react-hooks": "5.1.0",
-    "globals": "~15.14.0",
+    "@types/three": "~0.172.0",
+    "autoprefixer": "10.5.4",
+    "eslint": "~9.39.5",
+    "eslint-plugin-react": "~7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "~17.7.0",
+    "postcss": "8.5.19",
+    "tailwindcss": "3.4.19",
     "typescript": "~5.7.3",
-    "typescript-eslint": "~8.21.0"
+    "typescript-eslint": "~8.64.0"
   }
 }

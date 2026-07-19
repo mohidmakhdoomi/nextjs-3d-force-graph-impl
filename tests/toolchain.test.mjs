@@ -26,6 +26,12 @@ const expectedDependencyBaseline = {
         "@types/react-dom": "19.2.3",
     },
 };
+const expectedDevReclassifiedBuildPackages = {
+    postcss: "8.5.19",
+    tailwindcss: "3.4.19",
+    autoprefixer: "10.5.4",
+    "@types/three": "~0.172.0",
+};
 
 const packageJson = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),
@@ -84,6 +90,47 @@ test("pins the supported Next and React dependency baseline exactly", () => {
     assert.equal(
         packageJson.dependencies.next,
         packageJson.devDependencies["@next/eslint-plugin-next"],
+    );
+});
+
+test("reclassifies build/type-only packages into devDependencies", () => {
+    for (const [packageName, expectedRange] of Object.entries(
+        expectedDevReclassifiedBuildPackages,
+    )) {
+        assert.equal(
+            packageJson.devDependencies[packageName],
+            expectedRange,
+            `${packageName} must be a pinned devDependency`,
+        );
+        assert.equal(
+            Object.hasOwn(packageJson.dependencies, packageName),
+            false,
+            `${packageName} must not remain a runtime dependency`,
+        );
+    }
+
+    // The runtime Three.js stack stays in dependencies even though its types moved out.
+    assert.equal(packageJson.dependencies.three, "~0.172.0");
+    assert.equal(Object.hasOwn(packageJson.devDependencies, "three"), false);
+});
+
+test("removes the unused encoding dependency entirely", () => {
+    assert.equal(Object.hasOwn(packageJson.dependencies, "encoding"), false);
+    assert.equal(Object.hasOwn(packageJson.devDependencies, "encoding"), false);
+    assert.equal(
+        Object.hasOwn(packageLock.packages, "node_modules/encoding"),
+        false,
+    );
+});
+
+test("aligns eslint and @eslint/js on the same ESLint 9 line", () => {
+    const eslintRange = packageJson.devDependencies.eslint;
+
+    assert.equal(eslintRange, packageJson.devDependencies["@eslint/js"]);
+    assert.match(eslintRange, /^~9\./);
+    assert.equal(
+        packageLock.packages["node_modules/eslint"].version,
+        packageLock.packages["node_modules/@eslint/js"].version,
     );
 });
 
