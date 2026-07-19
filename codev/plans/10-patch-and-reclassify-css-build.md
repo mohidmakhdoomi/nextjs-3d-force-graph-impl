@@ -631,7 +631,15 @@ Review document and single pull request
 
 ### Initial plan review
 
-Pending Porch-managed review.
+Gemini, Codex, and Claude all approved the plan with high confidence and no
+key issues. Gemini verified the thirteen spec actions against the current
+`package.json` and endorsed the `@eslint/compat` handling and contract-test
+extensions. Codex verified the referenced files and project layout and found
+the two-phase path clear and testable. Claude verified the `fixupPluginRules`
+and `globals.commonjs` decision points against `eslint.config.mjs`, mapped all
+twelve functional requirements to the two phases, and confirmed the plan
+correctly separates `npm test` from `npm run validate`. No changes were
+requested; nothing required incorporation.
 
 ### Post-feedback plan review
 
@@ -640,7 +648,7 @@ Pending human feedback and Porch-managed re-review.
 ## Approval
 
 - [x] Specification approved
-- [ ] Initial expert AI consultation complete
+- [x] Initial expert AI consultation complete
 - [ ] Technical lead plan approval
 - [ ] Final expert AI consultation
 
