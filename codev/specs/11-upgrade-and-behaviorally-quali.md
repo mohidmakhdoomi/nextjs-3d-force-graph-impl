@@ -19,7 +19,7 @@ The intended package actions are:
 | --- | ---: | ---: | --- | --- |
 | `three` | `~0.172.0` (resolved `0.172.0`) | exact `0.185.1` | `dependencies` | Upgrade; pin exactly |
 | `@types/three` | `~0.172.0` (resolved `0.172.0`) | exact `0.185.1` | `devDependencies` | Upgrade; pin exactly; keep exactly aligned with runtime `three` |
-| `react-force-graph-3d` | `~1.26.0` (resolved `1.26.0`) | `1.29.1` | `dependencies` | Upgrade; pin exactly (see Open Questions — Important) |
+| `react-force-graph-3d` | `~1.26.0` (resolved `1.26.0`) | `1.29.1` | `dependencies` | Upgrade; pin exactly (decided — Confirmed Decisions #6) |
 
 All other manifest entries are unchanged. The transitive force-graph chain
 moves with `react-force-graph-3d` and is reviewed, not independently pinned:
@@ -118,14 +118,29 @@ time per FR1; this observation does not replace that verification):
    exports `ForceGraphMethods`, `ForceGraphProps`, `GraphData`, `LinkObject`,
    and `NodeObject` with defaulted generics, so the component's existing
    non-generic usage remains valid TypeScript.
-5. **Second engine is Firefox**: the two-browser qualification uses
-   Playwright's `firefox` project alongside `chromium`. WebKit's WebGL
-   support on headless Linux is materially weaker and would qualify the
-   harness more than the app (veto point in Open Questions).
+5. **Second engine is Firefox, and it is part of the required CI gate**: the
+   two-browser qualification uses Playwright's `firefox` project alongside
+   `chromium`, and both projects run in the required CI smoke
+   (`test:smoke` → `validate`). WebKit's WebGL support on headless Linux is
+   materially weaker and would qualify the harness more than the app. There
+   is **no pre-authorized fallback** to a qualification-only Firefox run: if
+   implementation shows Firefox headless cannot produce a WebGL context or
+   is irreducibly flaky after the stability measurement in FR8, that is a
+   blocking finding to escalate to the architect, and any relaxation is an
+   explicit architect scope decision at that time.
+6. **`react-force-graph-3d` is pinned exactly at `1.29.1`**: the issue
+   mandates "exact" only for `three`/`@types/three`, and house style
+   elsewhere preserves range style (`~1.26.0` today), but this spec pins the
+   qualified release exactly: one qualified release is one behavioral
+   surface, and the exact pin records for future maintainers that *this
+   specific version* was behaviorally qualified. The lockfile pins it
+   regardless, so the deviation is declarative, not resolutive.
 
 The issue body contains no "Baked Decisions" section; the decisions above are
 derived from the issue's scope/constraints text and direct registry
-verification.
+verification. Decisions 3, 5, and 6 are elections made by this spec (not
+forced by the issue); approving the spec gate confirms them, and the
+architect may override any of them at that gate.
 
 ## Scope
 
@@ -158,8 +173,11 @@ verification.
 - No global `skipLibCheck` removal combined with this runtime upgrade.
 - No changes to graph interaction semantics, visual design, data, or the
   dynamic client-only boundary beyond what the upgrade itself requires.
-- No new application routes or features (including test-only harness routes —
-  see Open Questions if reviewers disagree).
+- No new application routes, features, or test-only application surface. The
+  scripted matrix qualification (FR9/FR10) operates entirely from outside the
+  app — Playwright/CDP `page.evaluate` and real input events against the
+  unmodified production page — so this constraint and the qualification
+  method are compatible, not in tension.
 - No zero-findings audit gate: pre-existing advisories outside the 3D chain
   remain separately tracked evidence, not a blocker here.
 
@@ -292,15 +310,24 @@ near 1, far 200, focus distance 80), or control semantic changes except as
 strictly forced by the upgrade — and if any is forced, it must be called out
 explicitly in the review, not absorbed silently.
 
-### FR6 — Transitive chain review
+### FR6 — Transitive chain review and supply-chain verification
 
 Record before/after resolved versions for: `3d-force-graph`,
 `three-forcegraph`, `three-render-objects`, `react-kapsule`, `d3-force-3d`,
 `ngraph.forcelayout`, `float-tooltip`, `preact`, `kapsule`, `lodash-es`,
 `polished`, and `@babel/runtime`. For each package that moved, summarize
 meaningful renderer/layout/tooltip/runtime changes (from changelogs/release
-notes) relevant to this app's usage. Confirm lockfile provenance remains the
-public npm registry for every changed entry.
+notes) relevant to this app's usage.
+
+Supply-chain verification for every lockfile entry changed by this upgrade:
+(a) `resolved` URLs point only at the public npm registry
+(`registry.npmjs.org`) — no git, tarball-URL, or alternate-registry sources;
+(b) no changed entry introduces an install script (`hasInstallScript` /
+`preinstall`/`install`/`postinstall`) that its previous version did not have,
+and any pre-existing install script in the chain is identified and explained;
+(c) `npm ci` output shows no unexpected package-manager behavior (script
+execution, engine overrides, funding/deprecation anomalies aside). Findings
+go in the review's lockfile section.
 
 ### FR7 — Automated validation gates
 
@@ -316,12 +343,18 @@ codes).
 
 `playwright.config.ts` gains a `firefox` project alongside `chromium`; the
 Chromium-specific SwiftShader launch args are not applied to Firefox, which
-gets an equivalent software-WebGL-tolerant configuration. The existing smoke
-spec passes in both projects against the production server. The
-`browser:install` script and the CI workflow's browser provisioning install
-both engines (`--with-deps`). If Firefox headless proves unable to produce a
-WebGL context in the CI environment at all, that is a **blocking finding to
-escalate**, not a reason to quietly drop the second engine.
+gets an equivalent software-WebGL-tolerant configuration. The smoke spec
+passes in both projects against the production server, and **both projects
+are part of the required gate** (`test:smoke` → `validate`), locally and in
+CI — this is the single acceptance bar (Confirmed Decisions #5). Two
+provisioning surfaces move together: the `browser:install` package script
+**and** the CI workflow step (today `npm exec -- playwright install
+--with-deps chromium`) both install both engines. Before the unit lands,
+measure smoke stability over repeated runs (at least five consecutive green
+two-project runs locally); if Firefox headless cannot produce a WebGL
+context or remains flaky after reasonable configuration effort, that is a
+**blocking finding to escalate to the architect** — not a reason to quietly
+drop or demote the second engine.
 
 ### FR9 — Complete interaction matrix in Chromium and Firefox
 
@@ -346,15 +379,38 @@ The canonical matrix for this stage, exercised against the production build
 
 Verification is numeric via the react-force-graph imperative handle (camera
 position, node `fx` state, `graph2ScreenCoords`, AxesHelper visibility) per
-the established lessons — not screenshots. Items reliably automatable land in
-the committed Playwright suite for both projects; items the headless harness
-cannot drive with real events (per #9/#10: node drag `onNodeDragEnd` and node
-right-click `onNodeRightClick` in headless SwiftShader Chromium) are
-exercised via the documented scripted procedure, with **exactly what was
-exercised recorded per engine** — no broadening of environment-limited
-results into full-pass claims. Any behavioral difference from the current
+the established lessons — not screenshots. All verification operates from
+outside the app (`page.evaluate`/real input events against the unmodified
+production page); no test-only application surface is added.
+
+**Acceptance classes** (which items must pass with real input, which may use
+scripted evidence, and when an environment-limited result is acceptable):
+
+- **Class A — real-input, must pass, both engines** (items 1–6, 9–12): driven
+  by real Playwright pointer/wheel/click events with numeric verification.
+  These land in the committed Playwright suite for both projects. A Class A
+  failure in either engine is **blocking** (after the baseline-replay check
+  below).
+- **Class B — real input attempted; scripted fallback permitted** (items 7
+  and 8): #9/#10 established that headless SwiftShader Chromium does not
+  register synthetic node DRAG (`onNodeDragEnd`) or node RIGHT-click
+  (`onNodeRightClick`) even with real dispatched events. For these two items,
+  per engine: (a) attempt real events first — if they register, the observed
+  behavior must be correct, else **blocking**; (b) if they do not register,
+  replay the identical input against the rollback baseline (checked-in
+  versions) — the limitation is acceptable **only if the baseline exhibits
+  the identical non-registration**, proving a harness property rather than a
+  regression; and (c) verify the handler wiring via scripted
+  imperative-handle evidence plus the lifecycle/unit suites. Record exactly
+  what was exercised and what registered, per engine.
+- **Item 13** is qualified per FR10.
+
+An "environment-limited" recording is only ever acceptable for input
+*delivery* (the harness failing to register an event), never for handler
+*behavior*: any case where the input registers and the resulting state is
+wrong is a blocking regression. Any behavioral difference from the current
 baseline must be replayed with the same physical input against the rollback
-baseline (checked-in versions) before being attributed to the upgrade.
+baseline before being attributed to the upgrade.
 
 ### FR10 — Resize and unmount/remount qualification
 
@@ -364,9 +420,11 @@ graph stays interactive (matrix item 12). Unmount/remount: the lifecycle
 unit suite (`tests/focus-graph-lifecycle.test.mjs`) passes under the
 upgraded stack, and in-browser re-navigation to the page yields a fresh
 working canvas and a clean error budget (matrix item 13). No new application
-routes are added for this; if reviewers require a deeper in-place
-unmount/remount harness, that is an explicit scope decision for the
-architect (Open Questions).
+routes or test-only application surface are added for this: qualification
+uses re-navigation plus the existing unit suites, all driven from outside
+the app. A deeper in-place unmount/remount harness would require test-only
+application surface and is out of scope unless the architect explicitly
+requests it.
 
 ### FR11 — Error budget
 
@@ -426,6 +484,12 @@ Every claim in the review must state engine, renderer (hardware/SwiftShader/
 software), input method (real event vs. scripted handle), and result.
 Environment-limited results are recorded as such.
 
+### Supply-chain integrity
+
+The upgraded chain introduces no new install scripts, no non-registry
+sources, and no unexpected package-manager behavior (FR6); audit evidence is
+compared path-by-path with original exit codes preserved (FR13).
+
 ### Maintainability
 
 The two-engine smoke and strengthened contract tests become the standing
@@ -456,9 +520,11 @@ Lint, typecheck, `npm test`, build, direct production start, two-engine
 `test:smoke`, and aggregate `validate` all exit 0 at the final commit.
 
 ### Scenario 3 — Two-engine interaction matrix
-All thirteen matrix items pass (or are honestly recorded as
-environment-limited with scripted evidence) in Chromium and Firefox against
-the production build, with zero unexpected errors per FR11.
+All Class A matrix items pass with real input in Chromium and Firefox
+against the production build; Class B items either pass with real input or
+carry the full FR9 environment-limited evidence chain (baseline replay
+proving a harness property, plus scripted handler verification); item 13
+passes per FR10 — all with zero unexpected errors per FR11.
 
 ### Scenario 4 — Honest lockfile and audit story
 The review documents before/after resolved versions for the entire named
@@ -482,25 +548,15 @@ evidence and escalation — no partial pins, no mismatched runtime/types.
 
 ### Important
 
-1. **Pin style for `react-force-graph-3d`**: the issue mandates "exact" only
-   for `three`/`@types/three`; the current manifest uses `~1.26.0`. This spec
-   proposes exact `1.29.1` (one qualified release = one behavioral surface;
-   the lockfile pins it regardless). House style elsewhere preserves range
-   style, so this is an explicit deviation for the architect to confirm or
-   veto at the spec gate.
-2. **TrackballControls path switch is elected, not forced** (both paths exist
-   in 0.185.1). Confirm the `three/addons/...` election or strike it to
-   minimize the diff.
-3. **Second engine = Firefox** (vs. WebKit). Confirm.
-4. **CI scope of the Firefox project**: proposal is Firefox runs in the
-   required CI smoke (durable qualification bar). If repeated-run stability
-   measurement shows unacceptable flake, the fallback is Firefox as
-   qualification-time evidence only, with the decision recorded — architect
-   to confirm the fallback is acceptable.
-5. **Depth of unmount/remount qualification**: proposal is lifecycle unit
-   suite + in-browser re-navigation (no new routes). A deeper in-place
-   unmount/remount harness would require test-only application surface —
-   only with explicit architect approval.
+- None open. Every previously contingent choice is now a settled decision in
+  the spec body, overridable only at the spec-approval gate: exact
+  `react-force-graph-3d` pin (Confirmed Decisions #6), `three/addons/...`
+  import election (Confirmed Decisions #3 and Solution Exploration), Firefox
+  as the second engine **inside the required CI gate with no pre-authorized
+  fallback** (Confirmed Decisions #5, FR8), and unmount/remount depth =
+  re-navigation + unit suites with no test-only app surface (FR10). If the
+  architect wants any of these changed, that happens at the gate, and the
+  spec is amended before planning.
 
 ### Nice-to-know
 
@@ -524,4 +580,35 @@ evidence and escalation — no partial pins, no mismatched runtime/types.
 
 ## Consultation Log
 
-_(Populated by the porch-driven 3-way consultation after this draft.)_
+### Iteration 1 — initial three-way review (2026-07-19)
+
+- **Gemini: APPROVE (high confidence).** Endorsed the exact-pin rationale,
+  the `three/addons/...` election, and the Firefox-with-honest-limits
+  testing approach. No issues.
+- **Claude: APPROVE (high confidence).** Independently verified every
+  factual claim against the codebase (manifest versions, import paths,
+  Playwright/CI config, contract-test pins, camera/timer parameters). Minor
+  notes: make the package-script vs. CI-workflow provisioning distinction
+  explicit; noted the exact pin is declarative since the lockfile pins
+  regardless.
+- **Codex: REQUEST_CHANGES (high confidence).** Five points, all accepted
+  and incorporated:
+  1. `react-force-graph-3d` pin was simultaneously mandated (FR2/FR12) and
+     open (Open Questions #1) → settled as Confirmed Decisions #6; Open
+     Questions cleared.
+  2. Firefox CI bar contradicted the Open Questions fallback → single
+     acceptance bar encoded in Confirmed Decisions #5 and FR8; no
+     pre-authorized fallback, escalation only.
+  3. FR9 acceptance semantics were fuzzy → explicit Class A (real-input,
+     blocking, items 1–6/9–12) vs. Class B (items 7–8, real input attempted,
+     baseline-replay-proven harness limitation + scripted handler evidence)
+     classes; environment-limited is only ever acceptable for input
+     delivery, never for handler behavior.
+  4. "No new routes" vs. scripted qualification tension → clarified in Scope,
+     FR9, and FR10 that all qualification is driven from outside the app
+     (`page.evaluate`/real events against the unmodified production page).
+  5. Supply-chain verification was implicit → FR6 now requires
+     registry-only `resolved` URLs, install-script delta checks, and clean
+     `npm ci` behavior for every changed lockfile entry; new NFR added.
+- Claude's provisioning note was also applied to FR8 (both `browser:install`
+  and the CI workflow step are named as surfaces that move together).

@@ -30,3 +30,15 @@
   - Switch TrackballControls import to documented `three/addons/...` path.
   - Pin all three target packages exactly (issue says "exact" for three/types;
     extending to react-force-graph-3d for one-qualified-release rationale).
+
+## 2026-07-19 — Specify iteration 1 consultation
+
+- Verdicts: Gemini APPROVE, Claude APPROVE (verified every spec claim against
+  the codebase), Codex REQUEST_CHANGES with five structural points — all
+  accepted: settled the exact-pin and Firefox-in-CI decisions (no
+  pre-authorized fallback; escalation only), split FR9 into explicit Class
+  A/Class B acceptance classes, clarified the external-harness scope (no
+  test-only app surface), and added supply-chain verification to FR6
+  (registry-only sources, install-script delta, clean `npm ci`).
+- Rebuttal at `codev/projects/11-upgrade-and-behaviorally-quali/11-specify-iter1-rebuttals.md`;
+  spec Consultation Log updated. Awaiting porch re-verification.
