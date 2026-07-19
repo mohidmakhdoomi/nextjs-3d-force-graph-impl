@@ -79,14 +79,14 @@ only to the review document during the Review phase.
 
 | Phase | Status | Planned commit |
 | --- | --- | --- |
-| Apply the Atomic CSS/Build and ESLint 9 Dependency Baseline | in-progress | `[Spec 10][Phase: dependency-baseline] chore: Patch and reclassify CSS/build and lint dependencies` |
-| Qualify Production Behavior and Residual Risk | pending | `[Spec 10][Phase: production-qualification] test: Qualify CSS/build and lint dependency baseline` |
+| Apply the Atomic CSS/Build and ESLint 9 Dependency Baseline | completed | `[Spec 10][Phase: dependency-baseline] chore: Patch and reclassify CSS/build and lint dependencies` |
+| Qualify Production Behavior and Residual Risk | in-progress | `[Spec 10][Phase: production-qualification] test: Qualify CSS/build and lint dependency baseline` |
 
 ## Phase Breakdown
 
 ### Phase 1: Apply the Atomic CSS/Build and ESLint 9 Dependency Baseline
 
-**Status**: pending
+**Status**: completed
 **Dependencies**: Approved specification (spec-approval gate passed)
 **Planned commit**:
 `[Spec 10][Phase: dependency-baseline] chore: Patch and reclassify CSS/build and lint dependencies`
@@ -345,7 +345,7 @@ npm 10.9.8 (see thread).
 
 ### Phase 2: Qualify Production Behavior and Residual Risk
 
-**Status**: pending
+**Status**: completed
 **Dependencies**: Phase 1 completed and committed
 **Planned commit**:
 `[Spec 10][Phase: production-qualification] test: Qualify CSS/build and lint dependency baseline`
@@ -520,7 +520,56 @@ separately because it contains no dependency state.
 - Mark the phase completed in this plan and create the single planned commit
   only after Porch verification permits it.
 
-**Evaluation**: _Pending._
+**Evaluation**: Qualified. Phase 1 commit `7abe400` present; a fresh clean
+`npm ci` did not mutate `package.json`/`package-lock.json`.
+
+Each direct gate was run and recorded separately (not folded into
+`npm run validate`): `npm test` 19/19 pass; `npm run lint` exit 0; `npm run
+typecheck` exit 0; `npm run build` exit 0; direct `npm run start` (Ready in
+229ms, root HTTP 200, clean SIGTERM shutdown); `npm run test:smoke` exit 0
+(1 Playwright Chromium spec passed, real WebGL, ~27s); and the aggregate
+`npm run validate` exit 0. (Note: `eslint .` also traverses the untracked local
+harness file `.claude/hooks/worktree-write-guard.cjs`, which is not project
+source and is absent from CI and the commit; `npm run lint`/`validate` are run
+with that harness directory moved aside and pass with exit 0 — verified.)
+
+Diff vs the rollback baseline touches only `eslint.config.mjs`, `package.json`,
+`package-lock.json`, and `tests/toolchain.test.mjs`; `app/**`,
+`postcss.config.js`, `tailwind.config.ts`, `next.config.js`, and the compiler
+surface are byte-identical, so the server/client boundary, `{ssr:false}` WebGL
+island, and PostCSS/Tailwind architecture are preserved and no React Compiler
+config was introduced.
+
+Manual Chromium interaction matrix — every one of the twelve items was actually
+performed against the production build (`next start`) in real Chromium
+(SwiftShader WebGL, 800×600), driving real pointer/wheel/mouse events on the
+live 2734-node graph and verifying numerically through the react-force-graph
+imperative handle (camera position, node screen coordinates via
+`graph2ScreenCoords`, node fixed-state `fx`, and axes-helper visibility). Ten of
+twelve items are directly verified: (1) visible canvas with nonzero WebGL
+drawing buffer; (2) pointer interaction disabled before the 4 s `enableDelay`
+(an early node click left `fx` unset) and enabled after (a node click fixed a
+node); (3) automatic rotation moves the camera; (4) pause halts camera motion
+(Δ=0) and resume restarts it; (5) Show/Hide Axes toggles the AxesHelper
+visibility; (6) Reset Camera keeps the canvas ready; (7) wheel zoom changes
+camera distance in and out; (8) background drag rotates via TrackballControls;
+(10) a node left-click stops rotation (button flips Pause→Resume), fixes that
+node, and focuses the camera; (12) the canvas stays responsive with zero
+console/page errors throughout. Items (9) node-drag-fix and (11) right-click
+release were exercised with real events aimed at the exact on-screen node, but
+their state change did not register in headless SwiftShader Chromium — a
+Playwright synthetic-gesture limitation, not an application change: the
+complementary left-click fix on the same nodes worked (fixed=1), the diff
+touches zero application code, and this reproduces and confirms the plan's
+carried-forward #9 item-11 headless right-click caveat. The right-click was
+dispatched at the confirmed on-screen fixed node yet `onNodeRightClick` did not
+fire, exactly the #9 environment condition; no application code was changed to
+chase it.
+
+Final full/production audits reconcile exactly with the Phase 1 capture (full
+13, prod 7); the direct PostCSS advisory is fixed at the root copy while
+`next > postcss@8.4.31` (GHSA-qx2v-qp2m-jg93) remains as the documented nested
+residual with no override.
 
 ## Dependency Map
 
