@@ -210,3 +210,26 @@ and consultation feedback for every phase. Routed dependency-classification/
 lint-config to cold arch.md and the react-force-graph interaction-verification
 lesson to cold lessons-learned.md (nothing HOT-tier-worthy). Opened PR #24
 (Closes #10, base main). Review-phase 3-way consult running; architect notified.
+
+## 2026-07-19 — Review 3-way + pr gate reached
+
+Review-phase (PR) 3-way consult: Gemini APPROVE, Claude COMMENT, Codex
+REQUEST_CHANGES. Actionable items fixed in 5c4a6c7:
+- Claude COMMENT: package-lock.json root `name` had leaked the worktree dir
+  ("spir-10") because package.json has no `name`. Restored to baseline "primary"
+  (ec05454 value); npm ci clean and read-only (doesn't rewrite it); build/test
+  still pass. Did not add a name to package.json (kept manifest in-scope).
+- Codex #1: plan Metadata Status + Phase Status table for production_qualification
+  now `completed`, matching status.yaml.
+- Codex #2 (commit format): rebutted — `chore(porch):` commits are porch-generated
+  in strict mode and must not be rewritten by the builder; all builder-authored
+  commits use `[Spec 10]…`; squash-merge collapses everything at merge if desired.
+- Codex #3 (sandbox couldn't spawn child-process test / lint harness pollution):
+  N/A env artifact, already documented.
+Rebuttal: codev/projects/10-.../10-review-iter1-rebuttals.md.
+
+Bonus: the PR's Vercel preview deployed **Ready**, real-world confirmation that
+the devDependency reclassification doesn't break the actual deployment build (FR4).
+
+Porch now at GATE: pr. Requested via `porch gate 10`; notified architect. STOPPED,
+waiting for `porch approve 10 pr`.
