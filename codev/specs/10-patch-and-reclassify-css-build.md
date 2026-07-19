@@ -17,7 +17,7 @@ The intended package actions are:
 | `tailwindcss` | `3.4.17` | `3.4.19` | Update; move to dev dependencies |
 | `autoprefixer` | `10.4.20` | `10.5.4` | Update; move to dev dependencies |
 | `@types/three` | `~0.172.0` | `~0.172.0` | Move to dev dependencies only; no version change |
-| `encoding` | `~0.1.13` | — | Remove (unused direct dependency) |
+| `encoding` | `~0.1.13` | — | Remove (unused direct dev dependency) |
 | `@types/node` | `~22.10.7` | `~22.20.1` | Patch within the Node 22 line |
 | `eslint` | `~9.18.0` | `~9.39.5` | Patch within ESLint 9 |
 | `@eslint/js` | `~9.18.0` | `~9.39.5` | Patch; keep aligned with `eslint` |
@@ -32,7 +32,10 @@ implementation begins. The targets come from the modernization research
 (registry checked 2026-07-17); that observation does not replace the required
 implementation-time verification. Each manifest entry keeps its existing
 range style: entries that are exact today stay exact, entries that carry a
-`~` range today keep a `~` range.
+`~` range today keep a `~` range. The `@eslint/compat` row is a scoped
+decision point governed by FR5 (keep a compatible 1.x only where still
+required), not a guaranteed manifest edit; the other twelve actions are
+determinate pending drift checks.
 
 Success means the direct PostCSS advisory copy is fixed, build/type-only
 packages are correctly classified without breaking the CI or deployment build,
@@ -207,9 +210,10 @@ The issue body fixes these decisions (baked by the architect):
 - `npm ci` is the clean-install proof. A successful pre-existing
   `node_modules` tree is not evidence.
 - Each updated manifest entry preserves its existing range style (exact stays
-  exact, `~` stays `~`). Only the two intentional lint-tool major updates
-  (`eslint-plugin-react-hooks` `5.1.0` → `7.1.1`, `globals` `15.x` → current)
-  cross a major boundary, and both are fixed by the issue.
+  exact, `~` stays `~`). The only direct entries crossing a major boundary are
+  the two intentional lint-tool updates fixed by the issue:
+  `eslint-plugin-react-hooks` `5.1.0` → `7.1.1` and `globals` `15.x` →
+  `17.x` (a two-major jump).
 - `eslint` and `@eslint/js` must remain on the same ESLint 9 line.
 - The updated Hooks plugin must declare a peer range that accepts the pinned
   ESLint 9 line; if it does not, that is drift — pause for architect
@@ -378,6 +382,11 @@ under the drift constraint before installation.
 - The review MUST document the evidence that the build environments install
   dev dependencies: CI runs `npm ci` (which includes dev dependencies) and
   the CI validation job runs the production build.
+- The repository is the only source of truth examined: it contains no
+  Dockerfile, hosting-platform configuration, or other deployment manifest,
+  so CI is the only repo-verifiable build environment. If the review relies
+  on any non-CI host assumption, it MUST name that source of truth
+  explicitly.
 - If any deployment host outside the repository is identified that installs
   with `--omit=dev`, reclassification MUST pause for architect confirmation.
   No such host configuration exists in the repository today.
@@ -691,7 +700,24 @@ separately reviewable from it. No further clarification was required.
 
 ### Initial three-way review
 
-Pending Porch-managed review.
+Gemini, Codex, and Claude all approved the specification with high confidence
+and no blocking issues. Incorporated feedback:
+
+- Codex: FR4 now states explicitly that the repository is the only source of
+  truth examined for build environments, and that any non-CI host assumption
+  must name its source of truth.
+- Codex: the Summary now notes that the `@eslint/compat` row is a conditional
+  decision point governed by FR5, not a guaranteed manifest edit.
+- Claude: the target table now says `encoding` is an unused direct **dev**
+  dependency, and the Constraints spell out that `globals` crosses two majors
+  (`15.x` → `17.x`) while Hooks crosses `5` → `7`.
+- Claude verified the spec's factual claims against the codebase (manifest
+  classifications, `fixupPluginRules` usage, exact-vs-range styles, and that
+  `npm run validate` does not run `npm test` — FR7 lists them separately by
+  design).
+- Gemini endorsed the FR11 contract-test expansion for classification
+  invariants and the FR10 nested-PostCSS residual handling; no changes
+  requested.
 
 ### Post-feedback three-way review
 
