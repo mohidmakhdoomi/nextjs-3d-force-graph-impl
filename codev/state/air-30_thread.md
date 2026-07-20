@@ -90,3 +90,13 @@ Human gate decision: approve AFTER hardening. Applied:
 - Two prior PR #32 runs already completed **success in 6m13s / 6m10s** wall clock
   (down from ~15m) — sharded design proven on CI, target ≤~6m met.
 - Watching the post-hardening run 29781097474 to green, then re-request the pr gate.
+
+### Post-hardening run 29781194428: shard 2 flaked (re-running)
+- Shard 2/4 failed on `matrix.spec.ts:235` click-to-focus: camera-motion predicate
+  `toBeGreaterThan(MOTION_FLOOR)` timed out (10s poll) — documented SwiftShader
+  timing flakiness, NOT a regression. Same test passed in the two prior CI runs
+  (6m10s/6m13s) and locally (1.8m). `retries: 0` (unchanged from original) means
+  one flake fails the shard. Gate correctly went RED — hardening confirmed working.
+- Sharding improves flake recovery: re-run one ~5.6m shard, not the whole 14m suite.
+- Action: `gh run rerun 29781194428 --failed` (shard 2 + dependent gate). If it
+  flakes again → escalate to architect (per "2 failures, get outside perspective").
