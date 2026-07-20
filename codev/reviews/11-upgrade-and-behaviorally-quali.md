@@ -196,6 +196,8 @@ The hot `arch-critical.md` already carries the general reproducibility
 contract (exact toolchain + `npm ci`) that governs this class of change; no
 hot-tier displacement was needed.
 
+## Lessons Learned Updates
+
 Refined two existing entries in the **cold** `lessons-learned.md` under
 **Validation Evidence** rather than appending duplicates (the baseline-replay
 and imperative-handle lessons already existed; this project sharpened both):
