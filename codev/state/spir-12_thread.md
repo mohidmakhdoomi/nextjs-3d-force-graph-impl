@@ -80,3 +80,77 @@ REQUEST_CHANGES. Applied all feedback:
   16.x (`nextPlugin.configs.recommended.rules`, `configs['core-web-vitals'].rules`).
 Committed "Plan with multi-agent review". Next: porch → plan-approval GATE →
 notify architect and STOP.
+
+## Plan-approval gate — APPROVED (2026-07-20)
+Architect approved the plan (3 phases, one rollback unit), restarted me fresh, and
+told me to resume via porch into Implement. `porch next 12` transitioned to
+implement / plan_phase=framework_upgrade (iter 1).
+
+## Implement Phase 1 — framework_upgrade (2026-07-20)
+Scope: FR1, FR2, FR3, FR4, FR12 (+ FR13 rollback unit). Fresh worktree =
+node_modules ABSENT at start; lockfile baseline correctly locks next@15.5.20 /
+react@19.2.7 / plugin@15.5.20.
+
+**FR1 reverify (registry, under pinned toolchain):** PASS, no escalation.
+- `next` + `@next/eslint-plugin-next` `latest` = 16.2.10 (both). No superseding
+  stable 16.x (16.3.0 only preview/canary). `backport` = 15.5.20 (rollback tgt).
+- next@16.2.10 `engines.node >=20.9.0` admits 22.23.1; React peer `^19.0.0` admits
+  19.2.7; all non-React peers (sass, @playwright/test ^1.51.1, @opentelemetry/api,
+  babel-plugin-react-compiler) are peerDependenciesMeta.optional → no NEW required
+  peer. Playwright 1.61.1 satisfies the new optional peer.
+
+**FR2 codemod — run & curated.** `@next/codemod upgrade 16.2.10` orchestrator is a
+TTY multi-select (can't complete under builder non-TTY stdin; also self-installs,
+bypassing the pinned single-`npm install`). Recommended 5 codemods; reviewed each:
+- 4 jscodeshift transforms (remove-experimental-ppr, remove-unstable-prefix,
+  middleware-to-proxy, next-experimental-turbo-to-turbopack) → dry-run over whole
+  tree = 0 modified / 13 unmodified. Zero source changes (matches minimal surface).
+- `next-lint-to-eslint-cli` is an orchestrator that IGNORES --dry: it added
+  eslint-config-next@^15.5.20 (out-of-scope new dep, 15.x) + rewrote
+  eslint.config.mjs to `[...next, ...nextCoreWebVitals, ...nextTypescript]`
+  (broadens rule surface). **REVERTED entirely** — not applicable (repo already on
+  the #7 `eslint .` path w/ direct @next/eslint-plugin-next wiring). Curated out
+  per FR2/FR4. Net accepted codemod source/config change: NONE.
+Version bump + lockfile settle done by hand-reconciliation per the plan's toolchain
+discipline (not the orchestrator's self-install).
+
+**FR3 manifest+lockfile.** package.json next→16.2.10 (deps), plugin→16.2.10
+(devDeps); one `npm install` under Node 22.23.1/npm 10.9.8. Verified: lockfile v3;
+resolved next/plugin=16.2.10 (string-equal); react/react-dom unchanged 19.2.7;
+single three@0.185.1 (deduped, no nested); root deps/devDeps mirror manifest; NO
+peer warnings. `npm ci` = perfect no-op (lockfile md5 identical before/after 2nd
+ci). Nested next-owned postcss@8.4.31 persists (expected; FR10 disposition = Ph3).
+
+**FR4 obsolete idioms.** dev → `next dev` (dropped --turbopack). No `next lint` in
+scripts/CI(.github/workflows/validation.yml)/anywhere; lint stays `eslint .`.
+Plugin 16.2.10 `configs.recommended.rules` (21) & `configs['core-web-vitals'].rules`
+(21) resolve as spreadable objects → flat-config export-shape intact under 16.x.
+
+**FR12 contract tests.** toolchain.test.mjs expectedDependencyBaseline next+plugin
+15.5.20→16.2.10 (string-equality + lockfile-v3/Node assertions preserved).
+
+**DEVIATION (documented, FR6): tsconfig.json.** `next build` (Next 16) makes a
+mandatory tsconfig change: `jsx: "preserve"` → `"react-jsx"` (React automatic
+runtime) + suggested include `.next/dev/types/**/*.ts` (Turbopack dev types).
+Behavior-preserving (tsc is noEmit; jsx only affects type-check handling — typecheck
+passes both ways). Committed the minimal semantic form (2 edits, original
+formatting); verified BUILD-STABLE (2nd build leaves tsconfig untouched, no
+reconfigure msg). Not in the plan's expected file list but strictly forced by the
+Next 16 build → belongs in this rollback unit.
+
+**Environmental notes (NOT project issues, NOT committed):**
+- `npm run lint` in-worktree flags only the untracked harness file
+  `.claude/hooks/worktree-write-guard.cjs` (not in HEAD, not gitignored, absent in
+  clean CI checkouts). Project source lints CLEAN under 16.x plugin
+  (`eslint . --ignore-pattern .claude/**` = exit 0). Did NOT touch eslint.config.mjs
+  (out-of-scope + FR4 forbids new suppressions).
+- `next build` warns about multiple lockfiles (parent main-checkout + nested
+  worktree) and infers parent as turbopack root — artifact of nested-worktree
+  topology; absent in clean CI. Not silenced (would need an out-of-scope
+  `turbopack.root` path in config; spec keeps config effectively empty).
+
+**Phase 1 gates:** lint (project source exit 0) ✓ · typecheck exit 0 ✓ · npm test
+21/21 ✓ · Turbopack build exit 0 ✓ · next start root `/` HTTP 200 ✓ · npm ci no-op ✓.
+Files changed: package.json, package-lock.json (48/48 framework-only delta,
+registry URLs), tests/toolchain.test.mjs, tsconfig.json. Next: commit phase →
+`porch done 12` (checks + 3-way consult on the committed diff).
