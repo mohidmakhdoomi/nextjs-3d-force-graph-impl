@@ -52,3 +52,17 @@ Writing the spec now.
 
 Spec updated + Consultation Log written. Committing "Specification with multi-agent review",
 then `porch next 13` to advance toward the spec-approval gate.
+
+## GATE REACHED: `spec-approval` (STOP — human approval required)
+`porch next 13` → `gate_pending`. All reviewers approved (gemini APPROVE, codex
+COMMENT [non-blocking], claude APPROVE). Porch advanced to the `spec-approval`
+gate and is WAITING FOR HUMAN APPROVAL. Per strict mode I STOP here and do NOT run
+`porch approve` — only the architect approves gates. Architect notified via afx send.
+
+Open elections for the architect at this gate (overridable here, else confirmed):
+1. Hooks coverage: DEFAULT = coverage-preserving (2 effective rules via the existing
+   flat-native explicit registration) vs. adopt the 16/17-rule recommended preset.
+2. typescript-eslint: retain 8.64.0 (researched) vs. take 8.65.0 patch (same TS <6.1 range).
+
+On approval: `porch approve 13 spec-approval --a-human-explicitly-approved-this`
+(architect-run), then `porch next 13` → Plan phase.
