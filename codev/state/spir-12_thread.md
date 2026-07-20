@@ -152,5 +152,25 @@ Next 16 build → belongs in this rollback unit.
 **Phase 1 gates:** lint (project source exit 0) ✓ · typecheck exit 0 ✓ · npm test
 21/21 ✓ · Turbopack build exit 0 ✓ · next start root `/` HTTP 200 ✓ · npm ci no-op ✓.
 Files changed: package.json, package-lock.json (48/48 framework-only delta,
-registry URLs), tests/toolchain.test.mjs, tsconfig.json. Next: commit phase →
-`porch done 12` (checks + 3-way consult on the committed diff).
+registry URLs), tests/toolchain.test.mjs, tsconfig.json. Committed aae97b8;
+`porch done 12` checks passed (build ✓ tests ✓).
+
+### Phase 1 iter1 — 3-way consult
+Gemini APPROVE (high), Codex APPROVE (high), Claude REQUEST_CHANGES (high).
+Claude's finding is VALID: my worktree `npm install` rewrote package-lock.json
+top-level `"name": "primary"` → `"spir-12"` (npm derives it from the containing
+dir since package.json has no `name`). Canonical baseline (parent, merge-base,
+main) is all `"primary"`; the change was worktree contamination, not a framework
+delta. (My first self-check was fooled by diffing working-tree-vs-own-commit;
+diffing my commit vs its parent confirmed the change.) FIXED: restored line 2 to
+`"name": "primary"`. Verified npm ci exit 0 keeps name=primary (ci never rewrites
+the lock), no name delta vs parent, build ✓, tests 21/21 ✓.
+
+Delivery of the fix: I first tried to fold it into the phase commit via amend +
+restructure, but the remote enforces a **no-force-push rule** on builder branches
+(GH013 repo rule), so rewriting the already-pushed `aae97b8` is impossible. Per
+the SPIR guidance ("if changes are needed after commit, create a new commit with
+fixes"), the fix lands as a **follow-up content commit on top of `aae97b8`**
+(`[Spec 12][Phase: framework_upgrade] fix: restore lockfile name …`). The
+cumulative branch content is correct (name=primary); the eventual PR diff (branch
+vs main) is clean. Re-consult next.
