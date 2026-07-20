@@ -354,3 +354,8 @@ pr-gate approval on CI green.
 Added #33 cross-reference to review ## Flaky Tests. NOTE: this is a new commit that
 supersedes a37b4f5, so the CI run the architect pinned (29780353327) is superseded by a
 fresh run on the new HEAD. Pushing + notifying architect to track the new run for pr-gate approval.
+
+## CI GREEN on acfb6b1 (superseding run 29780570233)
+validation=pass (15m7s), Vercel=pass, Vercel Preview Comments=pass. All PR #31 checks green
+on the current HEAD acfb6b1 (branch 0 behind main, merged tree, #33 referenced). Confirmed to
+architect; awaiting pr-gate approval. On approval: merge PR #31 → porch done 13 --merged 31 → Verify.
