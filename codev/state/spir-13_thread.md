@@ -291,3 +291,14 @@ tests/orbit-camera.test.mjs (new), bugfix-27 project files. ZERO overlap with my
 config/doc changes; NO package.json/package-lock.json change on main → clean merge, TS6 lockfile
 unaffected. New app .ts + tests/*.mjs fall cleanly under my ESLint scoped globs. Surfacing the
 integration-timing decision to the architect (their call).
+
+## GATE REACHED: `pr` (STOP — human approval required)
+PR consultation passed: gemini APPROVE, codex COMMENT (non-blocking), claude APPROVE.
+Porch advanced to the `pr` gate and is WAITING FOR HUMAN APPROVAL. Strict mode: I STOP,
+do NOT run porch approve. Architect notified.
+Open integration decision for the architect: branch is 8 behind main (bugfix-27 / PR #29),
+conflict-free, no manifest/lock delta on main. Options: (a) I merge origin/main into the
+branch + re-qualify before merge, or (b) merge PR #31 then re-qualify in the Verify phase
+(which pulls the integration branch). Awaiting architect direction.
+On approval: architect runs `porch approve 13 pr --a-human-explicitly-approved-this`; then
+I merge PR #31 (per role), record `porch done 13 --merged 31`, and enter Verify.
