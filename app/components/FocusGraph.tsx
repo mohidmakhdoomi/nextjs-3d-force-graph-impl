@@ -9,6 +9,7 @@ import ForceGraph3D, {
 import {AxesHelper, PerspectiveCamera} from "three";
 import {TrackballControls} from 'three/addons/controls/TrackballControls.js';
 import {createFocusGraphResources} from "./focusGraphResources";
+import {orbitCameraStep} from "./orbitCamera";
 
 function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: number }) {
     const fgRef = useRef<ForceGraphMethods>(undefined);
@@ -45,9 +46,11 @@ function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: numb
             }
 
             const currentCamera = currentGraph.camera() as PerspectiveCamera;
-            const up = currentCamera.up.clone();
-            currentCamera.position.applyAxisAngle(up, -Math.PI / 300);
-            currentCamera.rotateOnAxis(up, -Math.PI / 300);
+            const currentControls = currentGraph.controls() as TrackballControls;
+            // Re-aim at the controls' orbit target every tick so the rotation
+            // stays centered without relying on TrackballControls.update()
+            // (skipped while controls are disabled during a node drag) — issue #27.
+            orbitCameraStep(currentCamera, currentControls.target, -Math.PI / 300);
         });
     }, [resources]);
 
