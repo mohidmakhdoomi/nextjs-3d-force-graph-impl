@@ -23,18 +23,19 @@ gates:
     requested_at: '2026-07-20T19:47:34.466Z'
     approved_at: '2026-07-20T19:48:16.676Z'
   pr:
-    status: pending
+    status: approved
     requested_at: '2026-07-20T21:02:35.469Z'
+    approved_at: '2026-07-20T21:48:30.542Z'
   verify-approval:
     status: pending
 iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-20T19:19:43.841Z'
-updated_at: '2026-07-20T21:02:35.470Z'
+updated_at: '2026-07-20T21:48:30.543Z'
 pr_history:
   - phase: review
     pr_number: 31
     branch: builder/spir-13
     created_at: '2026-07-20T20:57:03.917Z'
-pr_ready_for_human: true
+pr_ready_for_human: false
