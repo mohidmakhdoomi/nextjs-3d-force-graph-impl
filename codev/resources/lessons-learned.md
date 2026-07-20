@@ -61,3 +61,12 @@ gotcha, or constraint.
   committing — it is worktree contamination, not a dependency delta, and it muddies
   the lockfile diff. `npm ci` never rewrites the lockfile, so once corrected the
   value is stable for clean reproduction.
+- The builder worktree ships **without** `node_modules`, so verifying an installed
+  package's behavior (plugin rule counts, config shapes, parser warnings, peer
+  ranges) via a bare `require('<pkg>')` silently resolves the **parent checkout's**
+  `node_modules`, which can carry **stale** pre-branch versions — e.g. a bare
+  `require('eslint-plugin-react-hooks')` resolving the parent's `5.1.0` (2 rules)
+  instead of the manifest-pinned `7.1.1` (16/17/29 rules). This produced a
+  contradictory reviewer reading during a spec consultation. Verify installed-package
+  facts only after a real `npm ci` in the worktree (or an isolated version-exact
+  probe), never a bare `require`.

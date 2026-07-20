@@ -260,3 +260,15 @@ still holds for the current tree; b400853/144562a touch only README + thread.
   status metadata internally consistent for an in-progress review cycle.
 - Claude: APPROVE (HIGH) — accurate docs, all qualification evidence captured, all prior feedback resolved.
 All three implement phases now consultation-approved. Advancing porch → Review phase.
+
+## Review phase
+All 3 implement phases committed + consultation-approved. Wrote review
+codev/reviews/13-adopt-typescript-6-and-finaliz.md (spec-compliance FR1-13, deviations,
+lessons, full consultation feedback across specify/plan/impl phases, required
+Architecture Updates + Lessons Learned Updates sections, flaky=none, follow-ups).
+Arch/lessons routing (both COLD; hot caps untouched, maps already point to targets):
+- arch.md "Dependency Classification and Lint Config": finalized config state (TS6 exact
+  target + <6.1.0 peer bound + TS7/ESLint10 deferral; native React flat; scoped globals).
+- lessons-learned.md "Toolchain and Worktree Hygiene": no-node_modules bare-require trap
+  (Confirmed Decision #8). The lockfile-name contamination lesson was already present (#12).
+Next: commit review+docs, open the single PR (all 3 phase commits), porch done → PR consultation.

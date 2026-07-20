@@ -37,12 +37,29 @@ runtime or de-align the types. Any such upgrade is one atomic rollback unit
 (manifest + lockfile + code + contract tests) and must be re-qualified against
 the two-engine interaction matrix, not just install/build success.
 
-The ESLint flat config (`eslint.config.mjs`) uses
-`eslint-plugin-react-hooks` v7's native flat-config support (no
-`@eslint/compat`/`fixupPluginRules`) and pins the intended Hooks rule set
-explicitly (`react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`) rather
-than spreading `configs.recommended`, whose v7 form bundles ~16 rules — spreading
-it would silently expand coverage.
+The language target is TypeScript **6** — `typescript` is exact-pinned on the 6.x
+line (currently `6.0.3`); `tests/toolchain.test.mjs` enforces the exact pin and
+asserts the resolved `typescript-eslint` parser peer admits it and excludes
+`6.1.0`+. TypeScript 7 is deferred pending `typescript-eslint` parser support (its
+TS peer stops `<6.1.0`); ESLint 10 is a separate peer experiment — the lint stack
+stays on ESLint 9.
+
+The ESLint 9 flat config (`eslint.config.mjs`) is finalized on native flat-config
+surfaces (no `@eslint/compat`/`fixupPluginRules`): React via `eslint-plugin-react`'s
+`configs.flat.recommended` (replacing the legacy `configs/recommended.js` eslintrc
+shim; rule-identical), and `eslint-plugin-react-hooks` v7's native registration with
+the intended Hooks rule set pinned explicitly (`react-hooks/rules-of-hooks`,
+`react-hooks/exhaustive-deps`) rather than spreading `configs.recommended`/
+`recommended-latest`, whose v7 forms bundle 16/17 rules — spreading would silently
+expand coverage. Globals are scoped by file group instead of one un-scoped block:
+`globals.browser` for the `app/**` client island; `globals.node` for the Node/ESM
+toolchain files; `globals.node`+`globals.commonjs`/`sourceType:"commonjs"` for the
+`module.exports` config files (selected by explicit glob, including the `.ts`-but-
+CommonJS `tailwind.config.ts` — not a `.ts`=ESM heuristic); and both sets for the
+mixed `tests/e2e/**` (Node runner + in-page `page.evaluate` bodies). Coverage
+equivalence across a config restructure is proven with before/after
+`eslint --print-config`, and `tests/toolchain.test.mjs` still enforces exactly one
+`files`-less global-ignore block (generated output only).
 
 ## Framework and Bundler Baseline
 
