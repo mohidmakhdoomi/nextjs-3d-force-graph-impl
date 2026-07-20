@@ -277,3 +277,17 @@ Next: commit review+docs, open the single PR (all 3 phase commits), porch done �
 https://github.com/mohidmakhdoomi/nextjs-3d-force-graph-impl/pull/31
 Closes #13, Part of #6. Body summarizes all 3 phases + full qualification evidence.
 Running porch done 13 --pr 31 → PR 3-way consultation, then architect PR-gate review.
+
+## Review/PR — 3-way PR consultation (iter 1): Gemini APPROVE, Claude APPROVE, Codex COMMENT
+- Gemini: APPROVE (HIGH) — TS6 adoption + ESLint9 modernization as specified, strong evidence discipline.
+- Claude: APPROVE (HIGH) — minimal code changes, thorough evidence, ready for integration review.
+- Codex: COMMENT (MEDIUM, non-blocking) — no blocking code issues. Only substantive note: branch
+  is 8 commits behind main. (Other notes = known sandbox limits: worktree lint polluted by
+  untracked .claude/hooks/*.cjs [proven clean on clean checkout]; audit-report test needs writable
+  temp [passes locally].)
+Branch-behind analysis: main advanced via bugfix-27 merge (PR #29, graph auto-rotation fix).
+Main-side files: app/components/FocusGraph.tsx, app/components/orbitCamera.ts (new),
+tests/orbit-camera.test.mjs (new), bugfix-27 project files. ZERO overlap with my toolchain/
+config/doc changes; NO package.json/package-lock.json change on main → clean merge, TS6 lockfile
+unaffected. New app .ts + tests/*.mjs fall cleanly under my ESLint scoped globs. Surfacing the
+integration-timing decision to the architect (their call).
