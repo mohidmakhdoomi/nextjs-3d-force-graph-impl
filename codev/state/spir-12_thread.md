@@ -345,3 +345,72 @@ commits. Advancing to Phase 3 `evidence_disposition_and_docs` (FR10 audit/lockfi
 delta, FR11 supply-chain, FR6/FR10 PostCSS disposition, FR12 docs). Ph3 will need
 the audit counts captured here: full {mod 7, high 4, total 11}; production {mod 5,
 high 0, total 5}.
+
+## Implement Phase 3 — evidence_disposition_and_docs (COMPLETE)
+Evidence + docs phase. Baseline = merge-base with main `58f04bb` (next 15.5.20).
+Real source change this phase: `README.md` line 6 only. Evidence (FR10/FR11) is
+destined for the review; captured here.
+
+**FR10 lockfile delta — CLEAN, framework-only.** `git diff 58f04bb HEAD`:
+package.json (next 15.5.20→16.2.10 deps, plugin 15.5.20→16.2.10 devDeps, `dev`
+drops `--turbopack`), package-lock.json, tests/toolchain.test.mjs (Ph1 pin),
+tsconfig.json (Ph1 jsx/dev-types deviation). Structured lockfile `packages`-map
+diff (baseline vs HEAD): **11 changed, 0 added, 0 removed**, lockfileVersion stays
+3. Every changed entry is Next-owned, all 15.5.20→16.2.10:
+`next`, `@next/env`, `@next/eslint-plugin-next`, and 8× `@next/swc-*` platform
+binaries (darwin-arm64/x64, linux-arm64-gnu/musl, linux-x64-gnu/musl,
+win32-arm64-msvc/x64-msvc). React/DOM (19.2.7), three (0.185.1), and all other
+transitives UNCHANGED. Framework changes relevant to this app: bundler default
+(Turbopack for dev+build), `next lint` removed, Node floor >=20.9.0, browser floor
+Chrome/Edge/FF 111 + Safari 16.4 (all FR7).
+
+**FR10 audit delta — BYTE-IDENTICAL before/after (upgrade is audit-neutral).**
+`npm audit --package-lock-only` on baseline (15.5.20) vs HEAD (16.2.10), full &
+production, original exit codes preserved (both exit 1 = advisories present, not a
+zero-gate):
+- FULL: baseline {mod 7, high 4, total 11} == HEAD {mod 7, high 4, total 11}; same
+  11 advisory names (@vercel/analytics, @vercel/speed-insights, brace-expansion,
+  flatted, geist, glob, minimatch, next, picomatch, postcss, yaml).
+- PRODUCTION: baseline {mod 5, high 0, total 5} == HEAD {5}; same names
+  (@vercel/analytics, @vercel/speed-insights, geist, next, postcss).
+- Advisory paths **resolved by upgrade: 0 · introduced: 0 · unchanged: all**.
+- The `next` (moderate, `via: postcss`) and `postcss`
+  (GHSA-qx2v-qp2m-jg93, XSS via unescaped `</style>` in CSS stringify, range
+  `<8.5.10`) advisories BOTH trace to the Next-bundled nested postcss (below); npm's
+  only offered "fix" is a bogus `next@9.3.3` MAJOR DOWNGRADE (`isSemVerMajor`) — no
+  forward fix, i.e. not app-fixable. @vercel/analytics/@vercel/speed-insights/geist
+  = pre-existing app-dep advisories (unchanged). Dev-only (full∖prod):
+  brace-expansion, flatted, glob, minimatch, picomatch, yaml (pre-existing
+  toolchain, unchanged).
+
+**Nested PostCSS disposition (FR10) — Next-owned residual, carried forward.**
+`node_modules/next/node_modules/postcss@8.4.31` is present in BOTH baseline and
+HEAD (identical); `next@16.2.10` still pins it. It is Next-owned (nested under
+`next/`), NOT app-controllable in this stage. The app's OWN top-level
+`postcss@8.5.19` is patched (≥8.5.10, not in the advisory range) — so the postcss
+advisory path is solely the Next-bundled 8.4.31. Disposition: documented build-time
+residual, neither a new nor a closed finding; unchanged by this upgrade; identical
+to the pre-upgrade state. Not app-fixable without an out-of-scope override.
+
+**FR11 supply-chain — CLEAN.** For all 11 changed entries: `resolved` →
+`registry.npmjs.org` ONLY (no git/tarball/alt-registry). Install-script deltas:
+0 changed entries gained an install script; 0 added entries (none added) → no new
+install scripts introduced. Pre-existing unchanged install scripts in the subgraph:
+the `@next/swc-*` binaries carry none (`hasInstallScript:false` both versions), so
+nothing to re-enumerate. `npm ci` at HEAD = perfect no-op: exit 0, lock md5
+`b2cc530…` identical before/after, name stays `primary`, zero manifest/lock git
+diff.
+
+**FR12 docs/enumerations.** README line 6 updated: "Updated for React 19 and Next
+15…" → "React 19 and Next 16 Active LTS; production builds (`npm run build`) use the
+default Turbopack bundler…" (was not asserted by `automation.test.mjs` but would
+otherwise be false). No `--turbopack` dev flag or `next lint` mention existed in the
+README to remove. `tests/toolchain.test.mjs` next/plugin pins already moved
+15.5.20→16.2.10 in Ph1. `npm test` = **21/21** (automation.test.mjs README/script/CI
+enumerations + toolchain + audit-report all green). Raw audit JSON stays local/CI
+evidence, not committed.
+
+**Phase 3 commit contents:** README.md (line 6) + this thread evidence. Consult
+next. (The formal review doc `codev/reviews/12-*.md` is authored in the SPIR Review
+phase that porch drives after Implement; this phase assembles the tables above for
+it.)
