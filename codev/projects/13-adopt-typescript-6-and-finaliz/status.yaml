@@ -27,7 +27,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 2
-build_complete: false
+build_complete: true
 history:
   - iteration: 1
     plan_phase: qualification_evidence_docs
@@ -46,4 +46,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-13/codev/projects/13-adopt-typescript-6-and-finaliz/13-qualification_evidence_docs-iter1-claude.txt
 started_at: '2026-07-20T19:19:43.841Z'
-updated_at: '2026-07-20T20:44:23.845Z'
+updated_at: '2026-07-20T20:44:58.392Z'
