@@ -25,6 +25,7 @@ export default [
             "next-env.d.ts",
             "playwright-report/**",
             "test-results/**",
+            "blob-report/**",
         ],
     },
     {settings: {

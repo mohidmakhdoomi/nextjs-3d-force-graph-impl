@@ -6,14 +6,24 @@ of any work that introduces or changes architectural patterns.
 ## Validation Baseline
 
 The repository's reproducibility contract is Node.js `22.23.1`, npm `10.9.8`,
-lockfile v3, and clean `npm ci`. GitHub Actions runs contract tests plus the
-shared `npm run validate` gate, whose real production-server two-engine
-(Chromium and Firefox) smoke checks WebGL and the core controls in both engines. Full and production npm audits are separate
-evidence: CI validates their JSON/original status and uploads them without
-turning existing advisory totals into a zero-findings gate. Contributor commands
-and artifact names live in `README.md`; implementation details live in
-`.github/workflows/validation.yml`, `playwright.config.ts`, and
-`scripts/validate-audit-report.mjs`.
+lockfile v3, and clean `npm ci`. `npm run validate` is the single-command local
+green gate, whose real production-server two-engine (Chromium and Firefox) smoke
+checks WebGL and the core controls in both engines. GitHub Actions does **not**
+run that one command; it runs a **contract-equivalent decomposition** of it,
+parallelized to cut wall clock (~15 min → ~5–6 min): a `quality` job (lint +
+typecheck + `npm test` + audit evidence) and an `e2e` matrix that builds and
+runs the FULL Playwright suite split at the test level across four Chromium
+shards (`playwright.config.ts` sets `fullyParallel: true` while keeping
+`workers: 1`, so each shard is strictly serial). The decomposition drops no
+check: lint, typecheck, build, and every e2e test still run, the Chromium engine
+gate is pinned via `E2E_ENGINES=chromium`, and a `gate` job gives a single
+required status. Do not raise `workers` or trim the qualified per-test waits —
+the SwiftShader timing environment (one test at a time) is what the decomposition
+preserves. Full and production npm audits are separate evidence: CI validates
+their JSON/original status and uploads them without turning existing advisory
+totals into a zero-findings gate. Contributor commands and artifact names live in
+`README.md`; implementation details live in `.github/workflows/validation.yml`,
+`playwright.config.ts`, and `scripts/validate-audit-report.mjs`.
 
 ## Dependency Classification and Lint Config
 

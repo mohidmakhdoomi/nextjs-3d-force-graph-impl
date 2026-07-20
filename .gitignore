@@ -10,6 +10,8 @@
 /coverage
 /playwright-report/
 /test-results/
+/blob-report/
+/all-blob-reports/
 
 # next.js
 /.next/

@@ -70,15 +70,30 @@ export default defineConfig({
     // headroom over the local budget; local timing is unchanged. (The
     // click-to-focus test keeps its own explicit 240 s override either way.)
     timeout: process.env.CI ? 240_000 : 120_000,
-    fullyParallel: false,
+    // `fullyParallel` marks every test as an independently schedulable unit so
+    // `--shard` splits the suite at the TEST level (not the file level). With
+    // `workers: 1` still pinned, execution within any single job stays strictly
+    // serial — one test at a time, no SwiftShader CPU contention — so the
+    // qualified timing environment is unchanged. CI fans the shards out across
+    // parallel jobs; local `npm run validate` still runs one worker start to
+    // finish. Do NOT raise `workers`: in-job parallelism reintroduces the
+    // contention these timing-sensitive assertions were qualified against.
+    fullyParallel: true,
     workers: 1,
     retries: 0,
     forbidOnly: Boolean(process.env.CI),
     outputDir: "test-results",
-    reporter: [
-        ["list"],
-        ["html", {outputFolder: "playwright-report", open: "never"}],
-    ],
+    // Local/default: human-readable `list` + a self-contained HTML report.
+    // Sharded CI sets PLAYWRIGHT_BLOB_REPORT so each shard emits a machine
+    // `blob` report that the `merge-reports` job stitches into one HTML report;
+    // `list` is kept for live per-shard console output. Env unset ⇒ behavior is
+    // byte-for-byte the previous local contract.
+    reporter: process.env.PLAYWRIGHT_BLOB_REPORT
+        ? [["list"], ["blob"]]
+        : [
+              ["list"],
+              ["html", {outputFolder: "playwright-report", open: "never"}],
+          ],
     use: {
         baseURL,
         trace: "retain-on-failure",

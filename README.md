@@ -89,22 +89,37 @@ valid advisory evidence.
 ### Continuous integration
 
 GitHub Actions runs on pull requests and pushes to `main` using the same exact
-Node/npm contract, `npm ci`, `npm test`, and `npm run validate`. CI enforces the
-Chromium (SwiftShader) WebGL arm as the deterministic gate — it installs Chromium
-plus its Linux dependencies with:
+Node/npm contract and `npm ci`. Locally, `npm run validate` is the one-command
+green gate; in CI that gate is run as a **contract-equivalent decomposition**
+across parallel jobs to cut wall clock (~15 min → ~5–6 min) without dropping any
+check:
+
+- **`quality`** — `npm run lint`, `npm run typecheck`, `npm test`, and both
+  audit captures.
+- **`e2e`** — the production build plus the full Playwright suite, split at the
+  test level across four Chromium shards (`--shard=1/4 … 4/4`). Each shard runs
+  strictly serially (`workers: 1`); `playwright.config.ts` sets
+  `fullyParallel: true` so `--shard` splits per test rather than per file.
+- **`merge-reports`** — stitches the per-shard blob reports into one HTML report.
+- **`gate`** — a single required status that succeeds only when `quality` and
+  `e2e` both pass.
+
+CI enforces the Chromium (SwiftShader) WebGL arm as the deterministic gate — each
+shard installs Chromium plus its Linux dependencies with:
 
 ```sh
 npm exec -- playwright install --with-deps chromium
 ```
 
-and runs the Validate step with `E2E_ENGINES=chromium`. Firefox has no
-SwiftShader equivalent and cannot create a WebGL context on GPU-less runners, so
-the Firefox arm of the two-engine matrix stays a documented **local**
+(the browser download is cached at `~/.cache/ms-playwright`, keyed on the
+Playwright version) and runs its shard with `E2E_ENGINES=chromium`. Firefox has
+no SwiftShader equivalent and cannot create a WebGL context on GPU-less runners,
+so the Firefox arm of the two-engine matrix stays a documented **local**
 qualification gate: `npm run browser:install` and `npm run validate` (with
 `E2E_ENGINES` unset) exercise both engines locally. See
 `codev/reviews/11-upgrade-and-behaviorally-quali.md` ("CI Enforcement vs. Local
 Qualification").
 
 On every run it uploads the two audit artifacts. When Playwright produces
-diagnostics, the workflow also uploads stable `playwright-report` and
-`playwright-test-results` artifacts.
+diagnostics, the workflow also uploads the merged `playwright-report` and the
+per-shard `playwright-test-results-<n>` artifacts.
