@@ -26,8 +26,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 1
-build_complete: true
+iteration: 2
+build_complete: false
 history:
   - iteration: 1
     plan_phase: firefox_second_engine
@@ -45,5 +45,21 @@ history:
         verdict: REQUEST_CHANGES
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-11/codev/projects/11-upgrade-and-behaviorally-quali/11-firefox_second_engine-iter1-claude.txt
+  - iteration: 1
+    plan_phase: matrix_suite_baseline
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-11/codev/projects/11-upgrade-and-behaviorally-quali/11-matrix_suite_baseline-iter1-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-11/codev/projects/11-upgrade-and-behaviorally-quali/11-matrix_suite_baseline-iter1-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-11/codev/projects/11-upgrade-and-behaviorally-quali/11-matrix_suite_baseline-iter1-claude.txt
 started_at: '2026-07-19T18:32:47.973Z'
-updated_at: '2026-07-20T07:09:34.273Z'
+updated_at: '2026-07-20T07:20:43.073Z'
