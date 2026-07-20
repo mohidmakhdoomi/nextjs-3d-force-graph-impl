@@ -186,3 +186,9 @@ that .cjs no longer gets CJS globals under scoped config — still not project s
 Clean-checkout proof at a3f375d (worktree add --detach + npm ci): `eslint .` EXIT 0 zero
 output (no parser warning, no suppression), typecheck 0, tests 22/22.
 Next: commit thread, porch done 13 → porch next 13 (3-way Phase 2 consultation).
+
+## Phase 2 — 3-way implement consultation (iter 1): UNANIMOUS APPROVE (HIGH)
+- Gemini: APPROVE (HIGH) — globals scoped by file group, React→flat, coverage preserved. No issues.
+- Codex: APPROVE (HIGH) — modernized, globals properly scoped, Hooks preserved, ignore invariant holds. No issues.
+- Claude: APPROVE (HIGH) — FR5/6/7/12 verified line-by-line; print-config equivalence, no silent changes. No issues.
+No feedback. Running `porch next 13` → Phase 3 (qualification_evidence_docs).
