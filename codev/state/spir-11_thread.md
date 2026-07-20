@@ -202,3 +202,72 @@
 - **Phase 2 gates all green**: `npm run typecheck` (0), `npm test` (19/19),
   `eslint .` (0, via the hooks-aside dance for the untracked worktree-write
   guard), `npm run build` (0). Ready to signal porch and enter 3-way review.
+
+## 2026-07-20 — Phase 2 review passed; Phase 3 (dependency upgrade) applied
+
+- **Phase 2 review: unanimous APPROVE at iter2.** iter1 was Gemini/Claude
+  APPROVE, Codex REQUEST_CHANGES (items 4 & 9 "downgraded" to numeric/scripted).
+  Rebuttal grounded in: the plan's OWN approved Risk/Mitigation clause
+  (`plan.md:244-249`) pre-authorizing the scripted-evidence path for
+  unstabilizable Class A items "with the limitation demonstrated and recorded…
+  remains a Class A obligation at qualification"; FR9's input-delivery sanction
+  (`spec.md:408-413`); source-confirmed gating (`controlsEnabled` = the same
+  `clickEnabled` state that gates node clicks, `FocusGraph.tsx:196-198`); and
+  fresh both-engine evidence (moving-click=false). Codex upgraded to APPROVE
+  ("honest handling of demonstrated input-delivery limits"). No code changed.
+- **Porch/index gotcha discovered**: `porch done` commits the *staged index*,
+  not just status.yaml. The Phase 2 test files + thread were swept into
+  `92dd278 chore(porch): 11 implement re-iter (iter 2)` because they were
+  staged for the review diff before signaling. Content is correct/complete;
+  the plan status-flip was committed cleanly as `df218ae`. **Lesson for future
+  phases: commit deliverables yourself BEFORE `porch done`, or accept the
+  porch chore-commit sweeping them.**
+- **Phase 3 upgrade applied** (`three` 0.172.0→0.185.1, `@types/three`
+  →0.185.1, `react-force-graph-3d` 1.26.0→1.29.1; all exact pins):
+  - **FR1 reverify (2026-07-20)**: zero drift — all three targets == registry
+    `latest`; chain peers admit one three@0.185.1
+    (3d-force-graph@1.80.0 `three >=0.179 <1`, three-render-objects@1.42.0
+    `>=0.179`, three-forcegraph@1.43.4 `>=0.118.3`). No escalation.
+    `fr1-reverification.md`.
+  - **FR2**: `npm install` under exact toolchain, lockfile v3; clean `npm ci`
+    exit 0, no 3D-chain peer warnings, package.json+lock **byte-identical**
+    after (sha256), no mutation.
+  - **FR3**: `npm ls three` = exactly one `three@0.185.1` (all chain deduped);
+    lockfile has only `node_modules/three`; `@types/three` string-equal.
+  - **FR4/FR5**: import → `three/addons/controls/TrackballControls.js`;
+    typecheck 0 no new suppressions; `app/` diff is **exactly** that one line;
+    wrapper/resources/page/layout/graph-data byte-identical.
+  - **FR6**: all changed lockfile `resolved` = registry.npmjs.org;
+    `hasInstallScript:false` everywhere (no new scripts).
+    `chain-versions-after.json`, `fr6-fr13-chain-and-audit-review.md`.
+  - **FR12**: `tests/toolchain.test.mjs` updated (both three pins →0.185.1) +
+    new single-three-runtime, type-alignment, rfg3d-pin tests; `npm test`
+    21/21.
+  - **FR7 static gates**: lint 0, typecheck 0, build 0, prod `npm start` HTTP
+    200 on `/`.
+  - **FR13 audits**: full 13→11, prod 7→5 (**prod high 1→0**); BOTH 3D-chain
+    advisories resolved (`@babel/runtime`→7.29.7, `lodash-es`→4.18.1); no new
+    advisories; residuals all non-3D-chain (Next/toolchain). Exit codes (1/1)
+    preserved. Evidence in `.builder-evidence/upgrade-evidence/`.
+  - **FR7 stability**: 5× two-engine `playwright test` on the upgraded stack
+    — **5/5 green, 20 passed each** (smoke + matrix, both engines). Class A
+    matrix fully preserved after the upgrade.
+  - **FR9 Class B replay** (both engines, same scripted procedure vs Phase 2
+    baseline; `fr9-classB-replay-comparison.md`):
+    - moving-click false→false, stationary-control true→true, right-click
+      release (item 8) true→true — identical on both engines/stacks.
+    - node-drag (item 7): one upgraded-Chromium draw diverged (false vs
+      baseline's true), so per FR9(b) the identical input was replayed on the
+      rollback baseline. Rate is **identical**: baseline Chromium 2/4 true ==
+      upgraded Chromium 2/4 true (Firefox 1/1 true both). When it registers,
+      `onNodeDragEnd` fixes the node correctly on both stacks. The
+      intermittent non-registration is the documented SwiftShader
+      drag-precision harness property (the reason 7/8 are Class B), NOT an
+      upgrade regression. No FR14 blocking condition.
+  - **FR9(b) mechanics**: baseline replay done by `git checkout HEAD --
+    package.json package-lock.json` → `npm ci` (three@0.172.0) → 4 drag
+    repeats → restore upgraded manifest (sha256-verified) → `npm ci`
+    (three@0.185.1). Working tree back to the upgraded stack, clean.
+  - **Behavioral preservation: CONFIRMED.** No behavior attributable to the
+    upgrade differs from baseline in either engine. FR11 error budget: zero
+    unexpected errors across all upgraded runs (contextLost=0 everywhere).

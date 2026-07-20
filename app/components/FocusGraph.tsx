@@ -7,7 +7,7 @@ import ForceGraph3D, {
     NodeObject,
 } from "react-force-graph-3d";
 import {AxesHelper, PerspectiveCamera} from "three";
-import {TrackballControls} from 'three/examples/jsm/controls/TrackballControls.js';
+import {TrackballControls} from 'three/addons/controls/TrackballControls.js';
 import {createFocusGraphResources} from "./focusGraphResources";
 
 function FocusGraph({data, enableDelay=4000}: { data: string, enableDelay?: number }) {

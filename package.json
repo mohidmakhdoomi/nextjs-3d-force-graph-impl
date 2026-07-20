@@ -24,8 +24,8 @@
     "next": "15.5.20",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "react-force-graph-3d": "~1.26.0",
-    "three": "~0.172.0"
+    "react-force-graph-3d": "1.29.1",
+    "three": "0.185.1"
   },
   "devDependencies": {
     "@eslint/js": "~9.39.5",
@@ -34,7 +34,7 @@
     "@types/node": "~22.20.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "@types/three": "~0.172.0",
+    "@types/three": "0.185.1",
     "autoprefixer": "10.5.4",
     "eslint": "~9.39.5",
     "eslint-plugin-react": "~7.37.5",
