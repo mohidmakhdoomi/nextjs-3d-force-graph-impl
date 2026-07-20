@@ -302,6 +302,14 @@
      5_000` on the five camera-motion settle polls. Local timing unchanged.
 - Disposition recorded honestly in the review doc (new section "CI Enforcement
   vs. Local Qualification"; FR7/FR8 reconciled; Flaky Tests + Follow-up updated).
-- Local sanity: `CI=1 E2E_ENGINES=chromium npm run test:smoke` — the two
-  previously-CI-failing Chromium tests pass. Pushing to let CI validate under
-  real runner slowness, then ping architect for the pr gate.
+- Local sanity: `CI=1 E2E_ENGINES=chromium npm run test:smoke` — full Chromium
+  gate **10/10 green** (7.8m), incl. both previously-CI-failing tests.
+- Commit 6eda6e8 pushed → CI **failed fast** in `Test baseline contracts`:
+  `tests/automation.test.mjs` is a workflow *contract test* that pinned the old
+  step name "Install Chromium, Firefox, and system dependencies" +
+  `--with-deps chromium firefox`. My rename/drop tripped it (the test doing its
+  job). Architect flagged the same. Fix: re-pinned the contract to the new CI
+  shape — step "Install Chromium and system dependencies", `--with-deps
+  chromium` (asserts no `firefox`), and Validate pins `E2E_ENGINES: chromium`;
+  README CI section updated to match; review doc file-list updated.
+  `npm test` now **21/21**; lint+typecheck clean. Re-pushing.

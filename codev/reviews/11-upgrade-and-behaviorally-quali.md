@@ -134,8 +134,13 @@ raises a wait ceiling for a slow environment, it does not relax what is proven.
 
 **App code was not touched** for either fix (FR5 no-drift holds — the only
 `app/` change in the whole stage is still the one TrackballControls import
-line); all changes are confined to test/CI infrastructure
-(`playwright.config.ts`, `tests/e2e/matrix.spec.ts`, `.github/workflows/validation.yml`).
+line); all changes are confined to test/CI infrastructure and its docs:
+`playwright.config.ts`, `tests/e2e/matrix.spec.ts`,
+`.github/workflows/validation.yml`, the `tests/automation.test.mjs` workflow
+contract test (re-pinned to the Chromium-only install + `E2E_ENGINES=chromium`
+gate), and the README CI section. The `browser:install` script and the local
+`validate` path still install and run **both** engines — only what CI *enforces*
+narrowed, not what is locally qualified.
 
 ## Lessons Learned
 

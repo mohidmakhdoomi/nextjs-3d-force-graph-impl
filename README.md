@@ -89,12 +89,21 @@ valid advisory evidence.
 ### Continuous integration
 
 GitHub Actions runs on pull requests and pushes to `main` using the same exact
-Node/npm contract, `npm ci`, `npm test`, and `npm run validate`. CI installs
-Chromium and Firefox plus their Linux dependencies with:
+Node/npm contract, `npm ci`, `npm test`, and `npm run validate`. CI enforces the
+Chromium (SwiftShader) WebGL arm as the deterministic gate — it installs Chromium
+plus its Linux dependencies with:
 
 ```sh
-npm exec -- playwright install --with-deps chromium firefox
+npm exec -- playwright install --with-deps chromium
 ```
+
+and runs the Validate step with `E2E_ENGINES=chromium`. Firefox has no
+SwiftShader equivalent and cannot create a WebGL context on GPU-less runners, so
+the Firefox arm of the two-engine matrix stays a documented **local**
+qualification gate: `npm run browser:install` and `npm run validate` (with
+`E2E_ENGINES` unset) exercise both engines locally. See
+`codev/reviews/11-upgrade-and-behaviorally-quali.md` ("CI Enforcement vs. Local
+Qualification").
 
 On every run it uploads the two audit artifacts. When Playwright produces
 diagnostics, the workflow also uploads stable `playwright-report` and
