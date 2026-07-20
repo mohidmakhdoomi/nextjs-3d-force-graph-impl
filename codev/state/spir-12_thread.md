@@ -473,3 +473,18 @@ REQUEST_CHANGES. Addressed the non-blocking points to strengthen the deliverable
   squash/integration is the architect's call. Builder commits follow `[Spec 12]…`.
 Recorded in review Consultation Feedback → "PR Review (Round 1)". Committing the
 improvements; then `porch next 12` (advance to pr gate / verify).
+
+## GATE REACHED: `pr` (STOP — human approval required)
+`porch next 12` → `gate_pending`. All reviewers approved (gemini APPROVE, codex
+COMMENT [non-blocking], claude APPROVE); porch advanced to the `pr` gate and is
+WAITING FOR HUMAN APPROVAL. Per strict mode I STOP here and do NOT run
+`porch approve` — only the architect approves gates. Architect notified. Improvement
+commit `46e8e0b` pushed to PR #26.
+
+**On architect approval of the `pr` gate:** `porch next 12` → merge the PR
+(builder merges own PR after architect approves), record with
+`porch done 12 --merged 26` if applicable, then the project enters the **verify**
+phase: pull the integration branch (main) into the worktree, `porch done 12` to
+signal verification ready, architect approves `verify-approval`. If verify is
+unneeded: `porch verify 12 --skip "reason"`. NOTE: builder branches block
+force-push (GH013); merge via the PR, not a local rewrite.
