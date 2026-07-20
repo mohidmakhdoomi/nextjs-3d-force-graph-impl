@@ -1,7 +1,7 @@
 id: '12'
 title: migrate-the-application-to-nex
 protocol: spir
-phase: review
+phase: verify
 plan_phases:
   - id: framework_upgrade
     title: Reverify, Run/Review Codemod, and Land the Next 16 Manifest + Contract Tests
@@ -32,5 +32,5 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-20T11:23:09.851Z'
-updated_at: '2026-07-20T17:44:50.893Z'
+updated_at: '2026-07-20T17:49:01.247Z'
 pr_ready_for_human: false
