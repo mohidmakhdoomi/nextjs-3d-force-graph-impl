@@ -349,3 +349,8 @@ as a Firefox local-gate follow-up (timing race near the 4s boundary, plausibly n
 bugfix-27's camera changes already on main).
 Pushing merged branch (CI = Chromium → green) + reporting full attribution to architect for
 pr-gate approval on CI green.
+
+## Architect accepted re-qual; filed issue #33 for the Firefox flake follow-up
+Added #33 cross-reference to review ## Flaky Tests. NOTE: this is a new commit that
+supersedes a37b4f5, so the CI run the architect pinned (29780353327) is superseded by a
+fresh run on the new HEAD. Pushing + notifying architect to track the new run for pr-gate approval.

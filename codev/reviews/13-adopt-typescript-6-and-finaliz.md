@@ -234,9 +234,11 @@ verification recipe.
     the merged tree.
   - **Disposition**: the #11/#12 matrix is **reused, not re-authored** (FR9), so the
     test is left unchanged. The Firefox timing race (near the 4 s enable boundary,
-    plausibly nudged by bugfix-27's camera changes already on `main`) is recorded here
-    as a follow-up for the Firefox **local** gate; it does not affect the Chromium CI
-    gate and is not attributable to this PR's toolchain/lint change.
+    plausibly nudged by bugfix-27's camera changes already on `main`) is tracked by
+    **issue #33** (architect-filed) as a post-bugfix-27 follow-up to characterize the
+    camera-settle vs enable-timer race on the Firefox **local** gate — out of this PR's
+    scope. It does not affect the Chromium CI gate and is not attributable to this PR's
+    toolchain/lint change.
 
 ## Follow-up Items
 - **TypeScript 7** adoption — deferred pending `typescript-eslint` parser support
