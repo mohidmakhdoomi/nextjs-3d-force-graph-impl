@@ -152,3 +152,37 @@ Next: commit thread, then `porch done 13` → 3-way implement consultation on Ph
 - Codex: APPROVE (HIGH) — correct 6.0.3 pin, consistent lockfile, expected contract coverage, no Phase 2 leakage. No issues.
 - Claude: APPROVE (HIGH) — FR-by-FR verified (FR1-4, FR12, FR11 preview); minimal lockfile delta, clean-checkout FR4 proof, well-constructed dependency-free satisfiesRange. No issues.
 No feedback to address. Running `porch next 13` to advance (expect commit + transition to Phase 2 eslint9_config_finalization).
+
+## Implement — Phase 2 (eslint9_config_finalization) COMPLETE — committed a3f375d
+Pure eslint.config.mjs refactor (only file changed). No version changes.
+
+FR6 React: swapped legacy eslint-plugin-react/configs/recommended.js shim → native
+pluginReact.configs.flat.recommended. Verified rule-IDENTICAL: both 22 rules, zero
+severity/option diffs. It carries parserOptions.ecmaFeatures.jsx globally, so the
+standalone JSX block was folded away.
+FR6 Hooks: kept the already-flat-native explicit registration + 2-rule set
+(rules-of-hooks:error, exhaustive-deps:warn) — NOT the 16/17-rule preset (architect-
+confirmed coverage-preserving default). JS/TS/Next coverage + no-explicit-any:off +
+Next recommended/core-web-vitals preserved.
+FR5 globals: replaced single un-scoped globals.commonjs with 4 files-scoped groups:
+  app/**/*.{ts,tsx} → browser; eslint.config.mjs+playwright.config.ts+scripts/**.mjs+
+  tests/**.mjs → node(ESM only); next.config.js+postcss.config.js+tailwind.config.ts →
+  node+commonjs+sourceType:commonjs (explicit glob, incl .ts-but-CJS tailwind); tests/e2e/**
+  → node+browser. globals.node ⊇ globals.commonjs (0 keys missing); no-undef off for .ts/.tsx.
+FR7: @eslint/compat absent from manifest+lock; no fixup shims. Confirmed.
+FR12 invariant: single files-less global-ignore block preserved; toolchain test still 22/22.
+
+EVIDENCE (before/after eslint --print-config, 5 files: app/page.tsx, FocusGraph.tsx,
+eslint.config.mjs, postcss.config.js, e2e/matrix.spec.ts):
+  - Rule sets IDENTICAL every file (RULE DIFFS: NONE). Coverage-preserving PROVEN.
+  - Globals correct per group: browser files get window/document (lose inert CJS wrapper
+    globals — no-undef off there); node-esm gets node not browser; postcss/next/tailwind
+    get sourceType=commonjs + node+commonjs; e2e gets BOTH node+browser.
+  - Linted-file SET identical: 19 source files before(#10)/after — removing the bare
+    {files} marker dropped nothing (tseslint eslint-recommended's files keeps .ts/.tsx
+    lintable). Proven via `eslint . -f json` diff on clean checkouts.
+Worktree `eslint .` shows 21 errors ONLY on untracked .claude/hooks/*.cjs (env noise;
+that .cjs no longer gets CJS globals under scoped config — still not project source).
+Clean-checkout proof at a3f375d (worktree add --detach + npm ci): `eslint .` EXIT 0 zero
+output (no parser warning, no suppression), typecheck 0, tests 22/22.
+Next: commit thread, porch done 13 → porch next 13 (3-way Phase 2 consultation).
