@@ -414,3 +414,18 @@ evidence, not committed.
 next. (The formal review doc `codev/reviews/12-*.md` is authored in the SPIR Review
 phase that porch drives after Implement; this phase assembles the tables above for
 it.)
+
+### Phase 3 iter1 — 3-way consult → UNANIMOUS APPROVE (first iteration)
+Gemini APPROVE (high), Codex APPROVE (high), Claude APPROVE (high). No issues from
+any reviewer. Claude verified all four acceptance criteria (audit exit codes
+preserved + path-by-path delta; nested PostCSS dispositioned; supply-chain clean +
+npm ci no-op; README truthful + npm test 21/21) and grep-confirmed no `--turbopack`
+/`next lint` remnants anywhere. Committed `1bf5163`.
+
+**Phase 3 DONE. ALL THREE IMPLEMENT PHASES COMPLETE.** Advancing to SPIR **Review**
+phase (porch authors/guides `codev/reviews/12-*.md`), then the single PR (all phase
+commits on `builder/spir-12`), architect review, merge, verify. Next 16 migration
+implementation is code-complete: framework at 16.2.10, dev flag dropped, `next lint`
+gone, Turbopack build qualified across two engines, Node/browser policy verified,
+audit/lockfile delta explained (audit-neutral), PostCSS residual dispositioned,
+docs truthful.
