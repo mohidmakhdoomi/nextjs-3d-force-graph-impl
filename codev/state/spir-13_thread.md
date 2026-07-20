@@ -192,3 +192,28 @@ Next: commit thread, porch done 13 → porch next 13 (3-way Phase 2 consultation
 - Codex: APPROVE (HIGH) — modernized, globals properly scoped, Hooks preserved, ignore invariant holds. No issues.
 - Claude: APPROVE (HIGH) — FR5/6/7/12 verified line-by-line; print-config equivalence, no silent changes. No issues.
 No feedback. Running `porch next 13` → Phase 3 (qualification_evidence_docs).
+
+## Implement — Phase 3 (qualification_evidence_docs) COMPLETE — committed bda79f2
+File change: README.md only (FR12: TypeScript 6 line + ESLint 9 flat config documented
+in reproducible-baseline; TS7/ESLint10 deferral recorded). No arch/test enumerations
+were stale (only append-only thread logs reference old config shapes).
+
+FR10 (audit delta, path-by-path): before(TS5.7.3 @ merge-base 165812c) vs after(TS6.0.3):
+  FULL 11 advisory pkgs (7 mod/4 high) IDENTICAL; PROD 5 pkgs (5 mod) IDENTICAL — zero
+  path diffs. typescript is in NO advisory path. Next-owned nested postcss@8.4.31 unchanged;
+  app-direct postcss@8.5.19 unchanged. Audits exit 1 (evidence, not a zero-findings gate).
+FR11 (supply-chain): the ONLY net-changed lockfile entry across the whole branch is
+  typescript (5.7.3→6.0.3): resolved=registry.npmjs.org, deps=null (leaf), hasInstallScript
+  =false, bin=[tsc,tsserver]. No new install script; npm ci clean.
+FR13: net branch lockfile delta = typescript entry only; single-revert restores ~5.7.3.
+
+FR8/FR9 END-TO-END QUALIFICATION (clean checkout @ bda79f2, git worktree add --detach +
+real npm ci; both engines, E2E_ENGINES unset):
+  npm ci=0 (typescript 6.0.3) | lint=0 (no parser warning) | typecheck=0 | npm test=0 |
+  audit:full=1 / audit:production=1 (evidence) | npm run validate=0 (aggregate) |
+  direct `npm run start` → root HTTP 200 (251588 bytes) + clean shutdown.
+  Playwright: 20 passed (12.0m) — 10 Chromium (SwiftShader, required CI gate) + 10 Firefox
+  (local qualification gate): matrix.spec.ts (9) + smoke.spec.ts (1) per engine. Zero
+  unexpected page/console/hydration/timer/WebGL/GPU errors. Runtime behavior unchanged
+  (no runtime dependency moved) — FR9 reused suite, not re-authored.
+Next: commit thread, porch done 13 → porch next 13 (Phase 3 3-way consultation).
