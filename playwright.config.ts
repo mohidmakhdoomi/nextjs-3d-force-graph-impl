@@ -80,7 +80,14 @@ export default defineConfig({
     // contention these timing-sensitive assertions were qualified against.
     fullyParallel: true,
     workers: 1,
-    retries: 0,
+    // CI-only retries absorb SwiftShader rendering nondeterminism. The
+    // click-to-focus test (matrix.spec.ts) intermittently misses a camera-motion
+    // or node-click timing predicate; this predates sharding — it also flaked the
+    // old single-job workflow (tracking: issue #34). Local runs keep retries: 0 so
+    // flakes surface immediately. A test that only passes on retry is reported as
+    // "flaky" in the merged HTML report — that visibility is intentional, not a
+    // pass to be hidden.
+    retries: process.env.CI ? 2 : 0,
     forbidOnly: Boolean(process.env.CI),
     outputDir: "test-results",
     // Local/default: human-readable `list` + a self-contained HTML report.

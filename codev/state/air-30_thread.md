@@ -100,3 +100,34 @@ Human gate decision: approve AFTER hardening. Applied:
 - Sharding improves flake recovery: re-run one ~5.6m shard, not the whole 14m suite.
 - Action: `gh run rerun 29781194428 --failed` (shard 2 + dependent gate). If it
   flakes again → escalate to architect (per "2 failures, get outside perspective").
+
+### BLOCKER: click-to-focus (matrix:235) is ~50% flaky on CI SwiftShader
+Run history (all on the sharded workflow):
+- 29780379868 — all green (6m10s)
+- 29780412864 — all green (6m13s)
+- 29781194428 — shard 2 FAIL (camera-motion predicate `>MOTION_FLOOR` 10s timeout);
+  re-ran → green. Gate went red then green (hardening confirmed working).
+- 29782250395 — shard 2 FAIL again on the SAME test, DIFFERENT assertion
+  ("a real node click should register and fix the node").
+Failing on different timing assertions across runs = SwiftShader rendering
+nondeterminism, not a logic bug. matrix:235 is the test the issue flags as
+SwiftShader-flaky (it carries its own 240s override). `retries: 0` (original
+config, unchanged) means one flake reds the gate. Sharding may raise its
+frequency: it now runs 3rd-of-3 in a fresh browser vs 6th-of-10 warmed-up before.
+**Held: NOT re-running to a lucky green (would hide durable flakiness). Notified
+architect; recommended CI-only retries `retries: process.env.CI ? 2 : 0`
+(honors all issue constraints: no trimmed waits, no raised workers). Awaiting
+guidance before re-requesting the pr gate.** CI currently red on head 022f78f.
+
+### Architect decision (2026-07-20T22:09Z): APPROVED CI retries, count 2
+Architect confirmed the flake is PRE-EXISTING, not from sharding: the same test
+(same click-registration assertion) also failed the OLD single-job workflow twice
+today (runs 29775364675, 29775316520). Tracking: **issue #34**.
+Applied:
+- `playwright.config.ts`: `retries: process.env.CI ? 2 : 0` with a comment citing
+  #34. Local stays 0 (flakes surface immediately); CI self-heals a single flake.
+- `automation.test.mjs`: asserts the CI-gated retries contract. `npm test` 29/29.
+- Passed-on-retry is reported as "flaky" in the merged HTML report — visibility
+  kept intentionally, NOT suppressed (per architect).
+- #34 cited in a PR comment too.
+Next: push, wait for CI green, then re-request the pr gate.

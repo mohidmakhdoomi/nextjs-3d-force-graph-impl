@@ -88,6 +88,9 @@ test("shards the full Chromium e2e suite at the test level", () => {
     // execution within a shard is strictly serial (no SwiftShader contention).
     assert.match(playwrightConfig, /fullyParallel: true/);
     assert.match(playwrightConfig, /workers: 1/);
+    // CI-only retries (count 2) absorb pre-existing SwiftShader flake (issue #34)
+    // so a single flaky attempt can't red the gate; local stays 0 so flakes show.
+    assert.match(playwrightConfig, /retries: process\.env\.CI \? 2 : 0/);
 
     const e2e = jobBlock("e2e");
     // Four shards, and a failing shard must not cancel its siblings.
