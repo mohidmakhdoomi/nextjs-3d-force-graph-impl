@@ -47,3 +47,26 @@ REQUEST_CHANGES. Incorporated all feedback (minor/clarifying):
 - FR2: `next.config.js` → `.ts`/ESM noted as a reviewed codemod surface.
 Committed as "Specification with multi-agent review". Next: porch drives to the
 spec-approval GATE → notify architect and STOP for human approval.
+
+## Spec-approval gate — APPROVED (2026-07-20)
+Architect approved the spec, verified factual claims against main, and confirmed
+both elections (default-Turbopack + exact string-equal next/plugin pins). Told me
+to continue to Plan. Architect ran `porch approve` themselves (`porch pending`
+empty; `porch next 12` returned plan-phase tasks). Per porch skill, builders
+NEVER call `porch approve` — the human runs it.
+
+## Plan phase
+Drafted `codev/plans/12-migrate-the-application-to-nex.md`. Three phases (one
+rollback unit, phase commits within one PR):
+1. framework_upgrade — reverify (FR1), run/review codemod (FR2), manifest+lock →
+   16.2.10 (FR3), drop `--turbopack` dev flag + confirm no `next lint` (FR4),
+   re-pin toolchain.test.mjs (FR12). Static-green target.
+2. turbopack_behavioral_qualification — full two-engine matrix + smoke vs the
+   Turbopack build (FR9), client-bundle integrity: no Node imports + single Three
+   runtime (FR5), preserved semantics (FR6), Node/browser policy (FR7), validate
+   green (FR8), error budget (FR11).
+3. evidence_disposition_and_docs — audit/lockfile delta + PostCSS disposition
+   (FR10), supply-chain verify (FR11), docs/enumeration truthfulness (FR12).
+Design note: no infra-first phase (unlike plan 11) — the matrix/Firefox infra
+already exists from #11; this reuses it unchanged. Porch plan checks pass
+(plan_exists, has_phases_json, min_two_phases=3). Committed initial plan draft.
