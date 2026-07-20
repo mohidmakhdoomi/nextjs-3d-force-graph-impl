@@ -253,3 +253,10 @@ Iter-2 3-way re-verification (porch iteration 2, with --context of iter-1 feedba
 Post-fix qualification unchanged (README-only edit cannot affect gates): the bda79f2 clean-
 checkout proof (validate=0, 20/20 two-engine matrix, direct start HTTP 200, audit delta nil)
 still holds for the current tree; b400853/144562a touch only README + thread.
+
+## Phase 3 — iter 3 3-way re-verification: UNANIMOUS APPROVE (HIGH)
+- Gemini: APPROVE (HIGH) — thread current with iter-2 outcome, all concerns resolved.
+- Codex: APPROVE (HIGH) — README truthful, thread records evidence + iter-2 follow-up, porch
+  status metadata internally consistent for an in-progress review cycle.
+- Claude: APPROVE (HIGH) — accurate docs, all qualification evidence captured, all prior feedback resolved.
+All three implement phases now consultation-approved. Advancing porch → Review phase.
