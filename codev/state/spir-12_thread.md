@@ -453,3 +453,23 @@ e2e_tests skipped ✓). Architect notified PR-ready. Running PR 3-way consult ne
 then the `pr` gate awaits human approval (I do NOT approve gates). After merge →
 verify phase (pull integration branch, `porch done 12`, architect approves
 verify-approval).
+
+### PR #26 — 3-way `--type pr` consult (Round 1): 2 APPROVE + 1 COMMENT (no blockers)
+Gemini APPROVE (high), Claude APPROVE (high), Codex COMMENT (high). No
+REQUEST_CHANGES. Addressed the non-blocking points to strengthen the deliverable:
+- **Claude (verified catch):** `baseline-browser-mapping@2.10.43` flipped dev→prod
+  scope (next@16.2.10 declares it a direct dep `^2.9.19`; baseline didn't). My
+  earlier lockfile diff compared version/resolved/install-script but not the `dev`
+  flag, so "0 added/removed" missed this scope flip. VERIFIED it's the ONLY flip;
+  same version, registry.npmjs.org, Apache-2.0, no advisory, production audit still
+  5 → audit-neutral. Documented in review FR11 row + here.
+- **Codex nit 1 (plan stale):** updated plan `Status: draft`→`complete`, Phase
+  Status table pending→complete (×3), and the 13 Success Metrics checkboxes.
+  (Granular per-phase deliverable checkboxes left as plan-detail; authoritative
+  completion is status.yaml + the review doc. Verify-phase item stays unchecked —
+  genuinely not done until after merge.)
+- **Codex nit 2 (porch commit noise):** rebutted/N/A — `chore(porch): …` are
+  machine-generated state commits, not builder commits; force-push blocked (GH013);
+  squash/integration is the architect's call. Builder commits follow `[Spec 12]…`.
+Recorded in review Consultation Feedback → "PR Review (Round 1)". Committing the
+improvements; then `porch next 12` (advance to pr gate / verify).

@@ -42,7 +42,7 @@ and `README.md` — zero `app/` source changes.
 | FR8 | Automated validation gates | ✅ | typecheck 0; lint 0 on committed tree (clean-worktree proof); `npm test` 21/21; Turbopack build 0; `next start` root 200; `test:smoke`/`validate` green; audit pipeline preserves exit codes. |
 | FR9 | Browser smoke + interaction matrix | ✅ | Two-engine Playwright 20/20 (Chromium 10 + Firefox 10) vs the Turbopack `next start`; `focus-graph-lifecycle` unit green; strict error budget clean in both engines. |
 | FR10 | Lockfile/audit delta + PostCSS disposition | ✅ | 11 changed lockfile entries, all Next-owned, 15.5.20→16.2.10; audit byte-identical before/after (0 resolved / 0 introduced / all unchanged); nested `postcss@8.4.31` dispositioned as Next-owned residual. |
-| FR11 | Supply-chain verification | ✅ | All 11 changed entries → `registry.npmjs.org`; no install-script deltas; `npm ci` clean no-op. |
+| FR11 | Supply-chain verification | ✅ | All 11 changed entries → `registry.npmjs.org`; no install-script deltas; `npm ci` clean no-op. One dev→prod scope promotion: `baseline-browser-mapping@2.10.43` (now a direct `next@16.2.10` dep) — same version, registry-resolved, Apache-2.0, no advisory, audit-neutral. |
 | FR12 | Contract-test + docs updates | ✅ | `toolchain.test.mjs` pins moved to 16.2.10 (string-equal); README line 6 → Next 16 Active LTS + Turbopack note; `automation.test.mjs` enumerations green. |
 | FR13 | Rollback unit + blocking semantics | ✅ | Manifest+lock+config+contract tests+docs = one revert unit restoring `next@15.5.20` (never `15.1.11`); no genuine regression → nothing blocked/escalated. |
 
@@ -177,6 +177,28 @@ prior validate concern is credibly rebutted against the actual worktree state."
 all four acceptance criteria verified (audit exit codes + path-by-path delta;
 PostCSS disposition; supply-chain + `npm ci` no-op; README truthful + `npm test`
 21/21).
+
+### PR Review — `--type pr` (Round 1)
+#### Gemini — APPROVE (high). No issues.
+#### Claude — APPROVE (high)
+- **Observation** (non-blocking): `baseline-browser-mapping@2.10.43` was promoted
+  from dev-only to production scope because `next@16.2.10` declares it as a direct
+  dependency; the "0 added, 0 removed" framing covered version changes but not this
+  scope flip.
+  - **Addressed**: verified (it is the only dev→prod flip; same version, registry,
+    Apache-2.0, no advisory, production audit unchanged at 5) and documented in the
+    FR11 row above.
+#### Codex — COMMENT (high), two non-blocking nits:
+- **Nit 1**: the checked-in plan looked stale (`Status: draft`, unchecked success
+  metrics, phase statuses `pending`) vs `status.yaml`.
+  - **Addressed**: updated the plan's Status, Phase Status table (→ complete), and
+    the 13 Success Metrics checkboxes to reflect completion.
+- **Nit 2**: many `chore(porch): …` commits don't match the `[Spec N][Phase]`
+  convention; worth squashing if strict history matters.
+  - **Rebutted / N/A**: those are machine-generated porch state-transition commits,
+    not builder commits; the builder cannot rewrite them (remote blocks force-push,
+    GH013), and integration/merge (incl. any squash) is the architect's call. The
+    builder-authored commits follow the `[Spec 12]…` convention.
 
 ## Architecture Updates
 

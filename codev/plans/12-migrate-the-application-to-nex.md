@@ -2,7 +2,7 @@
 
 ## Metadata
 - **ID**: plan-2026-07-20-next-16-active-lts
-- **Status**: draft
+- **Status**: complete (all phases implemented, unanimously reviewed; PR #26)
 - **Specification**: [codev/specs/12-migrate-the-application-to-nex.md](../specs/12-migrate-the-application-to-nex.md)
 - **Created**: 2026-07-20
 
@@ -43,36 +43,36 @@ baseline — **never** `15.1.11`.
 
 Copied from the spec's acceptance scenarios and made implementation-checkable:
 
-- [ ] Target reverified at implementation time (FR1); drift escalated, not
+- [x] Target reverified at implementation time (FR1); drift escalated, not
       silently retargeted.
-- [ ] Official Next 16 codemod run in-branch and its output reviewed/curated;
+- [x] Official Next 16 codemod run in-branch and its output reviewed/curated;
       final manifest equals the exact target group (FR2).
-- [ ] `next@16.2.10` (dependencies) and `@next/eslint-plugin-next@16.2.10`
+- [x] `next@16.2.10` (dependencies) and `@next/eslint-plugin-next@16.2.10`
       (devDependencies) pinned exactly and string-equal; React/DOM unchanged at
       `19.2.7`; lockfile v3; clean `npm ci` with no manifest/lock mutation and no
       framework/3D-chain peer warnings (FR3).
-- [ ] `dev` is `next dev` (no `--turbopack`); no `next lint` invocation remains;
+- [x] `dev` is `next dev` (no `--turbopack`); no `next lint` invocation remains;
       `eslint .` passes under the 16.x plugin (FR4).
-- [ ] `next build` (Turbopack) succeeds; production `next start` serves the root
+- [x] `next build` (Turbopack) succeeds; production `next start` serves the root
       page HTTP 200; client bundle has no Node-only imports and resolves exactly
       one Three runtime through the client-only island (FR5).
-- [ ] No graph prop/handler/timer/camera/control semantic change except any Next
+- [x] No graph prop/handler/timer/camera/control semantic change except any Next
       16 strictly forces, which is called out explicitly (FR6).
-- [ ] Node policy (`22.23.1`) satisfies the Next 16 floor; supported-browser
+- [x] Node policy (`22.23.1`) satisfies the Next 16 floor; supported-browser
       policy verified and documented, compatible with the WebGL2 requirement (FR7).
-- [ ] `lint`, `typecheck`, `npm test`, Turbopack `build`, production `start`,
+- [x] `lint`, `typecheck`, `npm test`, Turbopack `build`, production `start`,
       `test:smoke`, aggregate `validate`, and the audit evidence pipeline all
       pass at the final commit (FR8).
-- [ ] Complete interaction matrix + smoke pass against the Turbopack build
+- [x] Complete interaction matrix + smoke pass against the Turbopack build
       (Chromium required gate + Firefox local qualification), zero unexpected
       errors, per #11 semantics (FR9, error budget).
-- [ ] Lockfile/audit delta documented path-by-path (exit codes preserved);
+- [x] Lockfile/audit delta documented path-by-path (exit codes preserved);
       nested Next-owned `postcss@8.4.31` explicitly dispositioned (FR10).
-- [ ] Supply-chain verification of every changed lockfile entry (registry-only
+- [x] Supply-chain verification of every changed lockfile entry (registry-only
       `resolved`, install-script delta) recorded (FR11).
-- [ ] `tests/toolchain.test.mjs` re-pinned to `16.2.10`; README/`automation.test`
+- [x] `tests/toolchain.test.mjs` re-pinned to `16.2.10`; README/`automation.test`
       enumerations stay truthful (FR12).
-- [ ] Single-revert rollback to `15.5.20` holds; blocking semantics honored (FR13).
+- [x] Single-revert rollback to `15.5.20` holds; blocking semantics honored (FR13).
 
 ## Phases (Machine Readable)
 
@@ -90,9 +90,9 @@ Copied from the spec's acceptance scenarios and made implementation-checkable:
 
 | Phase | Status |
 |-------|--------|
-| framework_upgrade | pending |
-| turbopack_behavioral_qualification | pending |
-| evidence_disposition_and_docs | pending |
+| framework_upgrade | complete |
+| turbopack_behavioral_qualification | complete |
+| evidence_disposition_and_docs | complete |
 
 ## Phase Breakdown
 
