@@ -1,7 +1,7 @@
 id: '13'
 title: adopt-typescript-6-and-finaliz
 protocol: spir
-phase: implement
+phase: review
 plan_phases:
   - id: typescript6_adoption
     title: Adopt TypeScript 6.0.3, Resolve/Bound Diagnostics, and Pin It (Contract Tests)
@@ -11,8 +11,8 @@ plan_phases:
     status: complete
   - id: qualification_evidence_docs
     title: End-to-End Qualification, Lockfile/Audit Delta, Supply-Chain, Docs, and Deferral
-    status: in_progress
-current_plan_phase: qualification_evidence_docs
+    status: complete
+current_plan_phase: null
 gates:
   spec-approval:
     status: approved
@@ -26,8 +26,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 3
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: qualification_evidence_docs
@@ -62,4 +62,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-13/codev/projects/13-adopt-typescript-6-and-finaliz/13-qualification_evidence_docs-iter2-claude.txt
 started_at: '2026-07-20T19:19:43.841Z'
-updated_at: '2026-07-20T20:49:33.577Z'
+updated_at: '2026-07-20T20:52:05.061Z'
