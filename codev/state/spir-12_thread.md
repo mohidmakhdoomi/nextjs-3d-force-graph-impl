@@ -174,3 +174,112 @@ fixes"), the fix lands as a **follow-up content commit on top of `aae97b8`**
 (`[Spec 12][Phase: framework_upgrade] fix: restore lockfile name …`). The
 cumulative branch content is correct (name=primary); the eventual PR diff (branch
 vs main) is clean. Re-consult next.
+
+### Phase 1 iter2 — 3-way consult → UNANIMOUS APPROVE
+Gemini APPROVE (high), Codex APPROVE (high), Claude APPROVE (high). Claude
+re-verified the lockfile name=primary fix, all 458 resolved URLs =
+registry.npmjs.org, no app/config/eslint changes, tsconfig deviation justified.
+No issues. porch advanced framework_upgrade → COMPLETE and moved to Phase 2
+(turbopack_behavioral_qualification, iter1).
+
+**Phase 1 done.** Branch commits on origin: aae97b8 (upgrade) + 114cc66 (name fix)
++ porch state commits. Lesson recorded for Ph2/Ph3: commit content BEFORE the
+consult cycle; NEVER rewrite pushed history (remote blocks force-push on builder
+branches, GH013) — post-consult fixes go as follow-up commits.
+
+## Implement Phase 2 — turbopack_behavioral_qualification (STARTING)
+Scope: FR5 (client-bundle integrity: single three + no Node-only imports in
+.next/static), FR6 (preserved semantics), FR7 (Node/browser policy), FR8
+(aggregate validate gate), FR9 (full two-engine matrix+smoke vs Turbopack build,
+error budget). This is the large browser-qualification phase (Playwright
+Chromium+Firefox). Known environmental watch-items entering Ph2:
+- `npm run validate` includes `npm run lint`, which fails ONLY on the untracked
+  harness file `.claude/hooks/worktree-write-guard.cjs` (absent in CI). Need an
+  honest strategy so the gate reflects project source, not the harness artifact.
+- Playwright browser availability / GPU (Firefox WebGL) in this worktree TBD —
+  #11 split is Chromium-required (SwiftShader) + Firefox local qualification.
+Per porch's own guidance ("Run /compact before starting each new phase") + the
+size of Ph2, this is a natural checkpoint.
+
+## Implement Phase 2 — turbopack_behavioral_qualification (QUALIFICATION COMPLETE)
+Pure qualification phase: re-run the #11 suites UNCHANGED against the now-default
+Turbopack production build, scan the shipped client bundle, verify Node/browser
+policy. **Zero source/test/config changes** — the correct outcome (plan: "Files:
+expected none in app/"). Environment: Node 22.23.1 / npm 10.9.8, next+plugin
+16.2.10, lockfile name=`primary`. All commands run in-worktree.
+
+**FR5 client-bundle integrity — PASS.**
+- Single Three runtime: `npm ls three` → one `three@0.185.1` (deduped across
+  react-force-graph-3d → 3d-force-graph → three-forcegraph/three-render-objects,
+  all `deduped`); no nested `node_modules/**/node_modules/three`. Also enforced by
+  the FR12 contract test.
+- No Node-only imports in shipped client chunks. After a clean `rm -rf .next &&
+  next build` (Turbopack), scanned `.next/static/` (14 files, 11 `.js`):
+  - `node:` scheme scan (fs/path/crypto/os/stream/util/process/module/
+    child_process/net/tls/http/https/zlib/events/buffer/assert/url/querystring/
+    worker_threads/dns/readline/vm/perf_hooks) → **0 matches**.
+  - Bare-builtin **import/require-form** scan (`(require\(|from|import)…"builtin"`)
+    → **0 matches** (authoritative proof).
+  - Broad quoted-token scan surfaced only 3 innocuous NON-import usages, each
+    inspected: `"path"` = SVG `<path>` tag + cookie `Path=` attr; `"module"` =
+    `type:"module"` script attr; `"process"` = `"process"===E(i.process)` runtime
+    env-sniff (`typeof process` isomorphic detection). None are Node-builtin
+    imports. Client bundle clean.
+
+**FR6 preserved semantics — PASS.** `git status`/`git diff --stat` after build:
+zero tracked source changes. No graph prop/handler/timer/camera/control edit;
+`app/` diff = none. Build is BUILD-STABLE (unlike Ph1, `next build` did NOT
+re-touch tsconfig — the react-jsx/dev-types change landed in Ph1 and holds). `.next`
+is gitignored (confirmed). Only uncommitted tracked file = this thread.
+
+**FR7 Node/browser policy — PASS (no declaration required).**
+- Node floor: `next@16.2.10` declares `engines.node: ">=20.9.0"`; repo pins
+  `22.23.1` (`.nvmrc` + `engines.node`, CI/contract-enforced) → satisfied with a
+  full-major margin. Matches spec §2. No Node change permitted/needed.
+- Browser policy (reverified from the official Next 16.2.10 doc
+  `nextjs.org/docs/architecture/supported-browsers`, lastUpdated 2025-10-01):
+  **Chrome 111+ / Edge 111+ / Firefox 111+ / Safari 16.4+**, zero-config. Next's
+  default browserslist = `["chrome 111","edge 111","firefox 111","safari 16.4"]`.
+  All four floor browsers ship WebGL2 (Safari since 15.0; others long before 111),
+  so the Next 16 floor is compatible with the app's WebGL2 requirement. Next works
+  zero-config and does NOT require an app-level `browserslist` → **none added**
+  (spec FR7: "otherwise record that no declaration is required"). Adding one would
+  be out-of-scope noise. `package.json` has no `browserslist` (unchanged).
+
+**FR8 aggregate gate — PASS (honest env-artifact caveat).**
+- `npm run typecheck` (tsc --noEmit) → exit 0.
+- `npm run lint` (`eslint .`) → exit 1, but ALL 18 errors are in ONE file:
+  the untracked builder-harness artifact `.claude/hooks/worktree-write-guard.cjs`
+  (not tracked, NOT in HEAD, absent from any clean CI `actions/checkout`). Project
+  source lints CLEAN: `eslint . --ignore-pattern ".claude/**"` → exit 0. Did NOT
+  edit `eslint.config.mjs` (FR4 forbids new suppressions; out-of-scope env noise).
+  In CI (`E2E_ENGINES=chromium npm run validate` over the committed tree) the lint
+  stage is green because the artifact isn't checked out.
+- `npm run test:smoke` (build + Playwright) → see FR9.
+- Audit pipeline intact + exit codes preserved (delta/disposition is Ph3/FR10):
+  full = {mod 7, high 4, total 11} exit 1; production = {mod 5, high 0, total 5}
+  exit 1. Existing advisories are not a zero-findings gate (arch-critical).
+
+**FR9 behavioral qualification + error budget — PASS.** `npm test`
+(node --test, incl. `focus-graph-lifecycle.test.mjs`) = **21/21**. Full two-engine
+Playwright matrix+smoke against the Turbopack `next start` = **20/20** (11.9m):
+- Chromium (SwiftShader, the required CI gate `E2E_ENGINES=chromium`): 10/10.
+- Firefox (local qualification gate): 10/10.
+- Covered: initial force layout, auto-rotate pause/resume, delayed pointer enable,
+  wheel zoom-out, wheel zoom-in + background-drag rotate, click-to-focus + camera
+  animate + reset, axes toggle, resize consistency, unmount/remount, and smoke
+  (canvas/WebGL2 readiness + core controls + STRICT error budget). Smoke green in
+  BOTH engines ⇒ zero unexpected page/console/hydration/timer/WebGL-context/GPU
+  errors. Re-run, not re-authored (#11 suites unchanged).
+
+**FR13 regression semantics:** no baseline divergence observed ⇒ no baseline
+replay needed; nothing to escalate.
+
+**Env-only warnings (NOT project issues, NOT silenced):** `next build`/`next start`
+warn about "multiple lockfiles / inferred workspace root" (parent main-checkout +
+nested worktree) — nested-worktree topology artifact, absent in clean CI. Did NOT
+add `turbopack.root`/`outputFileTracingRoot` (spec keeps config empty; out of
+scope). Same disposition as Ph1.
+
+**Phase 2 commit contents:** thread evidence only (zero source diff is the correct,
+plan-anticipated outcome for a qualify-existing-behavior phase). Consult next.
