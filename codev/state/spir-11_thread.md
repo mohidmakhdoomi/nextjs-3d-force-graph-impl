@@ -271,3 +271,37 @@
   - **Behavioral preservation: CONFIRMED.** No behavior attributable to the
     upgrade differs from baseline in either engine. FR11 error budget: zero
     unexpected errors across all upgraded runs (contextLost=0 everywhere).
+
+## 2026-07-20 — Post-integration: CI Validation red → fixed (pr gate held)
+
+- Architect held the `pr` gate: PR #25 CI Validation failed 5/5. This PR is the
+  first to run the two-engine matrix on GH Actions runners (no GPU, software
+  WebGL, slow CPU) — that environment was never qualified. Two distinct causes:
+  - **Firefox (10/12 fails):** `three` `WebGLRenderer` → "A WebGL context could
+    not be created … tryNativeGL … Exhausted GL driver options
+    (WEBGL_EXHAUSTED_DRIVERS)" → client crash ("Application error") → sized-canvas
+    wait times out. Confirmed from the CI trace. Firefox has no SwiftShader
+    equivalent; `webgl.force-enabled` only bypasses the blocklist, supplies no
+    driver. Robust bring-up needs Mesa llvmpipe + `LIBGL_ALWAYS_SOFTWARE` +
+    headed Firefox under Xvfb.
+  - **Chromium (2/12 fails):** two wheel-zoom tests' 5 s inner settle poll too
+    tight for the runner's software rasterizer (motion lands after 5 s).
+- **Consulted Gemini + Codex** on the Firefox-CI strategy. Both independently:
+  Chromium (SwiftShader) = required CI gate; Firefox software-WebGL too flaky to
+  own the main gate → keep as local qualification (or a future non-blocking job).
+  Matches the architect's option 3.
+- **Fix (test/CI infra only — app code untouched, FR5 no-drift holds):**
+  1. `playwright.config.ts`: engines selected via `E2E_ENGINES` env. Unset ⇒
+     full two-engine matrix (local gate). Verified via `--list`:
+     unset→chromium+firefox, `=chromium`→chromium only, `=chromium,firefox`→both,
+     `=bogus`→throws.
+  2. `.github/workflows/validation.yml`: Validate step sets `E2E_ENGINES=chromium`
+     (Firefox dropped from `playwright install`). Chromium is the deterministic
+     required gate.
+  3. `tests/e2e/matrix.spec.ts`: `SETTLE_TIMEOUT_MS = process.env.CI ? 20_000 :
+     5_000` on the five camera-motion settle polls. Local timing unchanged.
+- Disposition recorded honestly in the review doc (new section "CI Enforcement
+  vs. Local Qualification"; FR7/FR8 reconciled; Flaky Tests + Follow-up updated).
+- Local sanity: `CI=1 E2E_ENGINES=chromium npm run test:smoke` — the two
+  previously-CI-failing Chromium tests pass. Pushing to let CI validate under
+  real runner slowness, then ping architect for the pr gate.

@@ -1,4 +1,5 @@
 import {expect, test} from "@playwright/test";
+import process from "node:process";
 import {
     cameraDelta,
     expectCleanErrorBudget,
@@ -19,6 +20,13 @@ import {
 const MOTION_FLOOR = 1;
 const STILL_EPSILON = 0.05;
 const ZOOM_EPSILON = 0.5;
+
+// Ceiling for "the input moved the camera" settle polls. Local hardware
+// registers wheel/drag/reset motion within ~5 s, but GitHub Actions runners
+// render this scene through a software rasterizer (SwiftShader/llvmpipe) with
+// no GPU, so a single frame can take far longer and the motion lands later.
+// Give CI generous headroom without changing the local qualification timing.
+const SETTLE_TIMEOUT_MS = process.env.CI ? 20_000 : 5_000;
 
 async function snapshotOrFail(page: Parameters<typeof readGraphSnapshot>[0]): Promise<GraphSnapshot> {
     const snapshot = await readGraphSnapshot(page);
@@ -141,7 +149,7 @@ test("keeps pointer navigation inert until the enable delay elapses", async ({pa
             },
             {
                 message: "wheel input after enablement should zoom the camera",
-                timeout: 5_000,
+                timeout: SETTLE_TIMEOUT_MS,
             },
         )
         .toBeGreaterThan(ZOOM_EPSILON);
@@ -172,7 +180,7 @@ test("zooms out with the wheel", async ({page}) => {
                 const snapshot = await readGraphSnapshot(page);
                 return snapshot === null ? 0 : snapshot.cameraDistance;
             },
-            {message: "wheel up should zoom the camera out", timeout: 5_000},
+            {message: "wheel up should zoom the camera out", timeout: SETTLE_TIMEOUT_MS},
         )
         .toBeGreaterThan(start.cameraDistance + ZOOM_EPSILON);
 
@@ -198,7 +206,7 @@ test("zooms in with the wheel and rotates with a background drag", async ({page}
                     ? Number.POSITIVE_INFINITY
                     : snapshot.cameraDistance;
             },
-            {message: "wheel down should zoom the camera in", timeout: 5_000},
+            {message: "wheel down should zoom the camera in", timeout: SETTLE_TIMEOUT_MS},
         )
         .toBeLessThan(start.cameraDistance - ZOOM_EPSILON);
 
@@ -216,7 +224,7 @@ test("zooms in with the wheel and rotates with a background drag", async ({page}
             },
             {
                 message: "a background drag should rotate the camera",
-                timeout: 5_000,
+                timeout: SETTLE_TIMEOUT_MS,
             },
         )
         .toBeGreaterThan(MOTION_FLOOR);
@@ -365,7 +373,7 @@ test("click-to-focus fixes the node, animates the camera, and reset restores the
                 const snapshot = await readGraphSnapshot(page);
                 return snapshot === null ? 0 : cameraDelta(beforeReset, snapshot);
             },
-            {message: "reset should run zoomToFit", timeout: 5_000},
+            {message: "reset should run zoomToFit", timeout: SETTLE_TIMEOUT_MS},
         )
         .toBeGreaterThan(MOTION_FLOOR);
 

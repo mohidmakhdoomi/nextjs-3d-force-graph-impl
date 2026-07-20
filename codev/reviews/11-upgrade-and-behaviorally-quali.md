@@ -36,8 +36,8 @@ TrackballControls import moved to `three/addons/controls/TrackballControls.js`.
 | FR4 | TrackballControls import path | ✅ `three/addons/controls/TrackballControls.js`; typecheck clean, no new suppressions; call-site semantics (`noPan`, `zoomSpeed`, `update()`) unchanged. |
 | FR5 | Preserved client boundary + semantics | ✅ `app/components/` diff is exactly the one import line; wrapper/resources/page/layout/graph-data byte-identical; no timer/camera/handler changes. |
 | FR6 | Chain review + supply-chain verification | ✅ Before/after resolved versions recorded; all changed `resolved` URLs are registry.npmjs.org; no new install scripts (`hasInstallScript:false` throughout). |
-| FR7 | Automated validation gates | ✅ lint, typecheck, `npm test` (21/21), build, prod `npm start` HTTP 200, two-engine `test:smoke`, aggregate `validate` — all exit 0 at the final commit. |
-| FR8 | Two-engine automated browser smoke | ✅ Firefox in the required gate since Phase 1; both engines green with 5× stability. |
+| FR7 | Automated validation gates | ✅ lint, typecheck, `npm test` (21/21), build, prod `npm start` HTTP 200, two-engine `test:smoke`, aggregate `validate` — all exit 0 at the final commit (locally, both engines). CI runs the Chromium arm — see *CI Enforcement vs. Local Qualification*. |
+| FR8 | Two-engine automated browser smoke | ✅ Both engines in the required **local** gate since Phase 1, green with 5× stability. CI enforces the Chromium (SwiftShader) arm deterministically; Firefox stays a documented local qualification gate (GPU-less runners cannot bring up Firefox WebGL) — see *CI Enforcement vs. Local Qualification*. |
 | FR9 | Complete interaction matrix, both engines | ✅ Class A (items 1–6, 9–12) committed with real input, numeric verification, both engines. Class B (7, 8) replayed vs baseline (see Deviations). |
 | FR10 | Resize + unmount/remount qualification | ✅ Matrix items 12/13 green; lifecycle unit suite passes; re-navigation yields fresh working canvas, clean error budget. |
 | FR11 | Error budget | ✅ Zero unexpected console/page/WebGL-context errors across all runs; `contextLost=0` everywhere. |
@@ -82,6 +82,60 @@ story), 5 (atomic rollback — single-commit revert restores baseline),
   index, not just status.yaml). Content is correct and complete; the pattern
   for later phases was to commit deliverables under a proper
   `[Spec 11][Phase: …]` message *before* signaling porch.
+
+## CI Enforcement vs. Local Qualification
+
+This PR is the first to run the two-engine matrix + smoke on GitHub Actions
+runners, and that environment (no GPU, software WebGL, slower CPU) was never
+qualified. The initial CI runs surfaced two distinct, honestly-different
+problems — recorded here so the split between **what CI enforces** and **what
+remains local-only qualification evidence** is explicit.
+
+**1. Firefox cannot bring up a WebGL context on Actions runners (environment
+gap, not a regression).** Every Firefox test failed identically: `three`'s
+`WebGLRenderer` threw
+`A WebGL context could not be created … * tryNativeGL () * Exhausted GL driver
+options (FEATURE_FAILURE_WEBGL_EXHAUSTED_DRIVERS)`, which crashes the client
+("Application error") so the sized-canvas wait times out. Chromium survives
+because it is launched with `--use-angle=swiftshader` (a bundled, deterministic
+software rasterizer); Firefox has no SwiftShader equivalent. `webgl.force-enabled`
+bypasses Firefox's *blocklist* but supplies no driver — GPU-less runners lack
+the Mesa llvmpipe software GL that Firefox's `tryNativeGL` needs, and a robust
+bring-up would additionally require `LIBGL_ALWAYS_SOFTWARE`/`GALLIUM_DRIVER`
+plus **headed Firefox under Xvfb**. Both external reviewers (Gemini, Codex)
+independently advised against making software-WebGL Firefox a required CI gate:
+it is materially less deterministic than Chromium+SwiftShader on shared Linux
+VMs and prone to breaking on runner-image updates.
+
+**Disposition (the architect's option 3):** CI enforces **Chromium
+(SwiftShader)** as the required, deterministic gate. The **Firefox** arm of the
+two-engine matrix remains a **documented local qualification gate** — it was
+qualified locally (developer GPU) at **5×20/20 two-engine green** plus the FR9
+baseline-replay evidence recorded above, and that evidence is unchanged and not
+in question. This does **not** weaken qualification (the second engine was
+qualified; CI simply cannot host its WebGL stack) and does **not** hide
+regressions: Chromium continuously enforces every behavioral assertion in the
+matrix + smoke, so a logical interaction/WebGL regression would still fail CI.
+Firefox-specific rendering divergence is covered by the local qualification and
+is re-runnable on demand. Mechanism: `playwright.config.ts` selects engines
+from an `E2E_ENGINES` env var — **unset ⇒ the full two-engine matrix** (the
+local gate); the workflow sets `E2E_ENGINES=chromium`. `npm run validate` run
+locally therefore still exercises both engines.
+
+**2. Two Chromium matrix tests timed out on the slow runner CPU (timing
+calibration, not a behavior change).** `keeps pointer navigation inert…` and
+`zooms in with the wheel…` waited on a 5 s inner poll for wheel-zoom motion to
+settle; under the runner's software rasterizer a frame can take far longer, so
+the motion landed after 5 s. Fixed by CI-calibrating the five camera-motion
+settle polls (`SETTLE_TIMEOUT_MS = process.env.CI ? 20_000 : 5_000` in
+`matrix.spec.ts`). **Local qualification timing is unchanged** (still 5 s); only
+CI gets headroom. The assertions, thresholds, and inputs are untouched — this
+raises a wait ceiling for a slow environment, it does not relax what is proven.
+
+**App code was not touched** for either fix (FR5 no-drift holds — the only
+`app/` change in the whole stage is still the one TrackballControls import
+line); all changes are confined to test/CI infrastructure
+(`playwright.config.ts`, `tests/e2e/matrix.spec.ts`, `.github/workflows/validation.yml`).
 
 ## Lessons Learned
 
@@ -240,6 +294,13 @@ the committed suite:
    `fixedNodeCount === 0` before aiming, and recovers on a fresh page (≤2) if a
    stray is detected.
 
+Post-integration, two more environment-induced flakes were **fixed, not
+skipped**, when the suite first ran on GitHub Actions runners (see *CI
+Enforcement vs. Local Qualification*): the two Chromium wheel-zoom tests whose
+5 s settle poll was too tight for the runner's software rasterizer — resolved
+by CI-calibrating the settle ceiling to 20 s (`process.env.CI` only; local
+timing unchanged).
+
 ## Follow-up Items
 - The residual audit advisories are all Next.js/toolchain-owned
   (`next`, `@vercel/*`, `geist`, `postcss`, and dev-only `brace-expansion`,
@@ -247,3 +308,11 @@ the committed suite:
   3D unit. They belong to their own modernization units (tracked under #6).
 - `skipLibCheck` removal was explicitly kept out of scope (spec non-goal) and
   remains available as a separate follow-up.
+- **Firefox in CI (optional, non-blocking):** if continuous Firefox coverage is
+  wanted beyond the local qualification gate, add a *separate, non-blocking*
+  Actions job running `E2E_ENGINES=chromium,firefox` under the full
+  software-WebGL recipe (Mesa `libgl1-mesa-dri`/`libglx-mesa0` +
+  `LIBGL_ALWAYS_SOFTWARE=1` + headed Firefox under `xvfb-run`), and promote it
+  to required only after it stays green for a sustained streak. Both external
+  reviewers flagged this stack as too flaky to own the main PR gate today, so it
+  is deliberately left out of the blocking gate.

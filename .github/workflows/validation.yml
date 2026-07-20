@@ -36,10 +36,19 @@ jobs:
       - name: Test baseline contracts
         run: npm test
 
-      - name: Install Chromium, Firefox, and system dependencies
-        run: npm exec -- playwright install --with-deps chromium firefox
+      - name: Install Chromium and system dependencies
+        run: npm exec -- playwright install --with-deps chromium
 
+      # Chromium (bundled SwiftShader) is a deterministic software-WebGL
+      # rasterizer and is the required CI gate. The Firefox arm of the
+      # two-engine matrix stays a documented LOCAL qualification gate: Firefox
+      # has no SwiftShader equivalent and cannot create a WebGL context on
+      # GPU-less GitHub Actions runners ("Exhausted GL driver options"). See
+      # codev/reviews/11-upgrade-and-behaviorally-quali.md
+      # ("CI enforcement vs. local qualification").
       - name: Validate
+        env:
+          E2E_ENGINES: chromium
         run: npm run validate
 
       - name: Capture full audit evidence
