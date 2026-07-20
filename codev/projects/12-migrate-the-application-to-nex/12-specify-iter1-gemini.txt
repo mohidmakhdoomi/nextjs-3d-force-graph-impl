@@ -1,0 +1,18 @@
+This specification is exceptionally thorough and well-aligned with the repository's strict validation, testing, and operational constraints.
+
+### Review Highlights
+
+1. **Completeness & Correctness**: The spec correctly identifies all moving parts, including exact package targets, the required changes to `tests/toolchain.test.mjs` for the string-equality assertions, and the nuance that `dev` is not enumerated in `tests/automation.test.mjs` while acknowledging that related docs (like the README) still need updates to reflect the removed `--turbopack` flag. 
+2. **Feasibility**: Relying on the official Next 16 codemod (`@next/codemod upgrade`) while strictly curating its output to avoid scope creep (e.g., unintended React bumps) is the correct and feasible approach.
+3. **Risk Mitigation**: Moving to the now-default Turbopack bundler for production builds introduces risk around chunking and Node imports for the WebGL island. The spec effectively neutralizes this risk by explicitly defining checks to ensure no Node-only imports leak into the client chunk and exactly one Three.js runtime is resolved, backed by the existing two-engine Playwright interaction matrix.
+4. **Supply Chain & Security**: Explicitly dispositioning the nested, Next-owned `postcss@8.4.31` dependency and enforcing exact version pinning preserves the project's rigid reproducibility invariants. 
+
+There are no missing details, contradictions, or infeasible requirements.
+
+---
+VERDICT: APPROVE
+SUMMARY: The specification is exceptionally thorough, correctly aligning the upgrade with existing rigid validation and contract-test constraints.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

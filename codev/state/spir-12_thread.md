@@ -34,3 +34,16 @@ Started specify. No pre-existing spec — authoring from the issue + Stage 3 res
 No "Baked Decisions" heading in the issue; scope/acceptance-criteria text
 treated as fixed. Elections (Turbopack-by-default, exact pins) flagged in the
 spec's Confirmed Decisions, overridable at the spec gate.
+
+### Specify iteration 1 — 3-way consult (2026-07-20)
+Gemini APPROVE (high), Claude APPROVE (high), Codex COMMENT (high). No
+REQUEST_CHANGES. Incorporated all feedback (minor/clarifying):
+- FR5: explicit repo-local evidence method for the no-Node-import check
+  (scan `.next/static/` emitted client assets) + `npm ls three`.
+- FR9: named the exact #11 suites (matrix.spec.ts, smoke.spec.ts,
+  graph-handle.ts, focus-graph-lifecycle.test.mjs) + review 11 §FR9.
+- FR11: install-script listing scope (new ones called out; pre-existing
+  unchanged only confirmed).
+- FR2: `next.config.js` → `.ts`/ESM noted as a reviewed codemod surface.
+Committed as "Specification with multi-agent review". Next: porch drives to the
+spec-approval GATE → notify architect and STOP for human approval.

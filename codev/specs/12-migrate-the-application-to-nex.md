@@ -333,7 +333,10 @@ Record the verification date and findings in the review.
 Run the official Next 16 upgrade codemod (`@next/codemod upgrade`, or the exact
 invocation the reverified upgrade guide specifies) in the dedicated branch under
 the pinned toolchain. Review every change it proposes — manifest edits,
-`next.config` edits, source codemods, and any script changes. Curate the result:
+`next.config` edits (including a possible `next.config.js` → `next.config.ts`/ESM
+format migration, which is reviewed and accepted only if Next 16 actually
+requires it; otherwise the config stays as the effectively-empty
+`next.config.js`), source codemods, and any script changes. Curate the result:
 the final manifest must be exactly the target group (FR3); any incidental version
 drift the codemod introduces beyond that group (e.g. bumping React, types, or
 unrelated deps) is reverted as out of scope. Document, in the review, what the
@@ -368,10 +371,26 @@ direct production `next start` serves the root page HTTP 200; the built client
 bundle loads and runs the graph. The client-only dynamic boundary
 (`FocusGraphWrapper.tsx`: `dynamic(..., {ssr: false})`) is preserved. The client
 bundle contains **no Node-only imports** and resolves **exactly one** Three
-runtime through the client-only island (`npm ls three` shows a single
-`three@0.185.1`; no nested `node_modules/**/node_modules/three`; no `node:`/
-Node-builtin import reaches the client graph chunk). Any Turbopack-specific build
-output difference relevant to correctness is recorded in the review.
+runtime through the client-only island.
+
+**Evidence method (explicit, repo-local, so builders don't invent inconsistent
+proofs):**
+- *Single Three runtime*: `npm ls three` resolves exactly one `three@0.185.1`
+  and the lockfile contains no nested `node_modules/**/node_modules/three` entry
+  (also enforced by the existing FR12 contract test, mirroring #11).
+- *No Node-only imports in the client bundle*: after `next build`, scan the
+  emitted client assets under `.next/static/` (the chunks actually shipped to
+  the browser) for the `node:` scheme and bare Node-builtin specifiers
+  (e.g. `grep -RolE "node:(fs|path|crypto|os|stream|util|process|module|child_process)" .next/static/`
+  and the analogous check for the un-prefixed builtins the graph chunk could
+  pull in) — the shipped client chunks must match none. A clean production
+  `next build` plus successful client-side graph bring-up in the smoke (the
+  island renders under `{ssr:false}`) is corroborating evidence, but the
+  built-asset scan is the primary proof. The exact commands and their output are
+  recorded in the review.
+
+Any Turbopack-specific build output difference relevant to correctness is
+recorded in the review.
 
 ### FR6 — Preserved client boundary and interaction semantics
 
@@ -408,7 +427,12 @@ The automated smoke and the complete graph interaction matrix (the canonical
 matrix qualified in #11: canvas creation, initial layout, auto-rotation,
 delayed pointer enablement, trackball zoom/rotation, node drag→fix, right-click
 unfix, click-to-focus, reset, axes toggle, resize, unmount/remount) pass against
-the **Turbopack** production build. The #11 CI/local engine split is reused
+the **Turbopack** production build. The canonical matrix and smoke are the
+existing committed suites — `tests/e2e/matrix.spec.ts` (13-item matrix),
+`tests/e2e/smoke.spec.ts` (canvas/WebGL readiness + controls + strict error
+budget), the shared `tests/e2e/graph-handle.ts` imperative-handle helper, and
+the `tests/focus-graph-lifecycle.test.mjs` unit suite — as defined in review 11
+(§"Spec Compliance" / FR9). This stage re-runs them, not re-authors them. The #11 CI/local engine split is reused
 unchanged: Chromium (SwiftShader) is the required gate (`E2E_ENGINES=chromium`)
 locally and in CI; Firefox remains the documented local qualification gate.
 Verification stays numeric via the react-force-graph imperative handle, driven
@@ -441,9 +465,14 @@ For every lockfile entry changed by this upgrade: (a) `resolved` URLs point only
 at the public npm registry (`registry.npmjs.org`) — no git, tarball-URL, or
 alternate-registry sources; (b) no changed entry introduces an install script
 (`hasInstallScript`/`preinstall`/`install`/`postinstall`) its previous version
-lacked, and any pre-existing install script in the changed set is identified and
-explained; (c) `npm ci` output shows no unexpected package-manager behavior.
-Findings go in the review's lockfile section.
+lacked. **Listing scope**: every *newly introduced* install script (an entry that
+gains one relative to its pre-upgrade version, or a newly added package that has
+one) must be individually called out and explained; *pre-existing, unchanged*
+install scripts in the changed subgraph need only be confirmed as pre-existing
+and unchanged (a summary count/identification suffices — no exhaustive
+re-enumeration), consistent with #11's FR6. (c) `npm ci` output shows no
+unexpected package-manager behavior. Findings go in the review's lockfile
+section.
 
 ### FR12 — Contract-test and docs updates
 
@@ -612,5 +641,37 @@ workarounds, no mixed 16.x-runtime/15.x-plugin combination, no undisclosed
 
 ## Consultation Log
 
-_To be populated by the SPIR 3-way consultation (Gemini, Codex, Claude) that
-porch runs after this draft, and updated after any human feedback._
+### Iteration 1 — initial three-way review (2026-07-20)
+
+- **Gemini: APPROVE (high confidence).** Endorsed the exact-pin discipline, the
+  codemod-then-curate approach to avoid scope creep, the Turbopack client-bundle
+  risk mitigation (no Node-only imports + single Three runtime, backed by the
+  two-engine matrix), and the explicit nested-PostCSS disposition. No issues.
+- **Claude: APPROVE (high confidence).** Independently verified every factual
+  claim against the codebase (manifest versions, scripts, empty config, no
+  middleware, static async page, client island, camera/timer parameters,
+  contract-test string-equality, `E2E_ENGINES` selection, `dev` not asserted by
+  `automation.test.mjs`). No factual errors; internally consistent decisions.
+  Three non-blocking notes: (1) call out a possible `next.config.js` →
+  `next.config.ts`/ESM codemod change surface; (2) README `dev`-script update
+  (already covered by FR12); (3) record webpack-vs-Turbopack bundle-size delta
+  (already in Nice-to-know).
+- **Codex: COMMENT (high confidence).** Strong, implementation-ready spec; three
+  minor evidence-method clarifications, all accepted and incorporated:
+  1. FR5 lacked an explicit evidence method for "no Node-only imports reach the
+     client chunk" → FR5 now specifies a repo-local method: scan emitted
+     `.next/static/` client assets for `node:`/bare-builtin specifiers, plus
+     `npm ls three` for the single runtime.
+  2. FR9 referenced "the canonical matrix qualified in #11" without a concrete
+     pointer → FR9 now names the exact suites (`tests/e2e/matrix.spec.ts`,
+     `tests/e2e/smoke.spec.ts`, `tests/e2e/graph-handle.ts`,
+     `tests/focus-graph-lifecycle.test.mjs`) and review 11's FR9 section.
+  3. FR10/FR11 install-script listing scope was ambiguous → FR11 now states that
+     newly introduced install scripts are individually called out, while
+     pre-existing unchanged ones need only be confirmed (no exhaustive
+     re-enumeration), consistent with #11's FR6.
+- Claude note (1) was applied to FR2 (config-format migration is a reviewed
+  codemod surface, accepted only if Next 16 requires it).
+
+_Second consultation (after human/gate feedback) to be appended if the spec is
+revised at the spec-approval gate._

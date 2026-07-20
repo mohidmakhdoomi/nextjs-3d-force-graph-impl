@@ -1,0 +1,9 @@
+Using direct file reads to verify the spec against the actual repo context.---
+VERDICT: COMMENT
+SUMMARY: Strong, implementation-ready spec with clear scope and validation; only minor evidence-method clarifications would improve builder consistency.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- The spec should define the acceptable evidence method for FR5's “no Node-only imports reaches the client graph chunk” check (e.g. grep built chunks, build manifest inspection, or another explicit repo-local method) so builders don't invent inconsistent proofs.
+- FR9 relies on “the canonical matrix qualified in #11”; adding a direct pointer to the exact existing test file(s)/review section that define that matrix would make the requirement easier to execute without ambiguity.
+- FR10/FR11 are strong on lockfile review, but the review deliverable could more explicitly say whether unchanged pre-existing install scripts in the changed dependency subgraph must be re-listed or only newly introduced ones must be called out.
