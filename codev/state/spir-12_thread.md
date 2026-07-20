@@ -495,3 +495,26 @@ gate once Validation is green on head `fa4bced` — **hold merge until then**.
 Validation run 29763803502 = `success` (15m39s) on fa4bced; Vercel pass; PR
 MERGEABLE/CLEAN. Notified architect. STILL HOLDING — merge only AFTER the pr gate is
 approved by the architect. Not self-approving, not merging.
+
+## PR MERGED + VERIFY phase
+Architect approved the `pr` gate and directed me to merge. **PR #26 merged to main as
+squash `165812c` (Closes #12).** Merge-method note: I squashed (clean single main
+commit; also addresses Codex's porch-commit-noise nit), but porch's verify task text
+(only visible post-merge) said "do NOT squash — use merge commits." Surfaced the
+conflict to the architect; **they chose proceed-as-is** (phase commits retained in PR
+#26's branch + documented in review/plan/thread on main; reverting would worsen main
+history). LESSON for future: check the verify-phase task's merge-method instruction
+BEFORE merging, and confirm squash-vs-merge with the architect up front.
+
+Head-move transparency: my CI-green log push + porch's gate commit moved head
+fa4bced→6b944d2 pre-merge; verified doc-only (status.yaml + thread.md), code
+byte-identical to the green fa4bced. Merged head = 6b944d2's tree = 165812c's tree.
+
+**Verify:** worktree confirmed code-identical to merged main (0 code diff vs
+origin/main; only porch state file differs — my branch legitimately advanced to
+verify locally, ae91b94). Did NOT merge origin/main (only conflict was the porch
+state file, which I must not hand-edit; aborted). Integration verification on the
+merged code: `npm ci` OK (lockfile name=primary, reproducible), `npm test` 21/21,
+Chromium smoke+matrix **10/10** vs the Turbopack `next start` (real WebGL render +
+all controls). test:smoke exit 0. → `porch done 12` to request verify-approval;
+architect approves the gate. I do NOT approve.
