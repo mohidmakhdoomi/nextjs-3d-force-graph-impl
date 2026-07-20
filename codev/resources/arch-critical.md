@@ -12,3 +12,4 @@ STARTER: replace the examples below with YOUR project's facts and arch.md sectio
 
 ## Map of arch.md (consult when…)
 - Validation Baseline — consult when changing toolchains, dependencies, CI, browser validation, or audit handling.
+- Framework and Bundler Baseline — consult when changing the Next major, the bundler default (Turbopack), lint integration, or the Node/browser floors.

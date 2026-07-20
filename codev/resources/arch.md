@@ -43,3 +43,23 @@ The ESLint flat config (`eslint.config.mjs`) uses
 explicitly (`react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`) rather
 than spreading `configs.recommended`, whose v7 form bundles ~16 rules — spreading
 it would silently expand coverage.
+
+## Framework and Bundler Baseline
+
+The app runs on Next.js 16 (Active LTS) with React 19 (`react`/`react-dom`
+exact-pinned at `19.2.7`). Turbopack is the Next 16 default bundler for **both**
+`dev` (`next dev`) and `build` (`next build`); the scripts rely on that default
+rather than pinning `--turbopack`/`--webpack`, and the production Turbopack build is
+behaviorally qualified against the two-engine interaction matrix (not just build
+success). The `next lint` command is gone; linting is the explicit `eslint .` CLI
+path with `@next/eslint-plugin-next` wired directly in `eslint.config.mjs` and
+exact-pinned string-equal to `next`. The Node floor is `>=20.9.0` (the repo pins
+`22.23.1`); the supported-browser floor is Chrome/Edge/Firefox 111 and Safari 16.4
+(Next's zero-config default, all WebGL2-capable), so the app declares no
+`browserslist`.
+
+`next` bundles its own nested `postcss` (`node_modules/next/node_modules/postcss`,
+currently `8.4.31`) that the app cannot control in this stage. It is a documented,
+Next-owned build-time residual (audit-neutral and un-fixable from the app — npm
+offers only a bogus major downgrade), independent of the app's own top-level
+`postcss` (kept patched). Treat it as carried-forward, not a new or closed finding.

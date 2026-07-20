@@ -429,3 +429,19 @@ implementation is code-complete: framework at 16.2.10, dev flag dropped, `next l
 gone, Turbopack build qualified across two engines, Node/browser policy verified,
 audit/lockfile delta explained (audit-neutral), PostCSS residual dispositioned,
 docs truthful.
+
+## SPIR Review phase (R) — review doc + governance updates
+Porch advanced to `review`. Authored `codev/reviews/12-migrate-the-application-to-nex.md`
+(Summary, FR1–FR13 compliance table + issue acceptance criteria, Deviations,
+Lessons Learned, Technical Debt, full per-phase/round/model Consultation Feedback,
+mandatory Architecture Updates + Lessons Learned Updates, Flaky Tests = none,
+Follow-ups). Routed governance updates by tier via the update-arch-docs skill:
+- arch.md (cold): +"Framework and Bundler Baseline" (Next 16/Turbopack/next-lint-
+  gone/Node+browser floors/nested-postcss residual). arch-critical.md (hot): +1 map
+  line (2 topics, within cap; no new hot fact).
+- lessons-learned.md (cold): +"Toolchain and Worktree Hygiene" (env-artifact-vs-gate
+  + lockfile-name contamination). lessons-critical.md (hot): +1 lesson (env-artifact
+  vs gate; 5 total, within cap) +1 map line.
+npm test still 21/21. Next: commit review+governance+thread, push, open the single
+PR (Closes #12), run porch review checks (pr_exists/arch/lessons/e2e), `porch done`,
+notify architect PR-ready.
