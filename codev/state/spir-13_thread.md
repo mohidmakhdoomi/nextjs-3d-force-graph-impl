@@ -97,3 +97,10 @@ Committing draft, then porch done 13 → 3-way plan consultation.
   globals block into the scoped structure, keep the single files-less ignore block.
 Plan updated + Consultation Log written. Committing "Plan with multi-agent review", then
 porch next 13 → plan-approval gate (STOP for human).
+
+## GATE REACHED: `plan-approval` (STOP — human approval required)
+`porch next 13` → gate_pending, unanimous APPROVE (gemini/codex/claude all HIGH).
+Porch advanced to plan-approval and is WAITING FOR HUMAN APPROVAL. Strict mode: I STOP,
+do NOT run porch approve. Architect notified.
+On approval: architect runs `porch approve 13 plan-approval --a-human-explicitly-approved-this`,
+then `porch next 13` → Implement phase, Phase 1 (typescript6_adoption).
