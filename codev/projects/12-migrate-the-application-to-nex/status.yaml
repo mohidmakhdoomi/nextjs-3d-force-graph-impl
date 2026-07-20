@@ -27,7 +27,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 2
-build_complete: false
+build_complete: true
 history:
   - iteration: 1
     plan_phase: framework_upgrade
@@ -46,4 +46,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-12/codev/projects/12-migrate-the-application-to-nex/12-framework_upgrade-iter1-claude.txt
 started_at: '2026-07-20T11:23:09.851Z'
-updated_at: '2026-07-20T12:16:54.090Z'
+updated_at: '2026-07-20T12:17:31.721Z'
