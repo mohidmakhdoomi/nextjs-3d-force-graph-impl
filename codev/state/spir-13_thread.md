@@ -302,3 +302,50 @@ branch + re-qualify before merge, or (b) merge PR #31 then re-qualify in the Ver
 (which pulls the integration branch). Awaiting architect direction.
 On approval: architect runs `porch approve 13 pr --a-human-explicitly-approved-this`; then
 I merge PR #31 (per role), record `porch done 13 --merged 31`, and enter Verify.
+
+## Integration (architect chose option a): merged origin/main → re-qualify BEFORE merge
+Merged origin/main (bugfix-27 / PR #29) into builder/spir-13 → merge commit a9f9145.
+CLEAN merge, no conflicts, NO package.json/package-lock.json delta (TS6 lockfile intact).
+Integrated files: FocusGraph.tsx (drift-free auto-rotation), app/components/orbitCamera.ts (new),
+tests/orbit-camera.test.mjs (new), bugfix-27 project files.
+
+print-config confirms the two new files land in the intended scoped-globals groups:
+- app/components/orbitCamera.ts → BROWSER group (window/document present, 1191 globals, no node) ✓
+- tests/orbit-camera.test.mjs → NODE/ESM group (process/module present, 84 globals, no browser) ✓
+
+Merged-worktree quick gates: typecheck=0 (orbitCamera.ts clean under TS6); npm test 25/25
+(the 3 new orbit-camera tests pass + my toolchain tests). Benign pre-existing
+MODULE_TYPELESS_PACKAGE_JSON warning from bugfix-27's .mjs test importing a .ts source
+(same pattern as focus-graph-lifecycle.test.mjs) — not a failure.
+Full clean-checkout qualification + two-engine matrix on a9f9145 running (background).
+Then push; architect approves pr gate on fresh CI green.
+
+## Merged-tree qualification (a9f9145): gates green; 1 Firefox matrix failure under attribution
+First merged qualification hit a stray port-3000 next-server (v16.2.10) leaked from a prior
+run → killed it (surgical, PID-targeted). Re-ran matrix with a port pre-flight guard.
+Merged gate set: npm ci=0, lint=0, typecheck=0, npm test=0 (25/25 incl. 3 new orbit tests),
+build=0, direct start HTTP 200, audits=1 (evidence).
+Two-engine matrix on a9f9145: **Chromium 10/10 PASS** (the required CI gate). Firefox 19/20 —
+1 FAIL: matrix.spec.ts:111 "keeps pointer navigation inert until the enable delay elapses"
+("controls should still be disabled after camera placement").
+Root cause = TIMING: the test needs waitForStableCameraDistance to settle BEFORE the 4000ms
+pointer-enable timer; on Firefox (no SwiftShader, slower/less deterministic WebGL) the settle
+can cross the 4s boundary, enabling controls before the snapshot (the test's own comment flags
+this env-sensitivity). NOT my change — my TS6/ESLint change is runtime-inert and this exact
+Firefox test passed 20/20 pre-merge on bda79f2. The failure appeared only after merging
+bugfix-27's runtime change (FocusGraph.tsx auto-rotation). Firefox is the documented LOCAL
+qualification gate (CI runs Chromium only, which is green).
+Running attribution: firefox matrix.spec.ts:111 x3 on merged (a9f9145) vs x3 on origin/main
+(bugfix-27 WITHOUT my change) to prove flakiness/attribution before reporting to architect.
+
+## Firefox flake ATTRIBUTION (clean checkout + build + single test, x3 each)
+- MERGED a9f9145 (bugfix-27 + my TS6/ESLint): firefox matrix.spec.ts:111 → PASS, PASS, FAIL (2/3).
+- BASELINE origin/main (bugfix-27, NO my change): PASS, PASS, PASS (3/3).
+Conclusion: NON-DETERMINISTIC Firefox timing race (camera settle vs 4000ms enable timer),
+NOT a deterministic effect of my runtime-inert toolchain/lint change (2/3 pass on merged;
+20/20 pre-merge). Chromium (required CI gate) = 10/10 deterministic on merged. Per FR9 the
+matrix is reused/not re-authored → test left unchanged; flake recorded in review ## Flaky Tests
+as a Firefox local-gate follow-up (timing race near the 4s boundary, plausibly nudged by
+bugfix-27's camera changes already on main).
+Pushing merged branch (CI = Chromium → green) + reporting full attribution to architect for
+pr-gate approval on CI green.

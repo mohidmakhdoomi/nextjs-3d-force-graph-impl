@@ -216,8 +216,27 @@ lesson already covers the clean-checkout discipline, and this addition is a narr
 verification recipe.
 
 ## Flaky Tests
-No flaky tests encountered. All contract/unit suites and the two-engine Playwright
-matrix passed deterministically.
+
+- **Project qualification (pre-merge, `bda79f2`)**: no flaky tests — the two-engine
+  matrix passed **20/20** deterministically (10 Chromium + 10 Firefox).
+- **Merge-integration re-qualification (`a9f9145`, after merging `origin/main`'s
+  bugfix-27 / PR #29)**: one **Firefox-only** intermittent failure surfaced —
+  `tests/e2e/matrix.spec.ts:111` *"keeps pointer navigation inert until the enable
+  delay elapses"*. Failure mode: `waitForStableCameraDistance` occasionally settles
+  *after* the 4000 ms pointer-enable timer, so controls are already enabled when the
+  "still disabled after camera placement" assertion runs (a timing race the test's own
+  comment documents for the SwiftShader-less local Firefox gate).
+  - **Attribution** (each run = clean checkout + build + the single test): MERGED tree
+    `a9f9145` = **2/3 pass**; `origin/main` baseline (bugfix-27 *without* this change) =
+    **3/3 pass**. The failure is a **non-deterministic Firefox timing race**, not a
+    deterministic effect of this runtime-inert toolchain/lint change (which passed
+    20/20 pre-merge). **Chromium — the required CI gate — is 10/10 deterministic** on
+    the merged tree.
+  - **Disposition**: the #11/#12 matrix is **reused, not re-authored** (FR9), so the
+    test is left unchanged. The Firefox timing race (near the 4 s enable boundary,
+    plausibly nudged by bugfix-27's camera changes already on `main`) is recorded here
+    as a follow-up for the Firefox **local** gate; it does not affect the Chromium CI
+    gate and is not attributable to this PR's toolchain/lint change.
 
 ## Follow-up Items
 - **TypeScript 7** adoption — deferred pending `typescript-eslint` parser support
