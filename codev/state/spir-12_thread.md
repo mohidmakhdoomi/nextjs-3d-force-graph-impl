@@ -323,3 +323,25 @@ action.
 
 Re-consult (iter2) with rebuttal in context. No code change; thread carries the
 clean-tree validate evidence for on-disk re-verification.
+
+### Phase 2 iter2 — 3-way consult → UNANIMOUS APPROVE
+Gemini APPROVE (high), Codex APPROVE (high), Claude APPROVE (high). Codex flipped
+REQUEST_CHANGES → APPROVE: "the prior validate concern is credibly rebutted against
+the actual worktree state, and no phase-scoped fixes are needed." Gemini: handling
+of the harness-artifact lint failure "exactly right"; clean-`git worktree`
+verification proves the aggregate gate passes for real project code; correct not to
+mutate status.yaml. Claude independently re-verified both concerns as non-issues
+(confirmed `.claude/hooks/…cjs` "not in HEAD"; status.yaml `in_progress` +
+`build_complete:true` + `iteration:2` = correct porch review-cycle position) and
+all five FRs (FR5–FR9). No code change across iter1→iter2; the "fix" was a rebuttal
++ committed clean-tree evidence.
+
+**Phase 2 DONE.** Zero-source-diff qualification: FR5 (single Three + no client-side
+Node imports), FR6 (no app/ change), FR7 (Node floor + Chrome/Edge/FF 111 / Safari
+16.4 browser policy, no browserslist), FR8 (validate green on shipping tree), FR9
+(two-engine matrix+smoke 20/20 vs Turbopack, strict error budget clean). Branch
+commits: c1d85cd (qualification) + fb7bacc (clean-tree evidence) + porch state
+commits. Advancing to Phase 3 `evidence_disposition_and_docs` (FR10 audit/lockfile
+delta, FR11 supply-chain, FR6/FR10 PostCSS disposition, FR12 docs). Ph3 will need
+the audit counts captured here: full {mod 7, high 4, total 11}; production {mod 5,
+high 0, total 5}.
