@@ -66,3 +66,24 @@ Open elections for the architect at this gate (overridable here, else confirmed)
 
 On approval: `porch approve 13 spec-approval --a-human-explicitly-approved-this`
 (architect-run), then `porch next 13` → Plan phase.
+
+## Plan phase — draft written
+
+spec-approval gate APPROVED by architect (both elections confirmed at defaults:
+hooks coverage-preserving; retain typescript-eslint 8.64.0). Porch advanced to plan.
+
+Plan 13 drafted — 3 sequential phases:
+1. typescript6_adoption — manifest/lockfile/contract-test only: TS→6.0.3 exact,
+   tsc clean (resolve/bound deprecations), eslint clean (no parser warning) with
+   config UNCHANGED, pin in toolchain test. (FR1-4, FR12 pin)
+2. eslint9_config_finalization — pure eslint.config.mjs refactor: React native flat
+   config, scoped globals (browser=app/**, node/cjs=config/scripts/tests, e2e=both),
+   hooks coverage-preserving via existing flat-native registration (NOT the 16/17-rule
+   preset), @eslint/compat stays absent, before/after print-config proof. (FR5-7, FR12 invariant)
+3. qualification_evidence_docs — full gates + start HTTP200 + two-engine matrix +
+   lockfile/audit delta + supply-chain + docs + TS7/ESLint10 deferral. (FR8-13)
+
+Phase separation isolates "did TS6 change anything" (P1) from "did config refactor
+change coverage" (P2). All three ship as commits within ONE PR (per issue PR strategy).
+Local plan checks pass (plan_exists, has_phases_json, min_two_phases=3).
+Committing draft, then porch done 13 → 3-way plan consultation.
