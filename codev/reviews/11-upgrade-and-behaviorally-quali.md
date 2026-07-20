@@ -128,9 +128,14 @@ calibration, not a behavior change).** `keeps pointer navigation inert…` and
 settle; under the runner's software rasterizer a frame can take far longer, so
 the motion landed after 5 s. Fixed by CI-calibrating the five camera-motion
 settle polls (`SETTLE_TIMEOUT_MS = process.env.CI ? 20_000 : 5_000` in
-`matrix.spec.ts`). **Local qualification timing is unchanged** (still 5 s); only
-CI gets headroom. The assertions, thresholds, and inputs are untouched — this
-raises a wait ceiling for a slow environment, it does not relax what is proven.
+`matrix.spec.ts`) and, because the whole compound suite runs near the per-test
+wall-clock budget on the slow runner (measured 1.1–1.9 min per test; the
+wheel-plus-drag test tipped past 120 s once the settle polls had headroom),
+raising the per-test `timeout` to `process.env.CI ? 240_000 : 120_000` in
+`playwright.config.ts`. **Local qualification timing is unchanged** (still 5 s
+polls / 120 s per test); only CI gets headroom. The assertions, thresholds, and
+inputs are untouched — this raises wait ceilings for a slow environment, it does
+not relax what is proven.
 
 **App code was not touched** for either fix (FR5 no-drift holds — the only
 `app/` change in the whole stage is still the one TrackballControls import

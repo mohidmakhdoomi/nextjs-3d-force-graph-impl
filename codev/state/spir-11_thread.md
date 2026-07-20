@@ -313,3 +313,13 @@
   chromium` (asserts no `firefox`), and Validate pins `E2E_ENGINES: chromium`;
   README CI section updated to match; review doc file-list updated.
   `npm test` now **21/21**; lint+typecheck clean. Re-pushing.
+- Commit 8fbbdc5 CI: contract test + install + chromium e2e all green — **9/10**,
+  only `zooms in with the wheel and rotates with a background drag` failed on the
+  **overall 120 s test timeout** (`mouse.move` at line 215; ran 2.1m). Not an
+  assertion failure — the 20 s settle-poll headroom pushed the compound test
+  past its per-test wall-clock budget; other tests measured 1.1–1.9m (test 10
+  smoke 1.9m ≈ 114s, near the ceiling too). Suite ran 13.6m < 20m job limit.
+  Architect concurred: raise the per-test timeout CI-only, don't trim settle
+  logic. Fix: `playwright.config.ts` `timeout: process.env.CI ? 240_000 :
+  120_000` (local 120 s unchanged; click-to-focus keeps its explicit 240 s).
+  typecheck/lint/`npm test` 21/21 clean. Re-pushing (cycle 4).

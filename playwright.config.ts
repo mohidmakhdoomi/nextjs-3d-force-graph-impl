@@ -63,7 +63,13 @@ if (projects.length === 0) {
 
 export default defineConfig({
     testDir: "./tests/e2e",
-    timeout: 120_000,
+    // Per-test wall-clock ceiling. CI runners render this WebGL scene through a
+    // software rasterizer (SwiftShader) with no GPU, so the compound
+    // interaction tests (several camera-settle polls + real drags) run far
+    // slower — the whole suite sits near the local 120 s budget on CI. Give CI
+    // headroom over the local budget; local timing is unchanged. (The
+    // click-to-focus test keeps its own explicit 240 s override either way.)
+    timeout: process.env.CI ? 240_000 : 120_000,
     fullyParallel: false,
     workers: 1,
     retries: 0,
