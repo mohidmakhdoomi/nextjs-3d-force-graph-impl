@@ -54,3 +54,13 @@ README updates. Local gate: `npm test` 29/29, typecheck clean, `npm run build` c
   two runs raced for the port. Reordered-schedule tests that actually executed all
   passed. Re-verifying on an isolated port (31730) via a throwaway scratchpad config
   to get an uncontended clean pass. (Did NOT kill spir-13's active server.)
+
+### Verification COMPLETE (all green)
+- Isolated-port (31730) full chromium e2e: **10/10 passed (11.4m)** with
+  `fullyParallel: true` — tests still ran serially (workers:1), test independence
+  intact. Confirms the earlier 2 failures were the spir-13 shared-port-3000 race,
+  not my change. Throwaway config torn down; port freed cleanly.
+- Clean detached-checkout gate (real `npm ci`, no `.claude/hooks`): lint exit 0,
+  typecheck exit 0, `npm test` 29/29. Proves the 18 local lint errors were purely
+  the untracked harness file (environment noise), not committed code.
+- Committed as 66b3ccb on builder/air-30. Proceeding to PR (porch flow).
