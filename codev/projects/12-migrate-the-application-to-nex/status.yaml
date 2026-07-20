@@ -5,14 +5,14 @@ phase: implement
 plan_phases:
   - id: framework_upgrade
     title: Reverify, Run/Review Codemod, and Land the Next 16 Manifest + Contract Tests
-    status: in_progress
+    status: complete
   - id: turbopack_behavioral_qualification
     title: Qualify the Default Turbopack Build and Client WebGL Bundle (Two-Engine Matrix)
-    status: pending
+    status: in_progress
   - id: evidence_disposition_and_docs
     title: Lockfile/Audit Delta, Supply-Chain, PostCSS Disposition, and Docs
     status: pending
-current_plan_phase: framework_upgrade
+current_plan_phase: turbopack_behavioral_qualification
 gates:
   spec-approval:
     status: approved
@@ -26,8 +26,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 2
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: framework_upgrade
@@ -46,4 +46,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-12/codev/projects/12-migrate-the-application-to-nex/12-framework_upgrade-iter1-claude.txt
 started_at: '2026-07-20T11:23:09.851Z'
-updated_at: '2026-07-20T12:17:31.721Z'
+updated_at: '2026-07-20T12:20:15.181Z'
