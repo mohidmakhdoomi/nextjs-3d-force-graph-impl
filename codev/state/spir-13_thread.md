@@ -217,3 +217,15 @@ real npm ci; both engines, E2E_ENGINES unset):
   unexpected page/console/hydration/timer/WebGL/GPU errors. Runtime behavior unchanged
   (no runtime dependency moved) — FR9 reused suite, not re-authored.
 Next: commit thread, porch done 13 → porch next 13 (Phase 3 3-way consultation).
+
+## Phase 3 — 3-way consultation (iter 1): Claude APPROVE, Codex REQUEST_CHANGES, Gemini skipped
+- Claude: APPROVE (HIGH) — FR8-13 all verified, no issues.
+- Codex: REQUEST_CHANGES (HIGH) — (1) README `validate` row said "production start", but
+  validate=lint&&typecheck&&test:smoke; the direct `npm run start` HTTP 200 is a SEPARATE
+  step and the smoke's server is Playwright-managed → FIXED: reworded the validate table
+  row + prose to point at test:smoke and call out the separate direct-start check.
+  (2) status.yaml still `in_progress` — NOT actioned: status.yaml is porch-managed and
+  correctly in_progress until porch advances post-approval; strict mode forbids editing it.
+- Gemini: COMMENT (LOW) — agy lane produced no output (non-blocking tooling skip, same as
+  spec/plan passes). Will retry the lane.
+Committing README fix, then re-consult iter 2.
