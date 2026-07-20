@@ -1,9 +1,18 @@
 id: '12'
 title: migrate-the-application-to-nex
 protocol: spir
-phase: plan
-plan_phases: []
-current_plan_phase: null
+phase: implement
+plan_phases:
+  - id: framework_upgrade
+    title: Reverify, Run/Review Codemod, and Land the Next 16 Manifest + Contract Tests
+    status: in_progress
+  - id: turbopack_behavioral_qualification
+    title: Qualify the Default Turbopack Build and Client WebGL Bundle (Two-Engine Matrix)
+    status: pending
+  - id: evidence_disposition_and_docs
+    title: Lockfile/Audit Delta, Supply-Chain, PostCSS Disposition, and Docs
+    status: pending
+current_plan_phase: framework_upgrade
 gates:
   spec-approval:
     status: approved
@@ -21,4 +30,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-20T11:23:09.851Z'
-updated_at: '2026-07-20T11:44:00.412Z'
+updated_at: '2026-07-20T11:44:19.067Z'
