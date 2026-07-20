@@ -129,7 +129,11 @@ FR13 rollback unit.
 - [ ] **FR4 obsolete idioms**: remove `--turbopack` from the `dev` script
       (→ `next dev`); confirm (grep) no `next lint` invocation in scripts/CI/docs;
       leave `lint` as `eslint .` and the flat config's direct
-      `@next/eslint-plugin-next` wiring intact.
+      `@next/eslint-plugin-next` wiring intact. Specifically re-verify under the
+      16.x plugin that `eslint.config.mjs`'s accesses still resolve —
+      `nextPlugin.configs.recommended.rules` and
+      `nextPlugin.configs['core-web-vitals'].rules` — since a changed plugin
+      export shape would break the config; reconcile explicitly if it moved.
 - [ ] **FR12 contract tests**: update `tests/toolchain.test.mjs`
       `expectedDependencyBaseline` (`next` and `@next/eslint-plugin-next`
       `15.5.20` → `16.2.10`), preserving the string-equality and lockfile-v3/Node
@@ -178,7 +182,7 @@ move together in this commit, the revert is atomic.
 
 ### Phase 2: Qualify the Default Turbopack Build and Client WebGL Bundle (Two-Engine Matrix)
 **Dependencies**: Phase 1 (framework_upgrade)
-**Implements**: FR5, FR6, FR7, FR8, FR9, FR11 (error budget).
+**Implements**: FR5, FR6, FR7, FR8, FR9 (matrix + error budget).
 
 #### Objectives
 - Prove the now-default Turbopack production build preserves the app's behavior:
@@ -211,9 +215,9 @@ move together in this commit, the revert is atomic.
       one, else record that none is required.
 - [ ] **FR8 aggregate gate**: `npm run validate` green end-to-end (both engines
       locally).
-- [ ] **FR11 error budget**: zero unexpected page/console/hydration/timer/
+- [ ] **FR9 error budget**: zero unexpected page/console/hydration/timer/
       WebGL-context/GPU errors across smoke + matrix in both engines (strict
-      collection retained from #11).
+      collection retained from #11). (Supply-chain FR11 is handled in Phase 3.)
 - [ ] Phase commit: `[Spec 12][Phase: turbopack_behavioral_qualification] test: Qualify Turbopack build across the two-engine matrix`.
 
 #### Implementation Details
@@ -281,9 +285,12 @@ Revert this phase commit to drop any qualification-driven test/CI tweaks; Phase 
       exhaustive re-enumeration) pre-existing unchanged install scripts; confirm
       clean `npm ci` behavior. Record findings.
 - [ ] **FR12 docs/enumerations**: update README for the `--turbopack` dev-flag
-      removal and any Turbopack build note; keep `tests/automation.test.mjs`
-      README/script enumerations green (they assert required scripts + README
-      command mentions + CI text — verify all still hold).
+      removal and any Turbopack build note; **update the stale version statement
+      on README line 6** ("Updated for React 19 and Next 15…") to reflect Next 16
+      (it is not asserted by `automation.test.mjs` but would otherwise be false);
+      keep `tests/automation.test.mjs` README/script enumerations green (they
+      assert required scripts + README command mentions + CI text — verify all
+      still hold).
 - [ ] Phase commit: `[Spec 12][Phase: evidence_disposition_and_docs] docs: Record Next 16 audit/lockfile delta and update docs`.
 
 #### Implementation Details
@@ -387,7 +394,8 @@ Not tracked — SPIR measures progress by completed phases, not time.
 
 ## Documentation Updates Required
 - [ ] README: `--turbopack` dev-flag removal; Turbopack production-build note if
-      warranted.
+      warranted; refresh the stale line-6 "React 19 and Next 15" statement to
+      Next 16.
 - [ ] `codev/reviews/12-migrate-the-application-to-nex.md` (authored in the Review
       phase) carrying reverification, codemod review, matrix/bundle evidence,
       audit/lockfile/supply-chain tables, PostCSS disposition, and Node/browser
@@ -404,8 +412,40 @@ Not tracked — SPIR measures progress by completed phases, not time.
 
 ## Consultation Log
 
-_To be populated by the SPIR 3-way consultation (Gemini, Codex, Claude) that
-porch runs after this draft, and updated after any human feedback._
+### Iteration 1 — initial three-way review (2026-07-20)
+
+- **Gemini: APPROVE (high confidence).** "Perfectly translates the spec into
+  three highly coherent, executable phases." Endorsed the phase split
+  (upgrade → qualification → evidence), the single-PR rollback unit with
+  coherent per-phase commits, and the FR5 `npm ls three` + `.next/static/` grep
+  evidence method. One note: Phase 2 mislabeled the error budget as FR11 (it is
+  FR9).
+- **Claude: APPROVE (high confidence).** Traced every FR (FR1–FR13) to a phase
+  and verified each factual claim against the codebase (dev script, pins, empty
+  config, static page, client island, contract-test pins, `dev` not enumerated
+  in `automation.test.mjs`, `E2E_ENGINES`, CI). Full coverage, correct ordering,
+  literally-executable acceptance criteria. Notes: same FR11→FR9 mislabel; the
+  stale README line-6 statement; and a refinement to name the exact
+  `nextPlugin.configs.recommended.rules` / `configs['core-web-vitals'].rules`
+  accesses to re-verify under the 16.x plugin.
+- **Codex: COMMENT (high confidence).** "Strong, implementation-ready plan with
+  good spec coverage." One point: README currently says "Updated for React 19
+  and Next 15", which becomes false after the upgrade — call the line out
+  explicitly. Otherwise file targets, sequencing, risks, and test strategy align
+  with the repo.
+
+**Changes applied (all feedback incorporated):**
+1. Corrected the Phase 2 error-budget label from FR11 → FR9 (header, deliverable,
+   and risk text); FR11 (supply-chain) remains correctly in Phase 3.
+2. Phase 3 FR12 now explicitly calls out refreshing the stale README line-6
+   "React 19 and Next 15" statement (also noted in Documentation Updates).
+3. Phase 1 FR4 now names the exact ESLint plugin config accesses to re-verify
+   under `@next/eslint-plugin-next@16.2.10`
+   (`nextPlugin.configs.recommended.rules`,
+   `nextPlugin.configs['core-web-vitals'].rules`).
+
+_Second consultation (after human/gate feedback) to be appended if the plan is
+revised at the plan-approval gate._
 
 ## Approval
 - [ ] Expert AI Consultation Complete (3-way)
@@ -415,6 +455,7 @@ porch runs after this draft, and updated after any human feedback._
 | Date | Change | Reason | Author |
 |------|--------|--------|--------|
 | 2026-07-20 | Initial implementation plan | Plan phase draft | Builder (spir-12) |
+| 2026-07-20 | FR11→FR9 label fix (Phase 2); explicit README line-6 refresh (Phase 3); named ESLint plugin config accesses (Phase 1) | 3-way plan review | Builder (spir-12) |
 
 ## Notes
 - No time estimates (SPIR: phases are done/not-done).

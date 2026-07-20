@@ -70,3 +70,13 @@ rollback unit, phase commits within one PR):
 Design note: no infra-first phase (unlike plan 11) — the matrix/Firefox infra
 already exists from #11; this reuses it unchanged. Porch plan checks pass
 (plan_exists, has_phases_json, min_two_phases=3). Committed initial plan draft.
+
+### Plan iteration 1 — 3-way consult (2026-07-20)
+Gemini APPROVE (high), Claude APPROVE (high), Codex COMMENT (high). No
+REQUEST_CHANGES. Applied all feedback:
+- Fixed Phase 2 error-budget label FR11 → FR9 (FR11 = supply-chain, stays Phase 3).
+- Phase 3 FR12: explicit refresh of stale README line 6 ("React 19 and Next 15").
+- Phase 1 FR4: named the exact eslint plugin config accesses to re-verify under
+  16.x (`nextPlugin.configs.recommended.rules`, `configs['core-web-vitals'].rules`).
+Committed "Plan with multi-agent review". Next: porch → plan-approval GATE →
+notify architect and STOP.
