@@ -445,3 +445,11 @@ Follow-ups). Routed governance updates by tier via the update-arch-docs skill:
 npm test still 21/21. Next: commit review+governance+thread, push, open the single
 PR (Closes #12), run porch review checks (pr_exists/arch/lessons/e2e), `porch done`,
 notify architect PR-ready.
+
+**PR OPENED: #26** → https://github.com/mohidmakhdoomi/nextjs-3d-force-graph-impl/pull/26
+(base main, Closes #12). Review commit `89550a9` pushed. Porch review checks all
+green (pr_exists ✓, review_has_arch_updates ✓, review_has_lessons_updates ✓,
+e2e_tests skipped ✓). Architect notified PR-ready. Running PR 3-way consult next;
+then the `pr` gate awaits human approval (I do NOT approve gates). After merge →
+verify phase (pull integration branch, `porch done 12`, architect approves
+verify-approval).
