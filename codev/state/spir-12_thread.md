@@ -488,3 +488,10 @@ phase: pull the integration branch (main) into the worktree, `porch done 12` to
 signal verification ready, architect approves `verify-approval`. If verify is
 unneeded: `porch verify 12 --skip "reason"`. NOTE: builder branches block
 force-push (GH013); merge via the PR, not a local rewrite.
+
+**CI GREEN (architect's approval condition met).** Architect posted their 3-way
+integration review on PR #26 (unanimous APPROVE) and said they'll approve the pr
+gate once Validation is green on head `fa4bced` — **hold merge until then**.
+Validation run 29763803502 = `success` (15m39s) on fa4bced; Vercel pass; PR
+MERGEABLE/CLEAN. Notified architect. STILL HOLDING — merge only AFTER the pr gate is
+approved by the architect. Not self-approving, not merging.
