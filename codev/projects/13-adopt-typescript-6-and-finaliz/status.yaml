@@ -1,0 +1,41 @@
+id: '13'
+title: adopt-typescript-6-and-finaliz
+protocol: spir
+phase: review
+plan_phases:
+  - id: typescript6_adoption
+    title: Adopt TypeScript 6.0.3, Resolve/Bound Diagnostics, and Pin It (Contract Tests)
+    status: complete
+  - id: eslint9_config_finalization
+    title: Finalize the ESLint 9 Flat Config (Native React Flat Config, Scoped Globals, Coverage-Preserving)
+    status: complete
+  - id: qualification_evidence_docs
+    title: End-to-End Qualification, Lockfile/Audit Delta, Supply-Chain, Docs, and Deferral
+    status: complete
+current_plan_phase: null
+gates:
+  spec-approval:
+    status: approved
+    requested_at: '2026-07-20T19:38:26.889Z'
+    approved_at: '2026-07-20T19:39:22.438Z'
+  plan-approval:
+    status: approved
+    requested_at: '2026-07-20T19:47:34.466Z'
+    approved_at: '2026-07-20T19:48:16.676Z'
+  pr:
+    status: approved
+    requested_at: '2026-07-20T21:02:35.469Z'
+    approved_at: '2026-07-20T21:48:30.542Z'
+  verify-approval:
+    status: pending
+iteration: 1
+build_complete: false
+history: []
+started_at: '2026-07-20T19:19:43.841Z'
+updated_at: '2026-07-20T21:48:30.543Z'
+pr_history:
+  - phase: review
+    pr_number: 31
+    branch: builder/spir-13
+    created_at: '2026-07-20T20:57:03.917Z'
+pr_ready_for_human: false

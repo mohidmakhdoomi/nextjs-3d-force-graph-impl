@@ -6,6 +6,50 @@ import {URL} from "node:url";
 
 import eslintConfig from "../eslint.config.mjs";
 
+// Minimal, dependency-free semver-range satisfaction for the simple
+// space-separated comparator form npm records for peer ranges
+// (e.g. ">=4.8.4 <6.1.0"). The contract suite must not pull in a semver library,
+// so this covers exactly the comparator shapes the assertions below rely on.
+const parseVersion = (version) => {
+    const match = version.match(/^(\d+)\.(\d+)\.(\d+)/);
+    assert.ok(match, `unparseable version: ${version}`);
+    return match.slice(1, 4).map(Number);
+};
+
+const compareVersions = (a, b) => {
+    const left = parseVersion(a);
+    const right = parseVersion(b);
+    for (let index = 0; index < 3; index += 1) {
+        if (left[index] !== right[index]) {
+            return left[index] < right[index] ? -1 : 1;
+        }
+    }
+    return 0;
+};
+
+const satisfiesRange = (version, range) =>
+    range
+        .trim()
+        .split(/\s+/)
+        .every((comparator) => {
+            const match = comparator.match(/^(>=|<=|>|<|=)?(\d+\.\d+\.\d+.*)$/);
+            assert.ok(match, `unparseable comparator: ${comparator}`);
+            const operator = match[1] ?? "=";
+            const order = compareVersions(version, match[2]);
+            switch (operator) {
+                case ">=":
+                    return order >= 0;
+                case "<=":
+                    return order <= 0;
+                case ">":
+                    return order > 0;
+                case "<":
+                    return order < 0;
+                default:
+                    return order === 0;
+            }
+        });
+
 const expectedNodeVersion = "22.23.1";
 const expectedNpmVersion = "10.9.8";
 const expectedGeneratedIgnores = [
@@ -243,5 +287,42 @@ test("ignores generated output without excluding source or tests", () => {
             (pattern) => pattern.startsWith("app") || pattern.startsWith("tests"),
         ),
         false,
+    );
+});
+
+test("pins the TypeScript 6 language target exactly within the supported parser range", () => {
+    const manifestTypescript = packageJson.devDependencies.typescript;
+
+    // Exact pin (no range prefix), matching the house style for language-critical
+    // deps (next/react/three), so the language version cannot drift toward the
+    // deferred TypeScript 7 major.
+    assert.equal(manifestTypescript, "6.0.3");
+    assert.match(manifestTypescript, /^\d+\.\d+\.\d+$/);
+    assert.equal(
+        packageLock.packages["node_modules/typescript"].version,
+        manifestTypescript,
+    );
+
+    // typescript-eslint stays on a supported line whose declared TypeScript peer
+    // admits 6.0.3 and excludes 6.1.0+. That range is what keeps the
+    // "unsupported TypeScript version" parser warning silent under TS 6.0.3 and
+    // documents why TypeScript 7 remains deferred (parser-blocked).
+    const typescriptEslintPeer =
+        packageLock.packages["node_modules/typescript-eslint"].peerDependencies
+            .typescript;
+
+    assert.ok(
+        satisfiesRange(manifestTypescript, typescriptEslintPeer),
+        `typescript-eslint typescript peer "${typescriptEslintPeer}" must admit ${manifestTypescript}`,
+    );
+    assert.equal(
+        satisfiesRange("6.1.0", typescriptEslintPeer),
+        false,
+        `typescript-eslint typescript peer "${typescriptEslintPeer}" must exclude 6.1.0+`,
+    );
+    assert.equal(
+        satisfiesRange("7.0.0", typescriptEslintPeer),
+        false,
+        `typescript-eslint typescript peer "${typescriptEslintPeer}" must exclude TypeScript 7`,
     );
 });

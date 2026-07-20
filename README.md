@@ -34,6 +34,13 @@ This repository supports exactly Node.js `22.23.1` with npm `10.9.8`. The
 runtime is declared in `.nvmrc` and `package.json`; npm `10.9.8` generated the
 committed lockfile v3.
 
+The language and lint toolchain targets the **TypeScript 6** line — pinned
+exactly in `package.json` and enforced by `tests/toolchain.test.mjs` — together
+with the supported **ESLint 9** flat config in `eslint.config.mjs`. TypeScript 7
+and ESLint 10 are intentionally deferred: TypeScript 7 is blocked by
+`typescript-eslint` parser support (its declared TypeScript peer stops below
+`6.1.0`), and ESLint 10 is tracked separately as a peer-compatibility experiment.
+
 With [nvm](https://github.com/nvm-sh/nvm), install and verify the toolchain:
 
 ```sh
@@ -61,14 +68,17 @@ npm run browser:install
 | `npm run build` | Create the production Next.js build. |
 | `npm run start` | Start a previously built production application. |
 | `npm run test:smoke` | Build, start the production server, and run the Chromium and Firefox WebGL smoke. |
-| `npm run validate` | Fail fast through lint, typecheck, build, production start, and browser smoke. |
+| `npm run validate` | Fail fast through lint, typecheck, and the `test:smoke` browser suite (build plus the Chromium + Firefox WebGL smoke). |
 | `npm run audit:full` | Report findings in the complete dependency graph. |
 | `npm run audit:production` | Report findings with development dependencies omitted. |
 
-`npm run validate` is the documented green gate. The browser smoke observes a
-real WebGL drawing buffer and exercises the axes, camera-reset, and rotation
-controls against `next start` in both Chromium and Firefox; Playwright owns
-server startup and teardown.
+`npm run validate` is the documented green gate: it runs lint, typecheck, and
+`test:smoke`. The browser smoke observes a real WebGL drawing buffer and
+exercises the axes, camera-reset, and rotation controls against `next start` in
+both Chromium and Firefox; Playwright owns that server's startup and teardown.
+`npm run validate` does not itself perform a standalone production start — a
+direct `npm run start` serving the root page with HTTP 200 is verified separately
+as a stage-qualification check.
 
 ### Audit evidence
 
