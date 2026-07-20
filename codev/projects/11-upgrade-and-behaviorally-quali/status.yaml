@@ -8,11 +8,11 @@ plan_phases:
     status: complete
   - id: matrix_suite_baseline
     title: Automate the Class A Interaction Matrix and Capture Baseline Evidence
-    status: in_progress
+    status: complete
   - id: dependency_upgrade_qualification
     title: Upgrade the Three.js Force-Graph Unit and Qualify Behavior
-    status: pending
-current_plan_phase: matrix_suite_baseline
+    status: in_progress
+current_plan_phase: dependency_upgrade_qualification
 gates:
   spec-approval:
     status: approved
@@ -26,8 +26,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 2
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: firefox_second_engine
@@ -62,4 +62,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-11/codev/projects/11-upgrade-and-behaviorally-quali/11-matrix_suite_baseline-iter1-claude.txt
 started_at: '2026-07-19T18:32:47.973Z'
-updated_at: '2026-07-20T07:21:47.312Z'
+updated_at: '2026-07-20T07:24:36.144Z'
