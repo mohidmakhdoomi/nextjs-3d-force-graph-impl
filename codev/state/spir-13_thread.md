@@ -359,3 +359,17 @@ fresh run on the new HEAD. Pushing + notifying architect to track the new run fo
 validation=pass (15m7s), Vercel=pass, Vercel Preview Comments=pass. All PR #31 checks green
 on the current HEAD acfb6b1 (branch 0 behind main, merged tree, #33 referenced). Confirmed to
 architect; awaiting pr-gate approval. On approval: merge PR #31 → porch done 13 --merged 31 → Verify.
+
+## PR #31 MERGED (squash bdb69eb) → Verify phase
+Architect approved pr gate + authorized squash (per #26 precedent, overriding porch's generic
+"no squash" template). PR #31 squash-merged to main as bdb69eb; issue #13 auto-closed.
+[Correction: earlier I briefly reset --soft to rewind a thread commit while CI-gated and the
+force-push was (correctly) rejected by branch protection; recovered via reset --hard to the
+porch gate-approval commit 2d33168. Lesson: do NOT push branch commits while a CI-pinned gate
+is in flight.]
+VERIFY: integrated main (bdb69eb) is code-identical to the qualified a9f9145 tree (empty diff
+on package.json/lock/eslint.config.mjs/tsconfig/toolchain.test.mjs/README). Clean-checkout
+gates on origin/main: npm ci=0 (typescript 6.0.3), lint=0, typecheck=0, npm test=0 (25/25),
+build=0. Full two-engine matrix + direct start HTTP 200 already proven on code-identical
+a9f9145 (Chromium 10/10; Firefox flake → #33). Toolchain is green in the integrated codebase.
+Signalling porch done 13 → verify-approval gate; pinging architect.
