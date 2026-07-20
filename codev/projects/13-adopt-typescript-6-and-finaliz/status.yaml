@@ -1,7 +1,7 @@
 id: '13'
 title: adopt-typescript-6-and-finaliz
 protocol: spir
-phase: specify
+phase: plan
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -19,4 +19,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-20T19:19:43.841Z'
-updated_at: '2026-07-20T19:39:22.438Z'
+updated_at: '2026-07-20T19:39:42.693Z'
