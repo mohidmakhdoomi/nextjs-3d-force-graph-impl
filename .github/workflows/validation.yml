@@ -226,7 +226,19 @@ jobs:
   gate:
     name: Validation gate
     needs: [quality, e2e]
+    # Always run, then FAIL unless both upstreams succeeded. A plain
+    # `needs:`-only gate is SKIPPED when an upstream fails/cancels, and a skipped
+    # required check can be misread as passing — this makes the gate go actively
+    # red on any failed, skipped, or cancelled upstream job. For the matrix `e2e`
+    # job, `needs.e2e.result` is `success` only when every shard passed.
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Confirm the validation decomposition passed
-        run: echo "quality + full sharded e2e passed — contract-equivalent to npm run validate"
+      - name: Require quality and e2e to have succeeded
+        shell: bash
+        run: |
+          echo "quality result: ${{ needs.quality.result }}"
+          echo "e2e result:     ${{ needs.e2e.result }}"
+          test "${{ needs.quality.result }}" = "success"
+          test "${{ needs.e2e.result }}" = "success"
+          echo "quality + full sharded e2e passed — contract-equivalent to npm run validate"

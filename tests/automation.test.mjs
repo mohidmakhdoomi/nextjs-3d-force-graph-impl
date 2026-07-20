@@ -158,9 +158,15 @@ test("merges sharded reports into one HTML report and keeps diagnostics", () => 
     assert.match(step(merge, "Upload Playwright HTML report"), /name: playwright-report/);
 });
 
-test("exposes a single stable validation gate over quality and e2e", () => {
+test("exposes a hardened single validation gate over quality and e2e", () => {
     const gate = jobBlock("gate");
     assert.match(gate, /needs: \[quality, e2e\]/);
+    // Hardening: the gate must ALWAYS run and explicitly assert both upstream
+    // jobs succeeded. Without this, a failed/skipped/cancelled upstream leaves
+    // the gate skipped, which a required-status check can misread as passing.
+    assert.match(gate, /if: always\(\)/);
+    assert.match(gate, /test "\$\{\{ needs\.quality\.result \}\}" = "success"/);
+    assert.match(gate, /test "\$\{\{ needs\.e2e\.result \}\}" = "success"/);
 });
 
 test("documents every direct package command and CI artifact", () => {
