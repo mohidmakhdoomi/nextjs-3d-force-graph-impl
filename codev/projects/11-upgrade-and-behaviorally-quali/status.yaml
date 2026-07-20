@@ -27,7 +27,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: false
+build_complete: true
 history:
   - iteration: 1
     plan_phase: firefox_second_engine
@@ -62,7 +62,7 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-11/codev/projects/11-upgrade-and-behaviorally-quali/11-matrix_suite_baseline-iter1-claude.txt
 started_at: '2026-07-19T18:32:47.973Z'
-updated_at: '2026-07-20T09:13:33.387Z'
+updated_at: '2026-07-20T09:14:11.894Z'
 pr_history:
   - phase: review
     pr_number: 25
