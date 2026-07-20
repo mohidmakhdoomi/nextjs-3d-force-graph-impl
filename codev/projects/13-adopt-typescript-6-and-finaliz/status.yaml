@@ -1,7 +1,7 @@
 id: '13'
 title: adopt-typescript-6-and-finaliz
 protocol: spir
-phase: review
+phase: verify
 plan_phases:
   - id: typescript6_adoption
     title: Adopt TypeScript 6.0.3, Resolve/Bound Diagnostics, and Pin It (Contract Tests)
@@ -32,7 +32,7 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-20T19:19:43.841Z'
-updated_at: '2026-07-20T21:51:55.278Z'
+updated_at: '2026-07-20T21:52:10.033Z'
 pr_history:
   - phase: review
     pr_number: 31
