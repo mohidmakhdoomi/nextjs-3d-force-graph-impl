@@ -1,7 +1,7 @@
 id: bugfix-27
 title: node-drag-during-auto-rotation
 protocol: bugfix
-phase: fix
+phase: pr
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -11,4 +11,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-20T19:50:29.273Z'
-updated_at: '2026-07-20T19:58:29.624Z'
+updated_at: '2026-07-20T20:08:54.401Z'
