@@ -104,3 +104,45 @@ Porch advanced to plan-approval and is WAITING FOR HUMAN APPROVAL. Strict mode: 
 do NOT run porch approve. Architect notified.
 On approval: architect runs `porch approve 13 plan-approval --a-human-explicitly-approved-this`,
 then `porch next 13` → Implement phase, Phase 1 (typescript6_adoption).
+
+## Implement — Phase 1 (typescript6_adoption) STARTED
+Restarted with fresh context; architect confirmed plan-approval APPROVED (both elections
+at defaults). `porch next 13` → implement / plan_phase typescript6_adoption.
+Env verified: Node 22.23.1, npm 10.9.8 (contract match); node_modules ABSENT (worktree
+ships clean — Confirmed Decisions #8: no bare require; verify against real npm ci).
+Phase-1 scope ONLY: FR1 reverify, FR2 typescript→6.0.3 exact + lockfile, FR3 tsc clean,
+FR4 eslint clean no parser-warning (CONFIG UNCHANGED this phase), FR12-partial contract pin.
+Starting FR1 registry reverification.
+
+## Implement — Phase 1 (typescript6_adoption) COMPLETE — committed d642094
+FR1 reverified (registry + real install): typescript@6.0.3 is the latest STABLE 6.0.x
+(only 6.0.2/6.0.3 stable; dist-tags latest=7.0.2 TS7 GA, beta=6.0.0-beta). No newer
+6.0.x supersedes. typescript-eslint@8.64.0 peers typescript >=4.8.4 <6.1.0; the
+installed @typescript-eslint/typescript-estree@8.64.0 SUPPORTED_TYPESCRIPT_VERSIONS
+= '>=4.8.4 <6.1.0' (admits 6.0.3 via semver.satisfies → NO warning). typescript-eslint
+@latest=8.65.0 carries the SAME <6.1.0 range → no TS-support gain → retain 8.64.0.
+TS7 (7.0.2) still parser-blocked. No new required peer. No contradiction → proceed.
+
+FR2: package.json typescript ~5.7.3 → "6.0.3" exact (only manifest change). Lockfile
+regenerated via npm; delta is purely the typescript entry (5.7.3→6.0.3, registry.npmjs.org).
+Restored lockfile top-level "name":"primary" (npm had rewritten it to worktree basename
+"spir-13" — worktree contamination per Toolchain/Worktree-Hygiene lesson; reverted).
+npm ci reproduces clean, no peer warnings, no --force/--legacy-peer-deps, lockfile v3.
+
+FR3: tsc@6.0.3 --noEmit exits 0, ZERO diagnostics (no deprecations on full tsconfig +
+source; matches Confirmed Decisions #3). skipLibCheck untouched.
+
+FR4: eslint.config.mjs UNCHANGED this phase. In the worktree, `eslint .` reports 18
+errors ONLY on untracked .claude/hooks/worktree-write-guard.cjs (absent from clean
+checkouts) — env noise per lessons-critical, NOT suppressed in committed config.
+Proved on a detached clean checkout (git worktree add --detach d642094 + real npm ci):
+`eslint .` exits 0 with ZERO output → NO typescript-eslint unsupported-version warning,
+no suppression. typecheck exit 0, 22/22 tests, npm ci no-op there too. Worktree removed.
+
+FR12(pin): tests/toolchain.test.mjs asserts devDependencies.typescript==="6.0.3" (exact,
+== lockfile) + dependency-free satisfiesRange() proving the typescript-eslint peer admits
+6.0.3 and excludes 6.1.0+/7.x (documents TS7 deferral). 22/22 tests pass.
+
+Porch checks green: `npm test --exclude e2e` 22/22, `npm run build` exit 0 (TS compiled
+under 6.0.3; only the benign Next multi-lockfile workspace-root inference warning).
+Next: commit thread, then `porch done 13` → 3-way implement consultation on Phase 1.
