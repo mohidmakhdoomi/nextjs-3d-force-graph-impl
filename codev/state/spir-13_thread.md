@@ -39,3 +39,16 @@ Issue #13 has NO `## Baked Decisions` section → constraints derived from the i
 fixed scope/AC text (like spec 12).
 
 Writing the spec now.
+
+## Specify — 3-way consultation (iter 1) complete
+
+- Gemini: APPROVE (HIGH) — after `agy` first returned no output (tooling skip); re-run on request → APPROVE.
+- Codex: COMMENT (HIGH) — 3 clarity nits (start HTTP200 evidence, e2e globals pattern, docs exact-vs-line). All addressed.
+- Claude: APPROVE (HIGH) — 4 non-blocking. Key one: challenged "~16 rules" hooks claim.
+  RE-VERIFIED against a real install: hooks 7.1.1 = 29 rules total, recommended=16, recommended-latest=17.
+  Reviewer hit the no-node_modules-in-worktree trap (bare require → parent's stale 5.1.0 = 2 rules).
+  Added Confirmed Decisions #8 codifying the trap. Softened app browser-globals wording (only globalThis
+  is a direct ref), added tailwind.config.ts .ts+CJS note, clarified hooks flat-config surface.
+
+Spec updated + Consultation Log written. Committing "Specification with multi-agent review",
+then `porch next 13` to advance toward the spec-approval gate.

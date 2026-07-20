@@ -67,9 +67,14 @@ prove the app still builds and runs, not re-authored.
   2. **Hooks** coverage is pinned explicitly to the pre-#10 effective set
      (`react-hooks/rules-of-hooks: error`, `react-hooks/exhaustive-deps: warn`)
      because #10's issue forbade the *silent* coverage expansion that spreading
-     `eslint-plugin-react-hooks@7`'s ~16-rule `recommended` would cause. #13 is
-     the deliberate, reviewed moment to decide the Hooks coverage question and
-     express it through the current flat-config surface.
+     `eslint-plugin-react-hooks@7`'s much larger preset would cause. The
+     published `eslint-plugin-react-hooks@7.1.1` exposes **29 rules total** (the
+     React-Compiler-era expansion), with `configs.recommended` = **16 rules** and
+     `configs['recommended-latest']` = **17 rules** — versus the two-rule v5
+     baseline (verified against a real install 2026-07-20; see the stale-resolution
+     caveat in Confirmed Decisions #8). #13 is the deliberate, reviewed moment to
+     decide the Hooks coverage question and express it through the current
+     flat-config surface.
   3. **Globals** are applied as a single un-scoped `globals.commonjs` block
      (`globals.browser` is present only as a commented-out fragment). Browser
      source (`app/**` client island: `window`, `document`, WebGL, RAF) and
@@ -79,6 +84,12 @@ prove the app still builds and runs, not re-authored.
   off`, `react/jsx-uses-react: off` (React 19 automatic JSX runtime),
   `@typescript-eslint/no-explicit-any: off`, and the direct
   `@next/eslint-plugin-next` wiring (`recommended` + `core-web-vitals`).
+- The app/client source runs in the browser and transitively depends on browser
+  APIs (Three.js/WebGL/react-force-graph, `globalThis`) even though it makes few
+  *direct* references to bare browser globals — a grep of `app/**` finds only one
+  (`globalThis` in `focusGraphResources.ts`). Browser-globals scoping (FR5) is
+  therefore an intentional-correctness change, not a fix for current `no-undef`
+  errors (`no-undef` is off for TS files under the `typescript-eslint` config).
 - `tsconfig.json` uses `target: "es6"`, `module: "esnext"`, `moduleResolution:
   "bundler"`, `strict: true`, `skipLibCheck: true`, `incremental: true`, the
   `next` TS plugin, and the `@/*` path alias. Under a probe with TypeScript 6.0.3,
@@ -188,6 +199,17 @@ FR1 and do not replace that verification:
    is a no-TS-support-change election available at the spec gate. `eslint` and
    `@eslint/js` stay string-equal (contract-enforced). `typescript` is pinned
    exactly (like `next`/`react`/`three`) so the language version cannot drift.
+8. **Verify plugin facts against a real `npm ci`, not a bare `require` in the
+   worktree.** The builder worktree ships **without** `node_modules`, so an
+   in-tree `require('eslint-plugin-react-hooks')` (or any dependency) silently
+   resolves the *parent* checkout's `node_modules`, which carries **stale**
+   pre-#10 versions (e.g. `eslint-plugin-react-hooks@5.1.0`, which has only 2
+   rules). This trap produced a contradictory "the plugin has 2 rules" reading
+   during spec consultation; the authoritative count against the manifest-pinned
+   `7.1.1` is 16/17/29 (Problem Analysis). Any implementation-time verification of
+   installed-package behavior (rule counts, config shapes, parser warnings) must
+   run after a real `npm ci` in the worktree (or in an isolated probe that
+   installs the exact version), never against a bare `require`.
 
 The issue body contains **no** "Baked Decisions" section; the decisions above are
 derived from the issue's fixed scope / acceptance-criteria text (treated as fixed)
@@ -339,15 +361,22 @@ the `~5.7.3` baseline; explicitly defer TypeScript 7 and ESLint 10.
 
 **On the Hooks coverage election (crux)**: #10 deliberately pinned the Hooks
 effective set to two rules to avoid the *silent* coverage expansion that spreading
-`eslint-plugin-react-hooks@7`'s ~16-rule `recommended` causes. #13's "use current
-Hooks flat configuration where possible … preserve deliberate … rule coverage"
-reads as: modernize the config's *shape* to the current flat-config surface while
-keeping any coverage change *deliberate*. This spec's default (FR6) is
-**coverage-preserving**: express Hooks through the current flat-config surface but
-keep the effective rule set equal to the #10 baseline (rules-of-hooks: error,
-exhaustive-deps: warn), proven by a before/after `eslint --print-config` rule
-diff. Deliberately adopting the full `recommended` set (a real coverage increase)
-is an explicit, reviewable alternative at the spec gate — never absorbed silently.
+`eslint-plugin-react-hooks@7.1.1`'s preset causes (`configs.recommended` = 16
+rules, `configs['recommended-latest']` = 17 rules, 29 total — verified against a
+real install). #13's "use current Hooks flat configuration where possible …
+preserve deliberate … rule coverage" reads as: modernize the config's *shape* to
+the current flat-config idiom while keeping any coverage change *deliberate*.
+Crucially, the config's **existing** Hooks wiring — registering the plugin object
+(`plugins: { 'react-hooks': hooksPlugin }`) and declaring the two rules — **is
+already flat-config-native**; it is not a legacy shape needing migration. So for
+Hooks the modernization is minimal-to-none, and this spec's default (FR6) is
+**coverage-preserving**: keep the effective rule set equal to the #10 baseline
+(rules-of-hooks: error, exhaustive-deps: warn), proven by a before/after `eslint
+--print-config` rule diff. Deliberately adopting the 16/17-rule `recommended` /
+`recommended-latest` preset (a real, large coverage increase) is an explicit,
+reviewable alternative at the spec gate — never absorbed silently. (The genuinely
+legacy shapes this stage modernizes are the **React** `configs/recommended.js`
+import and the **un-scoped globals**, not the Hooks block.)
 
 ## Functional Requirements
 
@@ -416,9 +445,22 @@ un-scoped `globals.commonjs` block:
   toolchain files: `eslint.config.mjs`, `playwright.config.ts`, `next.config.js`,
   `postcss.config.js`, `tailwind.config.ts`, `scripts/**`, and `tests/**`
   (`*.test.mjs` node-test files, `tests/e2e/*.spec.ts` / `graph-handle.ts`).
-- The mixed Node-runner-plus-`page.evaluate`-browser context of the e2e specs is
-  handled explicitly (e.g. Node globals for the test module with browser globals
-  available where in-page callbacks reference them), documented in the review.
+  **Note**: `tailwind.config.ts` is a `.ts` file that uses `module.exports` (CJS
+  semantics in a TypeScript file), and `next.config.js` / `postcss.config.js` are
+  CommonJS — so the CJS group is selected by explicit file globs, **not** by a
+  naive "`.ts` = ESM / `.js` = CJS" extension heuristic.
+- **Mixed Node + in-page browser context of the e2e specs (concrete pattern)**:
+  `tests/e2e/*.spec.ts` and `tests/e2e/graph-handle.ts` execute in the Node
+  Playwright runner but pass callbacks to `page.evaluate(...)` whose *bodies* run
+  in the browser and reference browser globals (e.g. `document`, `window`). The
+  expected pattern is a single `files: ["tests/e2e/**"]` block giving these files
+  **both** Node globals (for the test module) **and** browser globals (for the
+  in-page callback bodies) — i.e. `globals: { ...globals.node, ...globals.browser }`
+  — rather than trying to split globals at the `page.evaluate` boundary (which
+  flat config cannot express per-callback). The builder must confirm via
+  `eslint --print-config` on an e2e spec that both sets are present and that no
+  legitimate reference is flagged; the chosen pattern and its print-config
+  evidence are recorded in the review.
 
 The scoping must be **behavior-preserving for diagnostics**: before/after `eslint
 --print-config` on representative files (a client `.tsx`, a Node config `.mjs`, a
@@ -435,12 +477,20 @@ the deliberate rule coverage established in #10:
   import with the plugin's native flat surface (`configs.flat.recommended`),
   keeping the `settings.react.version: "detect"` and the deliberate offs
   (`react/react-in-jsx-scope: off`, `react/jsx-uses-react: off`).
-- **Hooks**: express `eslint-plugin-react-hooks@7`'s coverage through its current
-  flat-config surface. **Default (this spec's election): coverage-preserving** —
-  the effective Hooks rules remain `react-hooks/rules-of-hooks: error` and
-  `react-hooks/exhaustive-deps: warn`, equal to the #10 baseline. A deliberate
-  adoption of the full `recommended` rule set is permitted **only** if elected at
-  the spec gate and then documented as an intentional coverage increase.
+- **Hooks**: the current flat-config-native expression for this plugin is the
+  explicit registration the config **already** uses — register the plugin object
+  (`plugins: { 'react-hooks': hooksPlugin }`) and declare the rules — because
+  `eslint-plugin-react-hooks@7.1.1`'s `configs.recommended` /
+  `configs['recommended-latest']` are 16-/17-rule presets (not a 2-rule set), and
+  spreading either is a real coverage change, not a shape modernization.
+  **Default (this spec's election): coverage-preserving** — keep the effective
+  Hooks rules `react-hooks/rules-of-hooks: error` and
+  `react-hooks/exhaustive-deps: warn`, equal to the #10 baseline, via that
+  explicit registration. Adopting the 16-/17-rule `recommended` /
+  `recommended-latest` preset is permitted **only** if elected at the spec gate
+  and then documented as an intentional coverage increase (each newly-enabled rule
+  triaged against the app's actual code). No Hooks rule id/severity changes
+  silently.
 - **TypeScript / JS**: preserve `@eslint/js` recommended, `typescript-eslint`
   recommended, and `@typescript-eslint/no-explicit-any: off`.
 - **Next**: preserve the direct `@next/eslint-plugin-next` wiring (`recommended` +
@@ -464,11 +514,17 @@ config uses only native flat-config surfaces. The review states the confirmation
 
 All of the following pass at the final commit: `npm run lint` (clean, no parser
 warning — FR4), `npm run typecheck` (clean under TS 6.0.3 — FR3), `npm test`
-(including updated contract tests), `npm run build`, a direct production
-`npm run start` serving the root page HTTP 200, `npm run test:smoke`, aggregate
-`npm run validate`, and the audit evidence pipeline (`npm run audit:full` /
-`audit:production` through `scripts/validate-audit-report.mjs` semantics,
-preserving original exit codes).
+(including updated contract tests), `npm run build`, `npm run test:smoke`,
+aggregate `npm run validate`, and the audit evidence pipeline (`npm run
+audit:full` / `audit:production` through `scripts/validate-audit-report.mjs`
+semantics, preserving original exit codes). Additionally, a **direct production
+`npm run start`** must serve the root page **HTTP 200**: this is a *separate,
+explicit* step — `npm run validate` (lint → typecheck → build+smoke) does **not**
+itself start the server or prove the HTTP 200, so the builder runs `npm run start`
+against the production build, records the observed status/response (and a clean
+shutdown), and captures that evidence in the review, exactly as #10/#12 did. Each
+gate's command and result are recorded separately (not folded into a single
+"validate passed" claim).
 
 ### FR9 — Browser smoke and complete interaction matrix (reused)
 
@@ -522,9 +578,14 @@ the TS-7 block); it continues to enforce the Node/npm/lockfile-v3 invariants, th
 invariant (which must still hold after the `files`-scoped blocks are added — the
 config must still contain exactly one global-ignore block with no `files`).
 `README.md` and any doc/test enumerations affected by the config restructure are
-updated to stay truthful. TypeScript 7 / ESLint 10 deferral is noted where
-toolchain versions are documented. All doc/test enumerations updated in the same
-rollback unit.
+updated to stay truthful. **Docs version-reference policy (resolves the exact-vs-
+line question)**: the *authoritative* exact pin (`typescript@6.0.3`) lives in
+`package.json` + `package-lock.json` + the `tests/toolchain.test.mjs` assertion;
+human-facing prose (`README.md`) references the **"TypeScript 6" line** rather
+than hard-coding the `6.0.3` patch, so a future supported-6.0.x patch does not
+force doc churn — but any prose that *does* state a version must not contradict
+the manifest. TypeScript 7 / ESLint 10 deferral is noted where toolchain versions
+are documented. All doc/test enumerations updated in the same rollback unit.
 
 ### FR13 — TypeScript 7 / ESLint 10 deferral, rollback unit, and blocking semantics
 
@@ -706,6 +767,52 @@ downgrade, no silent coverage drop.
 
 ## Consultation Log
 
-_Pending — porch runs the 3-way consultation (Gemini, Codex, Claude) at the verify
-step of the Specify phase; feedback and resulting changes will be appended here.
-A second consultation is appended if the spec is revised at the spec-approval gate._
+### Iteration 1 — initial three-way review (2026-07-20)
+
+- **Gemini: APPROVE (high confidence).** Verified the Problem Analysis against
+  `package.json`, `eslint.config.mjs`, `tsconfig.json`, and
+  `tests/toolchain.test.mjs`: confirmed the legacy React `configs/recommended.js`
+  import, the single un-scoped `globals.commonjs` block, the already-flat-native
+  Hooks wiring, and the absent `typescript` pin. Endorsed the bounded target, the
+  single-unit rollback, and the TS-7/ESLint-10 deferral. No issues.
+  *(Gemini's `agy` lane returned no output on the first automated pass — a
+  tooling skip, not a review — and was re-run on request; the re-run produced this
+  APPROVE against the feedback-updated spec.)*
+- **Claude: APPROVE (high confidence).** Independently verified every material
+  claim against the codebase (manifest versions, `tsconfig` options,
+  `eslint.config.mjs` shape, `eslint-plugin-react@7.37.5` `configs.flat.recommended`
+  existence, `globals@17.7.0` sets, the contract-test global-ignore invariant,
+  CJS/ESM config formats). Four non-blocking findings, all resolved:
+  1. *Hooks rule count.* Claude's reviewer read "2 rules" for
+     `eslint-plugin-react-hooks@7.1.1` and called the spec's "~16 rules" wrong.
+     **Re-verified against a real install**: the published `7.1.1` has **29 rules
+     total**, `configs.recommended` = **16**, `configs['recommended-latest']` =
+     **17** — the spec's framing is correct; the reviewer hit the
+     no-`node_modules`-in-worktree trap (a bare `require` resolves the parent
+     checkout's stale `5.1.0`, which has 2 rules). The spec now states the exact
+     counts and adds **Confirmed Decisions #8** codifying the trap and requiring
+     real-`npm ci` verification.
+  2. *"Current flat-config surface" ambiguity for Hooks.* Clarified in FR6 /
+     Solution Exploration: the existing explicit plugin registration **is** the
+     flat-config-native, coverage-preserving expression; the presets are a real
+     coverage change, not a shape fix.
+  3. *App browser-globals wording overstated.* Softened — a grep of `app/**` finds
+     only one direct browser global (`globalThis`); scoping is an
+     intentional-correctness change, not a `no-undef` fix (added to Problem
+     Analysis).
+  4. *`tailwind.config.ts` is `.ts` + `module.exports`.* FR5 now calls out that the
+     CJS group is chosen by explicit globs, not a `.ts=ESM` heuristic.
+- **Codex: COMMENT (high confidence).** Strong, implementation-ready; three minor
+  clarity gaps, all accepted and incorporated:
+  1. FR8/Scenario 5 `npm run start` HTTP 200 evidence → FR8 now states this is a
+     *separate explicit* step (`validate` does not prove it), recorded in the
+     review per #10/#12.
+  2. FR5 e2e globals pattern → FR5 now specifies the concrete pattern (a single
+     `tests/e2e/**` block with both Node and browser globals, since flat config
+     cannot split globals at the `page.evaluate` boundary), proven by print-config.
+  3. Docs exact-vs-line → FR12 now sets the policy: the exact `6.0.3` pin is
+     authoritative in manifest + contract test; README prose references the
+     "TypeScript 6" line to avoid patch churn without contradicting the manifest.
+
+_Second consultation (after human/gate feedback) to be appended if the spec is
+revised at the spec-approval gate._
