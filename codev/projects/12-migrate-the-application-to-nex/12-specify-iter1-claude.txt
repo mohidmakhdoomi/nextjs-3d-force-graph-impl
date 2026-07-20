@@ -1,0 +1,89 @@
+I'll read the key project files to verify the spec's claims against the actual codebase before rendering a verdict.Now let me check the app page and a few remaining items to complete the verification.I've now read all the key project files. Let me compile my findings and render a verdict.
+
+## Specification Review: 12 — Migrate the Application to Next 16 Active LTS
+
+### 1. Codebase Verification — Factual Claims
+
+Every factual claim I could verify against the actual codebase checks out:
+
+| Claim | Verified |
+|---|---|
+| `next@15.5.20` / `@next/eslint-plugin-next@15.5.20` | ✅ `package.json` lines 24, 32 |
+| `react@19.2.7` / `react-dom@19.2.7` | ✅ lines 25–26 |
+| `dev` script is `next dev --turbopack` | ✅ line 8 |
+| `build` script is `next build` | ✅ line 9 |
+| `lint` script is `eslint .` (not `next lint`) | ✅ line 11 |
+| `next.config.js` effectively empty (`{}`) | ✅ confirmed |
+| No `middleware.*` file | ✅ glob returned empty |
+| `app/page.tsx` is a static async server component | ✅ `export default async function Index()` |
+| `FocusGraphWrapper.tsx` uses `dynamic(..., {ssr: false})` | ✅ exact match |
+| `FocusGraph.tsx` uses `AxesHelper`, `PerspectiveCamera`, `TrackballControls`, imperative ref | ✅ all present |
+| Camera: fov 40, near 1, far 200, focus distance 80 | ✅ lines 63–66 and 118 |
+| Enable delay 4000ms default, ~1s reset (1001ms) | ✅ lines 13, 164 |
+| Node `22.23.1` in `.nvmrc` and `engines` | ✅ both confirmed |
+| `@playwright/test@1.61.1` | ✅ line 33 |
+| Contract tests enforce `next`/plugin string equality | ✅ `toolchain.test.mjs` line 91–94 |
+| Playwright config selects engines via `E2E_ENGINES` | ✅ confirmed |
+| `eslint.config.mjs` directly wires `@next/eslint-plugin-next` | ✅ line 7, 12–18 |
+| `dev` not asserted by `automation.test.mjs` (so flag removal is contract-safe) | ✅ not in the enumerated script list (lines 81–90) |
+| `three@0.185.1`, `react-force-graph-3d@1.29.1` | ✅ lines 27–28 |
+
+No factual errors found.
+
+### 2. Completeness
+
+**Excellent.** The spec:
+- Precisely identifies the two-package change set and one script-flag removal — nothing more
+- Defines 13 functional requirements, each testable
+- Has 10 acceptance scenarios that map cleanly to the FRs
+- Explicitly scopes in/out with no ambiguity
+- Addresses supply-chain verification (FR11) — an often-missed concern in upgrade specs
+- Carries forward the PostCSS nested-dependency disposition rather than ignoring it
+- Defines clear rollback semantics to `15.5.20` (FR13)
+
+### 3. Correctness
+
+No contradictions found. The confirmed decisions are internally consistent:
+- Decision #5 (default Turbopack, no explicit `--turbopack`/`--webpack` flag) aligns with FR4/FR5
+- Decision #7 (exact equal pins) aligns with FR3/FR12
+- The in-scope/out-of-scope boundary is clean — no React/Tailwind/TypeScript scope creep
+
+### 4. Feasibility
+
+**High.** The migration surface is genuinely minimal:
+- No middleware, no dynamic request APIs, empty config, single page with one client island
+- Already on React 19.2.7, already using Turbopack for dev
+- The ESLint CLI path (#7) is already in place — the `next lint` removal is a non-event
+- The only novel qualification surface is the Turbopack *production* build (previously only used for dev), and the spec builds a full qualification protocol around it
+
+### 5. Testing Strategy
+
+**Thorough.** The spec reuses the #11 two-engine interaction matrix — a strong existing bar — and applies it against the Turbopack production build. The CI/local engine split (Chromium required, Firefox local) is explicitly reused unchanged. FR5 adds the client-bundle integrity checks (no Node-only imports, single Three runtime). FR8 requires all static gates to pass. This is comprehensive.
+
+### 6. Edge Cases and Risk Handling
+
+Well covered:
+- **Codemod drift** (FR2): curate output, revert out-of-scope changes, escalate genuinely required ones
+- **Target supersession** (FR1): reverify at implementation time, escalate on drift
+- **Bundler behavioral differences** (FR5/FR9): full numeric matrix + baseline replay before attribution
+- **ESLint plugin rule changes** (FR4): explicit reconciliation, no silent absorption
+- **Blocking semantics** (FR13): no partial workarounds, no silent `--webpack` fallback
+
+### 7. Minor Comments (Non-Blocking)
+
+1. **`next.config.js` → `next.config.ts`/ESM potential**: Next 16 may prefer or suggest ESM config format. The spec implicitly handles this through FR2 (codemod review) and the constraint that config stays empty unless Next 16 mandates a change — but it could be called out as a known potential codemod change surface. Not a gap, just a documentation opportunity.
+
+2. **README `dev` script reference**: The spec correctly notes via FR12 that the README must be updated for the `--turbopack` removal. The `automation.test.mjs` checks README mentions of scripts but doesn't assert exact command values, so this is clean. Just confirming the spec's reasoning holds.
+
+3. **Bundle size comparison**: The "Nice-to-know" section mentions webpack-vs-Turbopack bundle size as worth recording. I'd agree — since this is the first Turbopack production build, the review should record the delta even though it's not a gate. The spec already covers this.
+
+---
+
+**VERDICT: APPROVE**
+**SUMMARY: Exceptionally thorough, factually accurate spec for a well-scoped framework upgrade with minimal migration surface; every codebase claim verified.**
+**CONFIDENCE: HIGH**
+
+---
+
+**KEY_ISSUES:**
+- None. Every factual claim is verified against the codebase. Requirements are complete, testable, and correctly scoped. The qualification strategy is appropriate for the bundler change risk. The rollback contract is well-defined.

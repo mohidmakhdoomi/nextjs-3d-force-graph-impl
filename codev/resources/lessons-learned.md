@@ -43,3 +43,21 @@ gotcha, or constraint.
   identically across the three 0.172→0.185 upgrade in both Chromium and Firefox
   — treat the intermittent/blocked cases as a known harness delivery limitation,
   not an app defect, and qualify them with rate comparison against baseline.
+
+## Toolchain and Worktree Hygiene
+
+- A local gate failure caused **only** by an untracked builder-harness file
+  (e.g. `.claude/hooks/worktree-write-guard.cjs`, which `eslint .` lints but which
+  is absent from any `git clone`/`actions/checkout`) is environment noise, not a
+  project-gate failure. Do **not** add a suppression to committed config (e.g.
+  `.claude/**` to `eslint.config.mjs`) to silence it. Prove the gate on the
+  committed tree instead: `git worktree add --detach <tmp> HEAD` (untracked harness
+  files do not propagate) + real `npm ci` + `npm run validate` → exit 0. Use a real
+  `npm ci`, not a symlinked `node_modules` — Turbopack rejects a symlink that
+  "points out of the filesystem root".
+- When `package.json` declares no `name`, `npm install` inside a builder worktree
+  rewrites `package-lock.json`'s top-level `name` to the worktree directory
+  basename (e.g. `spir-12` instead of the canonical `primary`). Reset it before
+  committing — it is worktree contamination, not a dependency delta, and it muddies
+  the lockfile diff. `npm ci` never rewrites the lockfile, so once corrected the
+  value is stable for clean reproduction.

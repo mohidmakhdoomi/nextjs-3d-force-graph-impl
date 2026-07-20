@@ -11,6 +11,8 @@ STARTER: a few universal lessons are seeded; add your project's as you learn the
 - "It compiled" / "tests pass" is not "it works" — verify the real user path before calling it done.
 - When stuck (2 failed hypotheses or ~30 min), get an outside perspective instead of guessing.
 - Before consultation, ensure every new deliverable is included in the canonical review diff; untracked files are invisible to reviewers.
+- A local gate failure caused only by an untracked builder-harness file (e.g. `.claude/hooks/*`, absent from clean checkouts) is environment noise, not a project failure — prove the gate on a clean checkout (`git worktree add --detach HEAD` + real `npm ci`), don't suppress it in committed config.
 
 ## Map of lessons-learned.md (consult when…)
 - Validation Evidence — consult when automating browser checks or preserving nonzero diagnostic evidence.
+- Toolchain and Worktree Hygiene — consult when a local gate fails on an untracked harness file or the lockfile name/dependencies look worktree-contaminated.

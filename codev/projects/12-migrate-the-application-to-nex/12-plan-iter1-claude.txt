@@ -1,0 +1,93 @@
+I'll review the plan against the spec and verify key claims against the actual codebase. Let me start by reading the relevant project files in parallel.Good — I've now read all the key project files. Let me check one more thing: the README to verify the plan's claims about documentation updates.I've now read all the key files. Let me compile my review.
+
+---
+
+## Plan Review: 12-migrate-the-application-to-nex
+
+### 1. Spec Coverage
+
+I traced every functional requirement (FR1–FR13) to a plan phase:
+
+| FR | Phase(s) | Covered? |
+|---|---|---|
+| FR1 (reverification) | Phase 1 | ✓ |
+| FR2 (codemod) | Phase 1 | ✓ |
+| FR3 (manifest/lockfile) | Phase 1 | ✓ |
+| FR4 (obsolete idioms) | Phase 1 | ✓ |
+| FR5 (Turbopack build) | Phase 2 | ✓ |
+| FR6 (preserved semantics) | Phase 2 | ✓ |
+| FR7 (Node/browser policy) | Phase 2 | ✓ |
+| FR8 (validation gates) | Phase 2 | ✓ |
+| FR9 (browser matrix) | Phase 2 | ✓ |
+| FR10 (audit/lockfile delta) | Phase 3 | ✓ |
+| FR11 (supply-chain) | Phase 3 | ✓ |
+| FR12 (contract tests/docs) | Phase 1 (pins) + Phase 3 (docs) | ✓ |
+| FR13 (rollback/blocking) | Cross-cutting | ✓ |
+
+All 10 acceptance scenarios map to plan deliverables. No phase goes beyond spec scope. Full coverage.
+
+### 2. Phase Breakdown & Ordering
+
+Three phases in a linear dependency chain — sound:
+
+1. **framework_upgrade** — land the manifest, lockfile, codemod output, contract test re-pins, build sanity.
+2. **turbopack_behavioral_qualification** — full two-engine matrix + bundle integrity against the Turbopack build.
+3. **evidence_disposition_and_docs** — audit delta, supply-chain, PostCSS disposition, README.
+
+The ordering respects dependencies: you can't qualify a build you haven't landed (Phase 2 → Phase 1), and you can't document the delta until it's qualified (Phase 3 → Phase 2). Each phase produces a coherent, independently-revertible commit. No phase is oversized or trivially small.
+
+### 3. Technical Approach — Verified Against the Codebase
+
+I verified every factual claim the plan makes:
+
+- **`package.json` line 8**: `"dev": "next dev --turbopack"` — confirmed; removing `--turbopack` is correct for Next 16. ✓
+- **`package.json` line 24/32**: `next: "15.5.20"` / `@next/eslint-plugin-next: "15.5.20"` — confirmed as the current baseline. ✓
+- **`next.config.js`**: effectively empty (`const nextConfig = {}; module.exports = nextConfig;`) — confirmed; minimal codemod surface. ✓
+- **`app/page.tsx`**: static async server component, no dynamic request APIs — confirmed. ✓
+- **`FocusGraphWrapper.tsx`**: `dynamic(() => import("./FocusGraph"), {ssr: false})` — confirmed; the client-only island pattern. ✓
+- **`eslint.config.mjs`**: flat config directly importing `@next/eslint-plugin-next` and wiring rules — confirmed; no dependency on `next lint`. ✓
+- **`tests/toolchain.test.mjs` lines 17-28**: `expectedDependencyBaseline` pins `next: "15.5.20"` and `@next/eslint-plugin-next: "15.5.20"` with a string-equality assertion (line 92-94) — confirmed. ✓
+- **`tests/automation.test.mjs` lines 80-91**: enumerates `lint`, `typecheck`, `build`, `start`, `browser:install`, `test:smoke`, `validate`, `audit:full`, `audit:production` — `dev` is **not** enumerated, so removing `--turbopack` from `dev` won't break these tests. ✓
+- **`playwright.config.ts`**: `E2E_ENGINES` selection, two-engine setup (Chromium + Firefox), `webServer` uses `npm run start` — confirmed. ✓
+- **CI workflow**: `E2E_ENGINES: chromium`, installs only Chromium, no `--turbopack` references — confirmed; no CI changes needed. ✓
+- **`test:smoke` script** (`npm run build && playwright test`): the build will automatically use Turbopack under Next 16 — no script change needed, which matches the plan. ✓
+
+The file list per phase is accurate and minimal. The plan correctly predicts near-zero `app/` source churn.
+
+### 4. Testability
+
+Each phase has concrete, runnable test criteria:
+
+- **Phase 1**: `npm ci` + `npm test` (re-pinned contract tests) + lint + typecheck + build sanity (Turbopack build + HTTP 200 probe). Clear and sufficient for a "statically green" checkpoint.
+- **Phase 2**: `npm run validate` (both engines locally), `npm ls three`, `.next/static/` grep scans, `focus-graph-lifecycle.test.mjs`. This is the heavyweight gate — the full behavioral proof.
+- **Phase 3**: `npm test` (including `automation.test.mjs` enumerations), audit pipeline with exit codes, clean `npm ci`.
+
+A builder can execute every acceptance criterion literally. The Defend step (writing tests) is straightforward since contract tests just need re-pinning, and behavioral tests are *reused*, not authored.
+
+### 5. Risk Assessment
+
+The six risks identified (Turbopack chunking, codemod scope creep, ESLint plugin rule changes, Node-only import leakage, reverification contradiction, new production advisory) are the right ones. Each has a specific mitigation tied to a plan deliverable.
+
+One implicit risk worth noting: the `eslint.config.mjs` accesses `nextPlugin.configs.recommended.rules` and `nextPlugin.configs['core-web-vitals'].rules` (lines 14-17). If `@next/eslint-plugin-next@16.2.10` changes the export shape (e.g., renamed or restructured configs), this would break. Phase 1's FR4 coverage addresses this ("reconcile explicitly, no silent absorption"), but a builder might benefit from knowing *exactly* which config property access to check. This is a refinement, not a gap.
+
+### 6. Issues Found
+
+**One labeling error (non-blocking):**
+
+Phase 2's header says it implements **"FR11 (error budget)"**, but FR11 in the spec is *Supply-chain verification of changed lockfile entries*, not the error budget. The zero-unexpected-errors requirement is part of **FR9** (browser matrix acceptance semantics). Phase 3 correctly covers the actual FR11 (supply-chain). The Phase 2 deliverables themselves are correct — the deliverable labeled "FR11 error budget" describes the error-budget requirement accurately — it's just tagged with the wrong FR number. A builder following the deliverable text would do the right thing, but the wrong FR label could cause confusion during review alignment.
+
+**One minor README note (non-blocking):**
+
+README line 6 says *"Updated for React 19 and Next 15"* — this will become stale after the upgrade. The plan covers README updates under Phase 3 FR12 ("keep enumerations green") and `automation.test.mjs` doesn't assert this specific text, so it won't cause a test failure. But a conscientious builder should update it. This is implicit in "stay truthful" but isn't explicitly called out.
+
+---
+
+**VERDICT: APPROVE**
+**SUMMARY: Thorough, codebase-accurate plan with correct phase ordering, complete FR coverage, and one cosmetic FR-labeling error in Phase 2 (FR11 should be FR9 for the error-budget deliverable)**
+**CONFIDENCE: HIGH**
+
+---
+
+KEY_ISSUES:
+- Phase 2 header and deliverable mislabel the error-budget requirement as "FR11" — it is part of FR9; FR11 (supply-chain) is correctly handled in Phase 3. Non-blocking: the deliverable text itself is correct, only the FR tag is wrong.
+- README line 6 ("Updated for React 19 and Next 15") will need updating, implicitly covered by Phase 3 FR12 "stay truthful" but not explicitly called out.

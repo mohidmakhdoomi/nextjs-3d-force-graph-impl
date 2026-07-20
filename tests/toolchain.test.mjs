@@ -16,12 +16,12 @@ const expectedGeneratedIgnores = [
 ];
 const expectedDependencyBaseline = {
     dependencies: {
-        next: "15.5.20",
+        next: "16.2.10",
         react: "19.2.7",
         "react-dom": "19.2.7",
     },
     devDependencies: {
-        "@next/eslint-plugin-next": "15.5.20",
+        "@next/eslint-plugin-next": "16.2.10",
         "@types/react": "19.2.17",
         "@types/react-dom": "19.2.3",
     },
