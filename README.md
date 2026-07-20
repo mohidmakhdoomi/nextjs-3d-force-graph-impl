@@ -34,6 +34,13 @@ This repository supports exactly Node.js `22.23.1` with npm `10.9.8`. The
 runtime is declared in `.nvmrc` and `package.json`; npm `10.9.8` generated the
 committed lockfile v3.
 
+The language and lint toolchain targets the **TypeScript 6** line — pinned
+exactly in `package.json` and enforced by `tests/toolchain.test.mjs` — together
+with the supported **ESLint 9** flat config in `eslint.config.mjs`. TypeScript 7
+and ESLint 10 are intentionally deferred: TypeScript 7 is blocked by
+`typescript-eslint` parser support (its declared TypeScript peer stops below
+`6.1.0`), and ESLint 10 is tracked separately as a peer-compatibility experiment.
+
 With [nvm](https://github.com/nvm-sh/nvm), install and verify the toolchain:
 
 ```sh
