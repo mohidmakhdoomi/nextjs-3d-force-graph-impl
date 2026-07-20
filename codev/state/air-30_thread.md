@@ -64,3 +64,14 @@ README updates. Local gate: `npm test` 29/29, typecheck clean, `npm run build` c
   typecheck exit 0, `npm test` 29/29. Proves the 18 local lint errors were purely
   the untracked harness file (environment noise), not committed code.
 - Committed as 66b3ccb on builder/air-30. Proceeding to PR (porch flow).
+
+## PR phase
+- **PR #32** opened → main (review embedded in body per AIR).
+  https://github.com/mohidmakhdoomi/nextjs-3d-force-graph-impl/pull/32
+- porch PR-phase checks: `pr_exists` ✓, `e2e_tests` ✓ (the check runs
+  `npm run test:e2e || echo skipped`; no such script → skip echo, and it's
+  optional — the real e2e was verified manually above, not by this check).
+- `porch gate 30` → **GATE: pr requested, waiting for human approval.** Did NOT
+  `porch approve` (human-only). Architect notified via `afx send`. STOPPING here.
+- Reviewer note in PR: if branch protection pins the old `validation` check name,
+  repoint it at the new `gate` job (needs quality + e2e).
