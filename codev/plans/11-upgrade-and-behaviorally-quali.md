@@ -68,7 +68,7 @@ restores the qualified baseline while keeping the improved harness.
 | --- | --- | --- |
 | Add Firefox as a Required Second Smoke Engine on the Current Baseline | completed | `[Spec 11][Phase: firefox-second-engine] test: Require Firefox alongside Chromium in the browser smoke gate` |
 | Automate the Class A Interaction Matrix and Capture Baseline Evidence | completed | `[Spec 11][Phase: matrix-suite-baseline] test: Automate the Class A graph interaction matrix` |
-| Upgrade the Three.js Force-Graph Unit and Qualify Behavior | pending | `[Spec 11][Phase: dependency-upgrade-qualification] feat: Upgrade the three/react-force-graph-3d unit to 0.185.1/1.29.1` |
+| Upgrade the Three.js Force-Graph Unit and Qualify Behavior | completed | `[Spec 11][Phase: dependency-upgrade-qualification] feat: Upgrade the three/react-force-graph-3d unit to 0.185.1/1.29.1` |
 
 ## Phase Breakdown
 

@@ -17,7 +17,13 @@ gotcha, or constraint.
 - When an upgrade-sensitive browser interaction fails, replay the same physical
   input against the rollback baseline before attributing it to dependency drift.
   Record the exact input and renderer that were exercised instead of broadening
-  an environment-limited result into a full-pass claim.
+  an environment-limited result into a full-pass claim. For a *nondeterministic*
+  interaction (e.g. synthetic node drag under software rendering), a single
+  before/after draw is not evidence — characterize the registration **rate**
+  across repeated identical runs on both the upgraded and rollback stacks. Equal
+  rates (observed 2/4 == 2/4 for node drag across the 0.172→0.185 three upgrade)
+  prove a harness property, not a regression; only a rate that shifts with the
+  upgrade is attributable to it.
 - Verify react-force-graph interactions numerically through the imperative handle,
   not screenshots: reach it by walking the React fiber up from the three.js-created
   canvas (which has no fiber key) to the first React-managed ancestor, then to the
@@ -26,6 +32,14 @@ gotcha, or constraint.
   or inertia-settling camera stales projected node coordinates, so pause and let
   TrackballControls settle before aiming clicks at a node's exact
   `graph2ScreenCoords` center. In headless SwiftShader, Playwright synthetic node
-  LEFT-clicks register (`onNodeClick`) but node DRAG (`onNodeDragEnd`) and
-  RIGHT-clicks (`onNodeRightClick`) do not, even aimed at the confirmed on-screen
-  node — treat those two as the known environment limitation, not an app defect.
+  LEFT-clicks register (`onNodeClick`) reliably only on a *stationary* target —
+  a click cannot land on an orbiting projection (the decisive hover raycast
+  resolves one frame after pointerup while the projection pans ~430 px/s), so
+  pause rotation first. Node RIGHT-clicks (`onNodeRightClick`) DO register when
+  aimed at the fixed node's exact projection after wheeling the camera back out
+  to a moderate positive depth (the focus tween can leave the node behind the
+  camera, where `graph2ScreenCoords` returns a phantom center point). Node DRAG
+  (`onNodeDragEnd`) registers only intermittently (~50%). All of this held
+  identically across the three 0.172→0.185 upgrade in both Chromium and Firefox
+  — treat the intermittent/blocked cases as a known harness delivery limitation,
+  not an app defect, and qualify them with rate comparison against baseline.
