@@ -226,17 +226,20 @@ contract test move together in this commit, so the revert is atomic.
       and the direct `@next/eslint-plugin-next` wiring (`recommended` +
       `core-web-vitals`).
 - [ ] **FR5 scoped globals**: replace the single un-scoped `globals.commonjs` block
-      with `files`-scoped `languageOptions.globals`:
-      - `app/**/*.{ts,tsx}` → `globals.browser`;
-      - config files `eslint.config.mjs`, `playwright.config.ts`, `next.config.js`,
-        `postcss.config.js`, `tailwind.config.ts`, plus `scripts/**` and
-        `tests/**/*.mjs` → `globals.node` (+ `globals.commonjs`/`sourceType:
-        "commonjs"` for the `module.exports` files — `next.config.js`,
-        `postcss.config.js`, and the `.ts`-but-CJS `tailwind.config.ts`, selected by
-        explicit glob, not a `.ts=ESM` heuristic);
-      - `tests/e2e/**` → **both** `globals.node` and `globals.browser` (Node runner
-        + in-page `page.evaluate` bodies), since flat config cannot split globals at
-        the `page.evaluate` boundary.
+      with `files`-scoped `languageOptions.globals`, in three explicit groups (do
+      **not** apply `globals.commonjs`/`sourceType: "commonjs"` to ESM files):
+      - **Browser** — `app/**/*.{ts,tsx}` → `globals.browser`.
+      - **Node/ESM** (module scope, node globals only) — `eslint.config.mjs`,
+        `playwright.config.ts`, `scripts/**`, and `tests/**/*.mjs` → `globals.node`.
+        These are ES modules; they get `globals.node` **without** the CJS globals.
+      - **Node/CommonJS** (the `module.exports` files) — `next.config.js`,
+        `postcss.config.js`, and the `.ts`-but-CJS `tailwind.config.ts` →
+        `globals.node` **plus** `globals.commonjs` / `sourceType: "commonjs"`.
+        Selected by explicit glob (including `tailwind.config.ts` by name), **not**
+        by a `.ts=ESM` / `.js=CJS` extension heuristic.
+      - **e2e (mixed)** — `tests/e2e/**` → **both** `globals.node` and
+        `globals.browser` (Node runner + in-page `page.evaluate` bodies), since flat
+        config cannot split globals at the `page.evaluate` boundary.
 - [ ] **FR7 `@eslint/compat` confirmation**: grep `package.json` + `package-lock.json`
       to confirm `@eslint/compat` is absent and not reintroduced; no
       `fixupConfigRules`/`fixupPluginRules` shims anywhere.
@@ -266,6 +269,13 @@ contract test move together in this commit, so the revert is atomic.
 - Watch the config-array ordering: `files`-scoped `languageOptions` blocks must
   layer correctly over the shared `pluginJs`/`tseslint`/React/Next blocks so the
   intended globals win per file group without disturbing rule coverage.
+- Fold the existing standalone `{files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]}` entry and
+  the existing global `languageOptions` block (`parserOptions.ecmaFeatures.jsx` +
+  `globals.commonjs`) into the new scoped structure rather than leaving a redundant
+  bare `files` entry — the JSX `parserOptions` stays applied where needed and the
+  old un-scoped `globals.commonjs` is removed once the three groups above cover
+  every file. Keep the generated-output ignore block as the single `files`-less
+  entry so the FR12 invariant holds.
 
 #### Acceptance Criteria
 - [ ] `npm run lint` exits 0 (still no parser warning) with the modernized config.
@@ -461,9 +471,40 @@ Strictly sequential: Phase 2's print-config coverage proof must run against the 
 
 ## Consultation Log
 
-_Pending — porch runs the 3-way consultation (Gemini, Codex, Claude) at the verify
-step of the Plan phase; feedback and resulting changes will be appended here. A
-second consultation is appended if the plan is revised at the plan-approval gate._
+### Iteration 1 — initial three-way review (2026-07-20)
+
+Unanimous approval; two non-blocking clarity points from Claude incorporated.
+
+- **Gemini: APPROVE (high confidence).** Endorsed the phase isolation (TS bump in
+  Phase 1 vs. config refactor in Phase 2 lets any lint-behavior delta be isolated),
+  the strict spec adherence (global-ignore invariant, `tsc` deprecation bounding,
+  `page.evaluate` globals scoping), and the atomic single-PR/independent-commit
+  rollback structure. No issues. *(Gemini's `agy` lane returned no output on the
+  first automated pass — a tooling skip — and was re-run on request; the re-run
+  produced this APPROVE.)*
+- **Codex: APPROVE (high confidence).** Plan tightly aligned to the approved spec,
+  maps cleanly onto the actual repo structure, clear/testable sequence with good
+  rollback and evidence discipline. No issues.
+- **Claude: APPROVE (high confidence).** Independently verified every plan claim
+  against the codebase (the legacy React import, the un-scoped `globals.commonjs`,
+  the already-flat-native Hooks registration, `tailwind.config.ts` as `.ts`+CJS,
+  the CJS/ESM config formats, the `page.evaluate` browser-globals pattern, the
+  single `globalThis` app reference, the `~5.7.3` pin, the global-ignore
+  invariant). Confirmed full FR1–FR13 coverage with no orphaned requirement and no
+  scope creep. Two non-blocking clarity points, both incorporated:
+  1. The Phase 2 FR5 globals grouping buried which files get CJS vs Node-only
+     treatment (`eslint.config.mjs`/`playwright.config.ts` are ESM → node globals
+     only, **not** commonjs). → FR5 now splits the Node group into explicit
+     **Node/ESM** and **Node/CommonJS** subgroups with a "do not apply commonjs to
+     ESM files" caveat.
+  2. The existing standalone `{files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]}` + global
+     `languageOptions` block needed a disposition. → Phase 2 Implementation Details
+     now direct folding both into the scoped structure (preserving the JSX
+     `parserOptions`, removing the old un-scoped `globals.commonjs`) while keeping
+     the generated-output ignore block as the single `files`-less entry.
+
+_Second consultation (after human/gate feedback) to be appended if the plan is
+revised at the plan-approval gate._
 
 ## Approval
 - [ ] Expert AI Consultation Complete (3-way)

@@ -87,3 +87,13 @@ Phase separation isolates "did TS6 change anything" (P1) from "did config refact
 change coverage" (P2). All three ship as commits within ONE PR (per issue PR strategy).
 Local plan checks pass (plan_exists, has_phases_json, min_two_phases=3).
 Committing draft, then porch done 13 → 3-way plan consultation.
+
+## Plan — 3-way consultation (iter 1): UNANIMOUS APPROVE
+- Gemini: APPROVE (HIGH) — after agy retry (first pass skipped, tooling).
+- Codex: APPROVE (HIGH) — no issues.
+- Claude: APPROVE (HIGH) — verified all FR1-13 coverage + codebase claims; 2 non-blocking clarity
+  points incorporated: (1) split Phase-2 globals into explicit Node/ESM vs Node/CJS subgroups
+  (don't apply commonjs to ESM files); (2) fold the standalone files-only block + old un-scoped
+  globals block into the scoped structure, keep the single files-less ignore block.
+Plan updated + Consultation Log written. Committing "Plan with multi-agent review", then
+porch next 13 → plan-approval gate (STOP for human).
