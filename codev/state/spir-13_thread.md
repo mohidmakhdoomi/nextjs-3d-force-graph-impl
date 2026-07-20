@@ -272,3 +272,8 @@ Arch/lessons routing (both COLD; hot caps untouched, maps already point to targe
 - lessons-learned.md "Toolchain and Worktree Hygiene": no-node_modules bare-require trap
   (Confirmed Decision #8). The lockfile-name contamination lesson was already present (#12).
 Next: commit review+docs, open the single PR (all 3 phase commits), porch done → PR consultation.
+
+## PR OPENED: #31 (single PR, all 3 phase commits) → base main
+https://github.com/mohidmakhdoomi/nextjs-3d-force-graph-impl/pull/31
+Closes #13, Part of #6. Body summarizes all 3 phases + full qualification evidence.
+Running porch done 13 --pr 31 → PR 3-way consultation, then architect PR-gate review.
