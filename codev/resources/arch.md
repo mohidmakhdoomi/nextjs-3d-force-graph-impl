@@ -7,8 +7,8 @@ of any work that introduces or changes architectural patterns.
 
 The repository's reproducibility contract is Node.js `22.23.1`, npm `10.9.8`,
 lockfile v3, and clean `npm ci`. GitHub Actions runs contract tests plus the
-shared `npm run validate` gate, whose real production-server Chromium smoke
-checks WebGL and the core controls. Full and production npm audits are separate
+shared `npm run validate` gate, whose real production-server two-engine
+(Chromium and Firefox) smoke checks WebGL and the core controls in both engines. Full and production npm audits are separate
 evidence: CI validates their JSON/original status and uploads them without
 turning existing advisory totals into a zero-findings gate. Contributor commands
 and artifact names live in `README.md`; implementation details live in
@@ -35,7 +35,9 @@ enforces all four properties (both pins, single runtime, type alignment, exact
 `react-force-graph-3d`) so a later dependency bump cannot silently split the
 runtime or de-align the types. Any such upgrade is one atomic rollback unit
 (manifest + lockfile + code + contract tests) and must be re-qualified against
-the two-engine interaction matrix, not just install/build success. The ESLint flat config (`eslint.config.mjs`) uses
+the two-engine interaction matrix, not just install/build success.
+
+The ESLint flat config (`eslint.config.mjs`) uses
 `eslint-plugin-react-hooks` v7's native flat-config support (no
 `@eslint/compat`/`fixupPluginRules`) and pins the intended Hooks rule set
 explicitly (`react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`) rather
