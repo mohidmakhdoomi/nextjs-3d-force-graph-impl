@@ -1,7 +1,7 @@
 id: '11'
 title: upgrade-and-behaviorally-quali
 protocol: spir
-phase: implement
+phase: review
 plan_phases:
   - id: firefox_second_engine
     title: Add Firefox as a Required Second Smoke Engine on the Current Baseline
@@ -11,8 +11,8 @@ plan_phases:
     status: complete
   - id: dependency_upgrade_qualification
     title: Upgrade the Three.js Force-Graph Unit and Qualify Behavior
-    status: in_progress
-current_plan_phase: dependency_upgrade_qualification
+    status: complete
+current_plan_phase: null
 gates:
   spec-approval:
     status: approved
@@ -27,7 +27,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history:
   - iteration: 1
     plan_phase: firefox_second_engine
@@ -62,4 +62,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-11/codev/projects/11-upgrade-and-behaviorally-quali/11-matrix_suite_baseline-iter1-claude.txt
 started_at: '2026-07-19T18:32:47.973Z'
-updated_at: '2026-07-20T09:02:51.240Z'
+updated_at: '2026-07-20T09:06:30.894Z'
