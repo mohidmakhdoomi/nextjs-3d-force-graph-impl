@@ -30,7 +30,7 @@ const expectedDevReclassifiedBuildPackages = {
     postcss: "8.5.19",
     tailwindcss: "3.4.19",
     autoprefixer: "10.5.4",
-    "@types/three": "~0.172.0",
+    "@types/three": "0.185.1",
 };
 
 const packageJson = JSON.parse(
@@ -110,7 +110,7 @@ test("reclassifies build/type-only packages into devDependencies", () => {
     }
 
     // The runtime Three.js stack stays in dependencies even though its types moved out.
-    assert.equal(packageJson.dependencies.three, "~0.172.0");
+    assert.equal(packageJson.dependencies.three, "0.185.1");
     assert.equal(Object.hasOwn(packageJson.devDependencies, "three"), false);
 });
 
@@ -156,12 +156,55 @@ test("locks exactly one stable React runtime", () => {
     assert.doesNotMatch(reactRuntimeRecords[0][1].version, /[-+]/);
 });
 
+test("locks exactly one three runtime aligned with its types", () => {
+    const threeRuntimeRecords = Object.entries(packageLock.packages).filter(
+        ([packagePath]) =>
+            packagePath === "node_modules/three" ||
+            packagePath.endsWith("/node_modules/three"),
+    );
+
+    // Exactly one resolved three, no nested node_modules/**/node_modules/three.
+    assert.deepEqual(
+        threeRuntimeRecords.map(([packagePath]) => packagePath),
+        ["node_modules/three"],
+    );
+
+    const manifestThree = packageJson.dependencies.three;
+    const manifestTypes = packageJson.devDependencies["@types/three"];
+
+    // Runtime three is pinned exactly (no range prefix) to the qualified 0.185.1.
+    assert.equal(manifestThree, "0.185.1");
+    assert.match(manifestThree, /^\d+\.\d+\.\d+$/);
+    assert.equal(threeRuntimeRecords[0][1].version, manifestThree);
+    assert.doesNotMatch(threeRuntimeRecords[0][1].version, /[-+]/);
+
+    // Runtime three and its community types stay exactly string-equal, so a
+    // future bump cannot de-align the types from the runtime.
+    assert.match(manifestTypes, /^\d+\.\d+\.\d+$/);
+    assert.equal(manifestThree, manifestTypes);
+    assert.equal(
+        packageLock.packages["node_modules/@types/three"].version,
+        manifestTypes,
+    );
+});
+
+test("pins react-force-graph-3d to the qualified release exactly", () => {
+    const manifestRfg = packageJson.dependencies["react-force-graph-3d"];
+
+    assert.equal(manifestRfg, "1.29.1");
+    assert.match(manifestRfg, /^\d+\.\d+\.\d+$/);
+    assert.equal(
+        packageLock.packages["node_modules/react-force-graph-3d"].version,
+        manifestRfg,
+    );
+});
+
 test("exposes direct validation and audit commands", () => {
     assert.equal(packageJson.scripts.lint, "eslint .");
     assert.equal(packageJson.scripts.typecheck, "tsc --noEmit");
     assert.equal(
         packageJson.scripts["browser:install"],
-        "playwright install chromium",
+        "playwright install chromium firefox",
     );
     assert.equal(
         packageJson.scripts["test:smoke"],

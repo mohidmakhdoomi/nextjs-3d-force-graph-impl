@@ -35,13 +35,22 @@ test("runs the exact locked validation path in GitHub Actions", () => {
     assert.match(workflowStep("Verify toolchain"), /10\.9\.8/);
     assert.match(workflowStep("Install locked dependencies"), /run: npm ci/);
     assert.match(workflowStep("Test baseline contracts"), /run: npm test/);
-    assert.match(
-        workflowStep("Install Chromium and system dependencies"),
-        /playwright install --with-deps chromium/,
-    );
+
+    // CI enforces the Chromium (SwiftShader) WebGL arm as the deterministic
+    // gate: it installs Chromium only, and the Firefox arm of the two-engine
+    // matrix stays a documented LOCAL qualification gate (Firefox cannot bring
+    // up a WebGL context on GPU-less runners). See
+    // codev/reviews/11-upgrade-and-behaviorally-quali.md.
+    const browserInstall = workflowStep("Install Chromium and system dependencies");
+    assert.match(browserInstall, /playwright install --with-deps chromium$/m);
+    assert.doesNotMatch(browserInstall, /firefox/);
 
     const validation = workflowStep("Validate");
     assert.match(validation, /run: npm run validate/);
+    // The Chromium-only gate is pinned via E2E_ENGINES, not by dropping the
+    // Firefox project — playwright.config.ts still defines both engines so the
+    // local (unset) run is the full two-engine matrix.
+    assert.match(validation, /E2E_ENGINES: chromium/);
     assert.doesNotMatch(validation, /continue-on-error/);
 });
 
@@ -84,6 +93,8 @@ test("documents every direct package command and CI artifact", () => {
     }
 
     assert.match(readme, /Node\.js `22\.23\.1` with npm `10\.9\.8`/);
+    assert.match(readme, /playwright install --with-deps chromium$/m);
+    assert.match(readme, /E2E_ENGINES=chromium/);
     assert.match(readme, /Audits are evidence snapshots, not a zero-finding green gate/);
     assert.match(readme, /`audit-full` and `audit-production` artifacts/);
     assert.match(readme, /`playwright-report` and\s+`playwright-test-results` artifacts/);
