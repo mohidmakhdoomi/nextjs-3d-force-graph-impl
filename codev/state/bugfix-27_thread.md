@@ -64,3 +64,22 @@ Gates: porch `check` PASSED (build ✓ 5.9s, tests ✓ — 24 unit tests). Lint 
 lessons-critical, that's environment noise, not suppressed in committed config.
 
 → fix complete; committing, then transitioning to pr.
+
+## PR
+
+- Commit `cbfa504` pushed on `builder/bugfix-27`.
+- **PR #29** opened against `main`: https://github.com/mohidmakhdoomi/nextjs-3d-force-graph-impl/pull/29
+  (body: Summary / Root Cause / Fix / Test Plan, closes #27).
+- Manual browser-test steps sent to architect for the human-in-the-loop confirmation.
+- 3-way CMAP review (gemini/codex/claude, `--protocol bugfix --type pr --project-id bugfix-27`) — the `--project-id`
+  flag was required because the shared worktree exposes all historical `codev/projects/*` (ambiguous auto-detect).
+  **All three APPROVE, no blocking issues:**
+  - gemini: APPROVE (HIGH) — no key issues.
+  - codex: APPROVE (MEDIUM) — no key issues; couldn't rerun build/typecheck in its read-only sandbox and saw the
+    audit-report validator test fail there — an environment artifact, NOT PR-introduced (local `npm test` = 24/24 green).
+  - claude: APPROVE (HIGH) — confirmed math correctness, scope discipline, cleanliness; non-blocking notes only
+    (the defensive `up.clone()`; no `describe()` grouping — both consistent with existing code).
+- No REQUEST_CHANGES → nothing to address. CMAP summary posted as a PR comment.
+
+→ requesting the `pr` gate via `porch done`; then WAIT for human approval (builders never self-approve).
+
