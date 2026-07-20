@@ -75,3 +75,18 @@ README updates. Local gate: `npm test` 29/29, typecheck clean, `npm run build` c
   `porch approve` (human-only). Architect notified via `afx send`. STOPPING here.
 - Reviewer note in PR: if branch protection pins the old `validation` check name,
   repoint it at the new `gate` job (needs quality + e2e).
+
+## Architect follow-up #1 — gate hardening (2026-07-20T21:38Z)
+Human gate decision: approve AFTER hardening. Applied:
+- `gate` job now `if: always()` + explicit `test "${{ needs.quality.result }}" =
+  success` and same for `e2e`. Without this, a needs-only gate is SKIPPED on
+  upstream failure/cancel, and a skipped required check can be misread as passing.
+  Now the gate goes actively RED on any failed/skipped/cancelled upstream. (Matrix
+  e2e aggregate result is success only when all 4 shards pass.)
+- automation.test.mjs asserts the hardened gate (if: always + both result checks).
+- Committed 88d4e45, pushed. `npm test` 29/29.
+
+### CI evidence (real GitHub runners)
+- Two prior PR #32 runs already completed **success in 6m13s / 6m10s** wall clock
+  (down from ~15m) — sharded design proven on CI, target ≤~6m met.
+- Watching the post-hardening run 29781097474 to green, then re-request the pr gate.
