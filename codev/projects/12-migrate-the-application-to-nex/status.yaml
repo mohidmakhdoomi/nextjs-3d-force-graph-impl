@@ -1,7 +1,7 @@
 id: '12'
 title: migrate-the-application-to-nex
 protocol: spir
-phase: implement
+phase: review
 plan_phases:
   - id: framework_upgrade
     title: Reverify, Run/Review Codemod, and Land the Next 16 Manifest + Contract Tests
@@ -11,8 +11,8 @@ plan_phases:
     status: complete
   - id: evidence_disposition_and_docs
     title: Lockfile/Audit Delta, Supply-Chain, PostCSS Disposition, and Docs
-    status: in_progress
-current_plan_phase: evidence_disposition_and_docs
+    status: complete
+current_plan_phase: null
 gates:
   spec-approval:
     status: approved
@@ -27,7 +27,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history:
   - iteration: 1
     plan_phase: framework_upgrade
@@ -62,4 +62,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-12/codev/projects/12-migrate-the-application-to-nex/12-turbopack_behavioral_qualification-iter1-claude.txt
 started_at: '2026-07-20T11:23:09.851Z'
-updated_at: '2026-07-20T17:10:35.586Z'
+updated_at: '2026-07-20T17:13:51.293Z'
