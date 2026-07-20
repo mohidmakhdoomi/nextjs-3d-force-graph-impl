@@ -1,7 +1,7 @@
 id: '11'
 title: upgrade-and-behaviorally-quali
 protocol: spir
-phase: review
+phase: verify
 plan_phases:
   - id: firefox_second_engine
     title: Add Firefox as a Required Second Smoke Engine on the Current Baseline
@@ -32,7 +32,7 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-19T18:32:47.973Z'
-updated_at: '2026-07-20T10:47:37.501Z'
+updated_at: '2026-07-20T10:48:41.059Z'
 pr_history:
   - phase: review
     pr_number: 25
