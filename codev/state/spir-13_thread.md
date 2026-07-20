@@ -229,3 +229,27 @@ Next: commit thread, porch done 13 → porch next 13 (Phase 3 3-way consultation
 - Gemini: COMMENT (LOW) — agy lane produced no output (non-blocking tooling skip, same as
   spec/plan passes). Will retry the lane.
 Committing README fix, then re-consult iter 2.
+
+## Phase 3 — iter 1 feedback RESOLVED + iter 2 outcome
+Fix landed: README `validate` description corrected in commit **b400853** (validate row →
+"lint, typecheck, and the test:smoke browser suite (build plus Chromium+Firefox WebGL smoke)";
+prose now states validate does NOT do a standalone production start and that the direct
+`npm run start` HTTP 200 is a separate stage-qualification check). Rebuttal written to
+13-qualification_evidence_docs-iter1-rebuttals.md. Codex iter-1 status.yaml point NOT actioned
+(porch-managed state, correct as `in_progress` until porch advances post-approval; strict mode
+forbids editing it).
+
+Iter-2 3-way re-verification (porch iteration 2, with --context of iter-1 feedback + rebuttal):
+- Gemini: APPROVE (HIGH) — README now reflects true validation semantics (agy lane recovered
+  this pass; iter-1 skip was a non-blocking tooling gap).
+- Claude: APPROVE (HIGH) — iter-1 README point verified fixed against package.json; all FR8-13
+  deliverables present; status.yaml rebuttal accepted as correct. No issues.
+- Codex: REQUEST_CHANGES (MEDIUM) — no code/doc defect; asks that this committed thread record
+  the iter-2 outcome + post-fix state (prior entry stopped at "re-consult iter 2"), and flags
+  the thread-vs-status.yaml lag. THIS ENTRY resolves that: the thread is now current through
+  iteration 2. status.yaml (iteration:2) is porch-managed and correct; the thread is an
+  append-only narrative that trails porch state by design and is brought current at each step.
+
+Post-fix qualification unchanged (README-only edit cannot affect gates): the bda79f2 clean-
+checkout proof (validate=0, 20/20 two-engine matrix, direct start HTTP 200, audit delta nil)
+still holds for the current tree; b400853/144562a touch only README + thread.
