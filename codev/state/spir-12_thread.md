@@ -283,3 +283,43 @@ scope). Same disposition as Ph1.
 
 **Phase 2 commit contents:** thread evidence only (zero source diff is the correct,
 plan-anticipated outcome for a qualify-existing-behavior phase). Consult next.
+
+### Phase 2 iter1 — 3-way consult
+Gemini APPROVE (high), Claude APPROVE (high), Codex REQUEST_CHANGES (high).
+Both approvers explicitly validated the lint-artifact handling ("honest env
+documentation, not a hidden failure"; "not touching eslint.config.mjs is correct").
+Codex raised 2 points, neither needing a code change:
+
+**Codex #1 — `npm run validate` not green locally (lint exits 1).** Root cause: the
+ONLY 18 `eslint .` errors are in `.claude/hooks/worktree-write-guard.cjs` — an
+untracked builder-harness artifact (+ its `.claude/settings.local.json` hook
+registration), NOT project source. Within `.claude/`, only `skills/**` is tracked;
+`hooks/` + `settings.local.json` are untracked → absent from any `git clone`/CI
+checkout. To answer the "local qualification" framing with evidence (not just "CI is
+clean"), I reproduced a clean checkout ON THIS MACHINE and ran the literal aggregate
+command:
+- `git worktree add --detach <tmp> HEAD` → clean committed tree (has tracked
+  `.claude/skills/`, NO `.claude/hooks/`, NO `settings.local.json`).
+- Bare `eslint .` there → **exit 0** (harness file was the sole cause).
+- `npm ci` (real node_modules; lockfile name stays `primary`) + literal
+  **`npm run validate`** (lint && typecheck && test:smoke, BOTH engines, no
+  `E2E_ENGINES` filter) → **exit 0** end-to-end; Playwright **20/20** (Chromium 10 +
+  Firefox 10). (First try symlinked node_modules → Turbopack "symlink out of fs
+  root" panic = rig artifact; redone with real `npm ci`.) Clean tree also emits NO
+  "multiple lockfiles" warning (not nested under the main checkout).
+- Did NOT edit `eslint.config.mjs`: FR4 forbids new suppressions + out-of-scope. So
+  the gate IS green locally (both engines) on the shipping tree; the failure is an
+  instrumentation artifact only. Rebuttal:
+  `12-turbopack_behavioral_qualification-iter1-rebuttals.md`.
+
+**Codex #2 — status.yaml shows phase `in_progress`, not `complete`.** Working as
+designed: porch owns status.yaml in strict mode; a phase stays `in_progress` through
+the review/iterate cycle and flips to `complete` only after unanimous approval, when
+porch advances. Current file is self-consistent: `in_progress` + `build_complete:
+true` + `iteration: 1` = checks passed, in review sub-stage. Thread's "QUALIFICATION
+COMPLETE" = the WORK is done/ready-for-review, a different thing from the porch state
+field. Strict-mode rule forbids me editing status.yaml; porch will advance it. No
+action.
+
+Re-consult (iter2) with rebuttal in context. No code change; thread carries the
+clean-tree validate evidence for on-disk re-verification.
