@@ -227,3 +227,10 @@ Downloaded playwright-test-results-4 (error-context.md + trace.zip x3) and root-
    dispatching; more settle frames + longer release poll. Off-screen drift self-heals instead of 6
    identical misses.
 Next: implement, re-prove on CI green shards (local SwiftShader is not representative).
+
+## CI PROVEN GREEN on the slow runner — head 0f2c7ac (run 29804841084)
+All 4 E2E shards + Quality + Validation gate = success. The previously-failing **shard 4/4 passed
+in 292s** (was 3/3 fail on ae74af7). Quality (lint/typecheck/unit/audit) green. The zoom-overshoot
+hardening (waitForCameraRest drains the offset before the fix; on-screen-validated aim) holds on the
+2-core CI SwiftShader, not just local. Acceptance criteria intact; assertion never weakened; workers
+untouched. Gate remains on hold — awaiting human approval (NOT self-approving). Notifying architect.
