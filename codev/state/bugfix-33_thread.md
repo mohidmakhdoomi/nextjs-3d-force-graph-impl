@@ -149,3 +149,11 @@ untouched:
   strict improvement over both the old 3000 floor and the *flaky* original assertion, catches
   grossly-premature enablement, and the actual #33 defect (the camera-settle race) is fully
   eliminated. Flagged for the architect's judgement at the `pr` gate.
+
+### CMAP resolution
+
+- **codex re-review** (commit `089d4d2`): **REQUEST_CHANGES -> COMMENT (HIGH)** — "the code change
+  is focused, the race explanation matches the actual helper/app code, and the test remains
+  deterministic." Only remaining ask: sync the PR body to the 3500 ms floor -> done via `gh pr edit`.
+- **Final CMAP: gemini APPROVE, claude APPROVE, codex COMMENT** — all non-blocking.
+- Commit `089d4d2` pushed; PR #40 body updated. -> requesting the `pr` gate; awaiting human approval.
