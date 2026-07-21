@@ -1,0 +1,13 @@
+diff --git a/node_modules/three-forcegraph/dist/three-forcegraph.d.ts b/node_modules/three-forcegraph/dist/three-forcegraph.d.ts
+index 5cdeeeb..3adae86 100644
+--- a/node_modules/three-forcegraph/dist/three-forcegraph.d.ts
++++ b/node_modules/three-forcegraph/dist/three-forcegraph.d.ts
+@@ -254,7 +254,7 @@ declare class ThreeForceGraphGeneric<ChainableInstance, N extends NodeObject = N
+   getGraphBbox(nodeFilter?: (node: N) => boolean): { x: [number, number], y: [number, number], z: [number,number] };
+ }
+ 
+-declare class ThreeForceGraph<NodeType = NodeObject, LinkType = LinkObject<NodeType>> extends ThreeForceGraphGeneric<ThreeForceGraph<NodeType, LinkType>, NodeType, LinkType> {}
++declare class ThreeForceGraph<NodeType extends NodeObject = NodeObject, LinkType extends LinkObject<NodeType> = LinkObject<NodeType>> extends ThreeForceGraphGeneric<ThreeForceGraph<NodeType, LinkType>, NodeType, LinkType> {}
+ 
+ export { ThreeForceGraphGeneric, ThreeForceGraph as default };
+ export type { GraphData, LinkObject, NodeObject };

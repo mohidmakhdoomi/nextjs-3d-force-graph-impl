@@ -1,0 +1,22 @@
+diff --git a/node_modules/3d-force-graph/dist/3d-force-graph.d.ts b/node_modules/3d-force-graph/dist/3d-force-graph.d.ts
+index 4493b31..5231795 100644
+--- a/node_modules/3d-force-graph/dist/3d-force-graph.d.ts
++++ b/node_modules/3d-force-graph/dist/3d-force-graph.d.ts
+@@ -1,8 +1,16 @@
+-import { WebGLRendererParameters, Renderer, Light, Scene, Camera, WebGLRenderer } from 'three';
++import { WebGLRendererParameters, Light, Scene, Camera, WebGLRenderer } from 'three';
+ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+ import { NodeObject, LinkObject, ThreeForceGraphGeneric } from 'three-forcegraph';
+ export { LinkObject, NodeObject } from 'three-forcegraph';
+ 
++// three r0.185 removed its `Renderer` base interface; this package still typed
++// `extraRenderers` against it. Restore the removed structural shape locally.
++interface Renderer {
++  domElement: HTMLCanvasElement;
++  render(scene: Scene, camera: Camera): void;
++  setSize(width: number, height: number, updateStyle?: boolean): void;
++}
++
+ interface ConfigOptions {
+   controlType?: 'trackball' | 'orbit' | 'fly'
+   rendererConfig?: WebGLRendererParameters,
