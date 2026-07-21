@@ -87,6 +87,14 @@ Architect phone-verified the account; waited ~5.5 min; re-dispatched → run `29
 - **Run #5 (conditional — only if run #4 = llvmpipe):** the T4 is compute-only (no graphics libs mounted). Escalation, in-kernel: `nvidia-smi --query-gpu=driver_version` → `apt install` exact-matching `libnvidia-gl-<branch>` + NVIDIA Vulkan ICD → rerun EGL + angle-vulkan flag sets. Fragile/version-dependent; libs may be absent from Ubuntu's archive. **A failed attempt is conclusive evidence too.** Still within sanctioned retries.
 - Plan: I'll implement run #5 as a `workflow_dispatch` input toggle (`install_nvidia_gl`) so the SAME probe covers baseline (off) and escalation (on) — but only PR it if run #4 returns software, to keep PR #47's approved scope clean.
 
+## 2026-07-21 — Run #5 ESCALATION: HARDWARE WebGL ACHIEVED → experiment COMPLETE, REJECT for CI
+
+PRs #48 (escalation) + 2 addenda (runfile fallback + verification + VK_ICD_FILENAMES; `--disable-software-rasterizer` no-fallback sets) merged; run `29864472544` with `install_nvidia_gl=true`.
+- **RESULT: `verdict=hardware`.** Driver `580.159.04`; runfile `DOWNLOAD_OK`+install exit 0 (host driver IS on public tesla server); NVIDIA EGL/GLX/Vulkan userspace landed; vulkaninfo sees Tesla T4. `angle-vulkan` and `angle-vulkan-nofallback` → `ANGLE (NVIDIA … Tesla T4)` — the nofallback one (software disabled) is DEFINITIVE. `--use-gl=egl`/desktop-gl did NOT reach the GPU. Evidence: `data/output/probe-run-5-evidence.md`.
+- **So hardware WebGL on Kaggle GPU is PROVEN achievable** — but only via ~hundreds-of-MB exact-version driver runfile per cold kernel + ANGLE-Vulkan. A default kernel = SwiftShader (run #4).
+- **Final disposition: REJECT for CI adoption** (required gate AND standing non-required lane), capability retained as a documented one-off recipe. Drivers unchanged by the positive WebGL: worse wall clock (driver install every run), fragility (driver-version coupling → runfile 404 risk), Kaggle ToS/account risk, reproducibility-contract violation, confirmed action reporting defect. **Route the real need to #41/#44** (credential-free native-GPU).
+- notes.md finalized (status=Complete, 5-run results table, metrics, full Decision, Xvfb + d3d12 notes). Next: sync branch, commit final writeup, open final PR (`Refs #42` — issue stays open for #41/#44 follow-up; owner to decide close), notify architect, then Review phase / complete.
+
 ## 2026-07-21 — Run #4 BASELINE VERDICT: SOFTWARE (make-or-break answered NO)
 
 Run `29862696170` (verified account, playwright 1.61.0, full probe) — result artifact written (evidence: `data/output/probe-run-4-evidence.md`):
