@@ -1,0 +1,25 @@
+[WebServer] 
+[WebServer] > start
+[WebServer] > next start --hostname 127.0.0.1 --port 3000
+[WebServer] 
+[WebServer] ▲ Next.js 16.2.10
+[WebServer] - Local:         http://127.0.0.1:3000
+[WebServer] - Network:       http://127.0.0.1:3000
+[WebServer] ✓ Ready in 114ms
+
+Running 10 tests using 1 worker
+
+  ✓   1 [chromium] › tests/e2e/matrix.spec.ts:52:5 › settles an initial force layout with positioned nodes (7.2s)
+  ✓   2 [chromium] › tests/e2e/matrix.spec.ts:81:5 › rotates the camera automatically until paused, then resumes (31.5s)
+  ✓   3 [chromium] › tests/e2e/matrix.spec.ts:111:5 › keeps pointer navigation inert until the enable delay elapses (44.0s)
+  ✓   4 [chromium] › tests/e2e/matrix.spec.ts:160:5 › zooms out with the wheel (46.4s)
+  ✓   5 [chromium] › tests/e2e/matrix.spec.ts:190:5 › zooms in with the wheel and rotates with a background drag (1.4m)
+  ✓   6 [chromium] › tests/e2e/matrix.spec.ts:235:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (1.1m)
+  ✓   7 [chromium] › tests/e2e/matrix.spec.ts:393:5 › toggles AxesHelper visibility through the axes control (29.5s)
+  ✓   8 [chromium] › tests/e2e/matrix.spec.ts:426:5 › keeps the canvas consistent and interactive across a resize (39.1s)
+  ✓   9 [chromium] › tests/e2e/matrix.spec.ts:487:5 › remounts a fresh working canvas on re-navigation (54.5s)
+  ✓  10 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (58.5s)
+
+  Slow test file: [chromium] › tests/e2e/matrix.spec.ts (6.7m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  10 passed (8.1m)

@@ -1,0 +1,14 @@
+id: '14'
+title: experiment-with-a-clean-suppor
+protocol: experiment
+phase: hypothesis
+plan_phases: []
+current_plan_phase: null
+gates:
+  experiment-complete:
+    status: pending
+iteration: 1
+build_complete: false
+history: []
+started_at: '2026-07-20T22:07:34.781Z'
+updated_at: '2026-07-20T22:07:34.782Z'

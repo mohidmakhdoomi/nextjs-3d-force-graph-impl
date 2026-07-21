@@ -1,0 +1,21 @@
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error
+npm error While resolving: undefined@undefined
+npm error Found: eslint@10.7.0
+npm error node_modules/eslint
+npm error   dev eslint@"10.7.0" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+npm error node_modules/eslint-plugin-react
+npm error   dev eslint-plugin-react@"~7.37.5" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/user/.npm/_logs/2026-07-20T22_14_24_900Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/user/.npm/_logs/2026-07-20T22_14_24_900Z-debug-0.log
