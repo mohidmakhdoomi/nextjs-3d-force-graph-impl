@@ -26,6 +26,11 @@ on:
         default: NvidiaTeslaT4
         type: choice
         options: [NvidiaTeslaT4, NvidiaTeslaP100]
+      install_nvidia_gl:
+        description: "Run #5 escalation — apt-install matching NVIDIA GL userspace before probing (else baseline)"
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
 
 # No elevated permissions; this job does not write to the repo.
 permissions:
@@ -91,7 +96,7 @@ jobs:
         with:
           api_token: ${{ secrets.KAGGLE_API_TOKEN }}
           title: nextjs3dfg-webgl-probe
-          code_file: experiments/42_kaggle_gpu_ci/kaggle_webgl_probe.py
+          code_file: ${{ inputs.install_nvidia_gl == 'true' && 'experiments/42_kaggle_gpu_ci/kaggle_webgl_probe_nvgl.py' || 'experiments/42_kaggle_gpu_ci/kaggle_webgl_probe.py' }}
           language: python
           kernel_type: script
           is_private: 'true'
@@ -109,7 +114,7 @@ jobs:
           username: ${{ steps.sniff.outputs.username }}
           key: ${{ steps.sniff.outputs.key }}
           title: nextjs3dfg-webgl-probe
-          code_file: experiments/42_kaggle_gpu_ci/kaggle_webgl_probe.py
+          code_file: ${{ inputs.install_nvidia_gl == 'true' && 'experiments/42_kaggle_gpu_ci/kaggle_webgl_probe_nvgl.py' || 'experiments/42_kaggle_gpu_ci/kaggle_webgl_probe.py' }}
           language: python
           kernel_type: script
           is_private: 'true'

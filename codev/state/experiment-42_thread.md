@@ -79,3 +79,18 @@ Architect phone-verified the account; waited ~5.5 min; re-dispatched → run `29
 - ❌ New trivial blocker (my bug): `playwright==1.61.1` has **no Python distribution** (Python `playwright` 1.61 line maxes at `1.61.0`; JS/Python patch numbers diverge). pip errored → probe exited before installing Chromium → still no artifact.
 - **Fixed**: pin `playwright==1.61.0` (same 1.61 Chromium as JS `@playwright/test@1.61.1`) + made browser-install non-fatal so the artifact is always written. PR → merge → re-dispatch (run #4).
 - **Crux still ahead**: kernel GL userspace is **Mesa-only** (no NVIDIA EGL/GL vendor driver) even with the T4 present → strong prior that Chromium WebGL still falls back to **llvmpipe software**, not the GPU. Run #4 measures it directly.
+
+## 2026-07-21 — Architect escalation plan for run #4/#5 (recorded)
+
+- **d3d12 note (record in notes, defer to #44):** `MESA_D3D12_DEFAULT_ADAPTER_NAME` / `GALLIUM_DRIVER=d3d12` is the **WSL2-only** path (needs `/dev/dxg` + `libdxcore`) — NOT applicable in a Kaggle Linux container. Keep that technique under issue **#44**.
+- **Run #4 = unmodified baseline** (probe v2 + 1.61.0 fix). Read its WebGL verdict.
+- **Run #5 (conditional — only if run #4 = llvmpipe):** the T4 is compute-only (no graphics libs mounted). Escalation, in-kernel: `nvidia-smi --query-gpu=driver_version` → `apt install` exact-matching `libnvidia-gl-<branch>` + NVIDIA Vulkan ICD → rerun EGL + angle-vulkan flag sets. Fragile/version-dependent; libs may be absent from Ubuntu's archive. **A failed attempt is conclusive evidence too.** Still within sanctioned retries.
+- Plan: I'll implement run #5 as a `workflow_dispatch` input toggle (`install_nvidia_gl`) so the SAME probe covers baseline (off) and escalation (on) — but only PR it if run #4 returns software, to keep PR #47's approved scope clean.
+
+## 2026-07-21 — Run #4 BASELINE VERDICT: SOFTWARE (make-or-break answered NO)
+
+Run `29862696170` (verified account, playwright 1.61.0, full probe) — result artifact written (evidence: `data/output/probe-run-4-evidence.md`):
+- **2× Tesla T4 present**, yet EVERY flag set → `ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)` = **SwiftShader software**. `angle-vulkan` fell back to SwiftShader's *software* Vulkan (not the T4); `angle-gl-egl` → null context; `webgpu:false`. `verdict: software_or_error`.
+- **Root cause confirmed**: T4 is compute-only; only Mesa GL userspace present, `--with-deps` pulled MORE Mesa, never NVIDIA GL. So ANGLE has no path to the GPU → SwiftShader. Same software class we already have on CI → **zero hardware-WebGL benefit**.
+- The issue's central premise ("real hardware WebGL on Kaggle GPU") is **FALSE for a default kernel**.
+- **Run #5 escalation built** (`kaggle_webgl_probe_nvgl.py` + `install_nvidia_gl` workflow input): apt-install matching `libnvidia-gl-<branch>` + Vulkan ICD, retry EGL/ANGLE-Vulkan. Last hardware-GL attempt; failure is equally conclusive. Recorded d3d12/WSL2 note (defer to #44). PR → merge → dispatch run #5 with `-f install_nvidia_gl=true`.
