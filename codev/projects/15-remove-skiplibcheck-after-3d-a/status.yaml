@@ -1,7 +1,7 @@
 id: '15'
 title: remove-skiplibcheck-after-3d-a
 protocol: air
-phase: pr
+phase: verified
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -13,5 +13,5 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-21T00:45:58.288Z'
-updated_at: '2026-07-21T01:31:22.519Z'
+updated_at: '2026-07-21T01:40:07.261Z'
 pr_ready_for_human: false
