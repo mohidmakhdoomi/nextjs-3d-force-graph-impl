@@ -78,8 +78,14 @@ jobs:
           PY
 
       # --- Access-token-string credential path ---
+      # continue-on-error: the action's own status/log-dump step crashes on this
+      # kernel's log format (ConvertFrom-Json "Additional text encountered") and
+      # never prints the kernel stdout — a real reporting defect. We let the job
+      # proceed to the retrieval/verdict steps below, which read the actual
+      # result artifact and set the true job status.
       - name: Run WebGL probe on Kaggle GPU kernel (api_token)
         if: steps.sniff.outputs.mode == 'string'
+        continue-on-error: true
         # Frederisk/kaggle-action@v2.0.0 pinned by SHA (audited 2026-07-21).
         uses: Frederisk/kaggle-action@e6bafb6bf66da87116cca560a7636422213cf354
         with:
@@ -97,6 +103,7 @@ jobs:
       # --- Legacy username/key credential path ---
       - name: Run WebGL probe on Kaggle GPU kernel (username/key)
         if: steps.sniff.outputs.mode == 'json'
+        continue-on-error: true
         uses: Frederisk/kaggle-action@e6bafb6bf66da87116cca560a7636422213cf354
         with:
           username: ${{ steps.sniff.outputs.username }}
@@ -110,3 +117,39 @@ jobs:
           enable_internet: 'true'
           machine_shape: ${{ inputs.machine_shape }}
           timeout_seconds: '1200'
+
+      # The kaggle CLI + ~/.kaggle credentials were set up by the action above and
+      # persist on the runner. By the time the action returns (even on its crash),
+      # the kernel is in a TERMINAL state, so its output is fetchable. This is the
+      # real evidence channel — it bypasses the action's broken stdout dump.
+      - name: Retrieve Kaggle kernel output (robust)
+        if: always()
+        shell: bash
+        run: |
+          OWNER=mohidmakhdoomi   # kernel owner for this token (confirmed via push URL)
+          SLUG=nextjs3dfg-webgl-probe
+          kaggle kernels output "$OWNER/$SLUG" -p kernel-output || true
+          echo "=== retrieved files ==="; ls -la kernel-output || true
+          echo "=== webgl_probe_result.json (structured verdict) ==="
+          cat "kernel-output/webgl_probe_result.json" 2>/dev/null || echo "(no result artifact — kernel may have crashed before writing it)"
+          echo "=== reconstructed kernel stdout ==="
+          if [ -f "kernel-output/$SLUG.log" ]; then
+            jq -r '.[].data' "kernel-output/$SLUG.log" 2>/dev/null \
+              || python3 -c "import json,sys;print(''.join(x.get('data','') for x in json.load(open(sys.argv[1]))))" "kernel-output/$SLUG.log" 2>/dev/null \
+              || cat "kernel-output/$SLUG.log"
+          fi
+
+      - name: Verdict (job status reflects the actual WebGL result)
+        if: always()
+        shell: bash
+        run: |
+          f=kernel-output/webgl_probe_result.json
+          if [ ! -f "$f" ]; then
+            echo "::warning::No result artifact — kernel crashed before writing it; inspect stdout above."
+            exit 1
+          fi
+          verdict="$(python3 -c "import json;print(json.load(open('$f'))['verdict'])")"
+          flagset="$(python3 -c "import json;d=json.load(open('$f'));print(d.get('hardware_flag_set') or 'none')")"
+          echo "Kaggle GPU WebGL verdict: $verdict (hardware flag set: $flagset)"
+          # Job PASSES only if a real hardware renderer was obtained.
+          test "$verdict" = "hardware"
