@@ -95,6 +95,45 @@ chromium suite measured 9.7 m under SwiftShader). Zero flakes at
 fallback path (Scenario 2) on this host: loud banner at start and before the
 report, `mode: software-fallback`, suite exit semantics preserved.
 
-The 3+ consecutive qualification runs (under `E2E_GPU_REQUIRE=1`, on the
-final headless default) land in this section during
-`qualification_evidence_and_docs`.
+### Qualification runs (plan phase: qualification_evidence_and_docs)
+
+Three **consecutive** full-suite lane runs, 2026-07-21, on the final shipped
+configuration (headless default, `wsl2-d3d12-angle-gl` candidate), each under
+`E2E_GPU_REQUIRE=1` so an unnoticed fallback was impossible. Retries policy:
+`retries: 0` (config local default, untouched). Renderer, asserted and logged
+identically in all three runs:
+`ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)`.
+
+| Run | Result | Suite | Total | Lane exit |
+|---|---|---|---|---|
+| Q-1 | 11/11 pass | 94 s | 104 s (build 10 s) | 0 |
+| Q-2 | 11/11 pass | 95 s | 105 s (build 9 s) | 0 |
+| Q-3 | 11/11 pass | 95 s | 105 s (build 9 s) | 0 |
+
+Per-test durations across Q-1/Q-2/Q-3 (all pass; seconds):
+
+| Test | Q-1 | Q-2 | Q-3 |
+|---|---|---|---|
+| matrix: settles an initial force layout | 2.3 | 2.2 | 2.2 |
+| matrix: rotates automatically until paused, then resumes | 7.7 | 7.6 | 7.7 |
+| matrix: pointer inert until enable delay | 7.0 | 6.9 | 6.9 |
+| matrix: zooms out with the wheel | 8.6 | 8.5 | 8.6 |
+| matrix: zooms in + background-drag rotate | 13.3 | 13.7 | 13.9 |
+| matrix: click-to-focus + reset | 17.6 | 17.7 | 17.4 |
+| matrix: AxesHelper toggle | 3.6 | 4.6 | 4.5 |
+| matrix: canvas consistent across resize | 4.3 | 4.0 | 4.0 |
+| matrix: remounts fresh canvas on re-navigation | 2.9 | 2.9 | 2.9 |
+| right-click-release: releases fx/fy/fz | 17.9 | 17.8 | 17.8 |
+| smoke: renders graph + core controls | 7.0 | 6.9 | 6.9 |
+
+**Findings**: no instability observed — per-test wall-clock spread across the
+three runs is ≤ 1.0 s on every test; zero flakes at `retries: 0`; no
+timing-incompatible test; no lane-only accommodation was needed and none was
+added; canonical waits untouched (spec Decision 7 discipline had nothing to
+absorb). Including the phase-2/3 runs, the lane is 5-for-5 full-suite
+hardware passes (HW-1 headed, HW-2 headless, Q-1..Q-3 headless).
+
+**FR8 verdict**: satisfied — 3+ consecutive hardware runs with asserted
+renderer, per-test results, wall-clocks, and retries policy recorded, plus
+the contemporaneous SwiftShader serial baseline (FB-1, 594 s suite) for the
+6.1× comparison and the forced-fallback qualification of Scenario 2.

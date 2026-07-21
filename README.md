@@ -68,6 +68,7 @@ npm run browser:install
 | `npm run build` | Create the production Next.js build. |
 | `npm run start` | Start a previously built production application. |
 | `npm run test:smoke` | Build, start the production server, and run the Chromium and Firefox WebGL smoke. |
+| `npm run test:e2e:gpu` | Opt-in: run the full Chromium e2e suite on verified hardware WebGL when a GPU adapter is usable, with loud software fallback otherwise. **Not part of the gate.** See [Opt-in native-GPU e2e lane](#opt-in-native-gpu-e2e-lane). |
 | `npm run validate` | Fail fast through lint, typecheck, and the `test:smoke` browser suite (build plus the Chromium + Firefox WebGL smoke). |
 | `npm run audit:full` | Report findings in the complete dependency graph. |
 | `npm run audit:production` | Report findings with development dependencies omitted. |
@@ -133,3 +134,101 @@ Qualification").
 On every run it uploads the two audit artifacts. When Playwright produces
 diagnostics, the workflow also uploads the merged `playwright-report` and the
 per-shard `playwright-test-results-<n>` artifacts.
+
+## Opt-in native-GPU e2e lane
+
+```sh
+npm run test:e2e:gpu
+```
+
+An **opt-in, local-only** lane (issue #44) that runs the *full* Chromium e2e
+suite on **genuine hardware-accelerated WebGL** instead of SwiftShader. It is
+additional tooling and evidence, **never the green gate**: `npm run validate`,
+`test:smoke`, CI, and every committed test are unchanged and stay on the
+qualified SwiftShader serial path. Nothing in the repo behaves differently
+unless you invoke the lane.
+
+What one invocation does (`scripts/e2e-gpu-lane.mjs`):
+
+1. **Probes the host** and picks a hardware recipe from an evidence-ordered
+   candidate list (WSL2 Mesa d3d12 for any vendor adapter; ANGLE-Vulkan/GL on
+   native Linux). Unusable candidates are skipped with a one-line cause +
+   remedy diagnostic.
+2. **Verifies the renderer before trusting anything**: launches the repo's own
+   Playwright Chromium under the candidate flags and reads
+   `UNMASKED_RENDERER_WEBGL`; the string must not match
+   SwiftShader/llvmpipe/software. Failed candidates fall through to the next
+   (per-candidate transcripts land in `gpu-lane-logs/`).
+3. **Runs the suite** — `npm run build`, then `npx playwright test` with
+   `E2E_ENGINES=chromium` and the verified flags injected through the
+   config's `PW_CHROMIUM_ARGS` hook. Same production server, same
+   `workers: 1`, same `retries: 0`, same timeouts as the normal local suite.
+4. **Reports honestly.** The run ends with a machine-greppable block:
+
+   ```
+   === E2E GPU LANE REPORT ===
+   mode: hardware | software-fallback
+   renderer: <verbatim UNMASKED_RENDERER_WEBGL>
+   engine: chromium
+   suite: pass | fail (exit n)
+   wall-clock: <total>s (build <n>s, suite <n>s)
+   ```
+
+   `mode: hardware` is only ever printed after the deny-list assertion
+   passed. When no adapter is usable the lane still runs the suite under the
+   default SwiftShader args with an unmissable `SOFTWARE FALLBACK` banner at
+   the start and before the report — a fallback run can never be mistaken for
+   hardware evidence. The suite's own pass/fail is the lane's exit code.
+
+Measured on the qualification host (WSL2, RTX 3080): hardware suite ≈ 97 s vs
+≈ 594 s for the same suite under SwiftShader — about **6× faster**, with the
+SwiftShader-only hover/timing flake class absent.
+
+### Env controls and flags
+
+| Control | Effect |
+| --- | --- |
+| `E2E_GPU_FORCE_FALLBACK=1` | Skip all hardware candidates; run the software-fallback path deterministically (how the fallback is exercised on a GPU-capable machine). |
+| `E2E_GPU_REQUIRE=1` | Exit non-zero instead of falling back when no candidate verifies — use for hardware-evidence runs so a silent fallback can't pollute results. |
+| `--probe-only` | Probe + verify + report without building or running the suite. |
+| `--mode=headed\|headless` | Override the run mode. Default is **headless** (proven equivalent; see below). Headed needs WSLg/X (`DISPLAY`). |
+| `--candidate=<id>` / `--channel=<name>` | Probe a specific recipe / a specific Playwright channel (`--channel` is probe-only). Used by the FR5 matrix. |
+
+Pass flags through npm like `npm run test:e2e:gpu -- --probe-only`.
+
+### WSL2 Mesa d3d12 recipe (what the lane automates)
+
+Proven on WSL2 + RTX 3080 (PR #43, then productized here). The lane detects
+`/dev/dxg` + `/usr/lib/wsl/lib` and injects, per spawn (never into your
+shell):
+
+```sh
+GALLIUM_DRIVER=d3d12                       # select Mesa's D3D12 gallium driver
+LD_LIBRARY_PATH=/usr/lib/wsl/lib:$LD_LIBRARY_PATH   # WSL GPU driver libs (libd3d12.so, libdxcore.so)
+# Chromium flags (via PW_CHROMIUM_ARGS):
+--use-gl=angle --use-angle=gl --ignore-gpu-blocklist --disable-gpu-sandbox
+```
+
+`--use-angle=gl-egl` is a proven alternate backend (OpenGL ES 3.1);
+ANGLE-Vulkan is a known llvmpipe dead end under WSL2 and is only tried on
+native Linux. Optional multi-GPU disambiguators pass through if you export
+them: `MESA_D3D12_DEFAULT_ADAPTER_NAME=<vendor>` (pick the adapter) and
+`LIBGL_ALWAYS_SOFTWARE=false`. The sandbox/blocklist relaxations above exist
+**only** inside this explicitly invoked lane — never in default launch args or
+CI.
+
+**Headless works** (2026-07 investigation): default Playwright headless
+(headless shell), new headless (`--channel=chromium`), and headed WSLg all
+reach the adapter with identical renderer strings and identical suite timing —
+the d3d12 path needs no display, so the lane defaults to headless and works on
+display-less WSL2 hosts. Evidence, including the 4-cell matrix and repeat-run
+stability results, lives in `codev/reviews/44-add-an-opt-in-native-gpu-local.md`.
+
+### Status and sequencing
+
+- Renderer strings and timings above are **evidence dated 2026-07** on one
+  host (Mesa 26.0.3, driver 581.29); driver updates can shift them. The lane
+  probes rather than assumes, and falls back loudly.
+- `workers` stays `1` in the lane, matching the qualified suite. Raising
+  parallelism on top of this lane is issue #41's qualification, sequenced
+  after this one — do not raise it ad hoc.
