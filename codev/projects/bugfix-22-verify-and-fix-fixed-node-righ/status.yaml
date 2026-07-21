@@ -1,0 +1,14 @@
+id: bugfix-22
+title: verify-and-fix-fixed-node-righ
+protocol: bugfix
+phase: investigate
+plan_phases: []
+current_plan_phase: null
+gates:
+  pr:
+    status: pending
+iteration: 1
+build_complete: false
+history: []
+started_at: '2026-07-21T04:14:33.857Z'
+updated_at: '2026-07-21T04:14:33.858Z'
