@@ -1,7 +1,7 @@
 id: bugfix-33
 title: firefox-local-gate-flake-point
 protocol: bugfix
-phase: investigate
+phase: fix
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -11,4 +11,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-21T03:14:15.336Z'
-updated_at: '2026-07-21T03:14:15.337Z'
+updated_at: '2026-07-21T03:28:12.304Z'
