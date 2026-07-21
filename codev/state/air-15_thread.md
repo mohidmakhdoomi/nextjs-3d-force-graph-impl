@@ -47,4 +47,4 @@ Then remove `skipLibCheck` from `tsconfig.json`; add `patch-package` devDep + `p
 - `porch check 15`: build ✓ tests ✓.
 
 ### PR phase
-Signalled `porch done 15` → PR gate. Opening PR (review in body), then `porch gate 15` and STOP for human approval.
+Signalled `porch done 15` → PR gate. Opened **PR #37** (review in body). `porch check 15`: pr_exists ✓ e2e_tests ✓. `porch gate 15` → **WAITING FOR HUMAN APPROVAL of the `pr` gate**. Architect notified. STOPPED per strict-mode protocol — will not run `porch approve`.
