@@ -3,7 +3,7 @@ import process from "node:process";
 
 const baseURL = "http://127.0.0.1:3000";
 
-// Experiment 42 (Stage 2) — env-gated Chromium WebGL launch args.
+// Env-gated Chromium WebGL launch args.
 //
 // DEFAULT (PW_CHROMIUM_ARGS unset): byte-identical to the previous forced-
 // SwiftShader gate. Every local run, `npm run validate`, and the required CI
@@ -12,10 +12,13 @@ const baseURL = "http://127.0.0.1:3000";
 // deterministic software-WebGL rasterizer as before. This indirection does not
 // change any default behavior.
 //
-// OPT-IN: only the non-required Kaggle-GPU experiment lane
-// (experiments/42_kaggle_gpu_ci/kaggle_e2e_runner.py) sets PW_CHROMIUM_ARGS, to
-// inject the hardware ANGLE-Vulkan flag set proven in experiment 42 run #5 and
-// measure the suite on a real Tesla T4. See experiments/42_kaggle_gpu_ci/notes.md.
+// OPT-IN: an opt-in lane may set PW_CHROMIUM_ARGS to a hardware-WebGL flag set
+// instead of software SwiftShader. Experiment 42 added this hook to run the suite
+// on a real GPU; the *Kaggle* path was REJECTED on Kaggle-AUP grounds (see
+// experiments/42_kaggle_gpu_ci/notes.md) and its dispatch workflow was removed.
+// The hook is retained to serve issue #44 (opt-in native-GPU LOCAL lane), which
+// can set PW_CHROMIUM_ARGS to the ANGLE-Vulkan flag set proven in experiment 42
+// run #5 — on real local hardware, with no third party or ToS exposure.
 const SWIFTSHADER_CHROMIUM_ARGS = [
     "--use-angle=swiftshader",
     "--enable-unsafe-swiftshader",

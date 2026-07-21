@@ -125,3 +125,18 @@ Built the Stage-2 harness (3 changes on `builder/experiment-42`):
 Baseline to beat (measured from recent validation.yml runs): **~5m32s–6m57s** sharded (4-shard Chromium/SwiftShader).
 
 Next: commit → push (validation.yml required gate runs on PR = clean-checkout proof default path unchanged) → notify architect that harness is ready and the e2e dispatch needs merge-to-main first (kernel clones main + workflow_dispatch reads default branch) + Kaggle-account go. Await approval to merge+dispatch; then measure and finalize recommendation.
+
+## 2026-07-21 — rev-3: FULL STOP → REJECT FINAL (Kaggle AUP, primary source)
+
+Architect STOP mid-flight, then rev-3 final directions. **Never dispatched stage=e2e** (was still waiting on the required gate for fix #3); verified kaggle-gpu-spike history shows only historical probe runs #1–#5, nothing in flight → nothing to cancel Kaggle-side.
+
+**Why REJECT is now final:** owner captured Kaggle's actual AUP (effective 2025-06-22, primary source) — the resource-abuse clause **explicitly** bars *"activity unrelated to ML data science"* and *"server farming."* Our e2e-CI-on-Kaggle-GPU is exactly that → dispositive violation. This CORRECTS rev-2's "no explicit prohibition found": that was a tooling limitation (client-rendered AUP page, machine-inaccessible), not absence. Wall-clock measurement is moot AND the dispatch would itself be the violating activity → not run.
+
+**Executed rev-3 directions:**
+1. Committed the verbatim AUP as `data/output/kaggle-aup-2025-06-22.txt` (provenance header + verbatim text), cited as the dispositive primary source.
+2. Rewrote notes.md → REJECT FINAL, AUP first / prior drivers as corroboration / run #5 hardware-WebGL capability documented for the record; corrected the rev-2 framing throughout (status, priors item 6, metrics ToS+wall-clock rows, decision, next steps, env/repro, references).
+3. **Removed** `.github/workflows/kaggle-gpu-spike.yml` (`git rm`) — no standing dispatch surface; even one-offs are prohibited non-ML activity.
+4. **Kept** the `playwright.config.ts` `PW_CHROMIUM_ARGS` hook (default byte-identical), re-purposed comment to note it serves **#44** (native-GPU LOCAL lane).
+5. Runner `kaggle_e2e_runner.py` retained + docstring note: built-but-never-dispatched (AUP).
+
+Next: commit → push (validation.yml gate) → retitle PR to COMPLETE/REJECT + `Closes #42` → drive porch to completion (`porch done 42` → experiment-complete gate pending → architect approves → push chore(porch) commit BEFORE merge) → merge on CI green. Also recommend owner revoke `KAGGLE_API_TOKEN` (nothing references it now).

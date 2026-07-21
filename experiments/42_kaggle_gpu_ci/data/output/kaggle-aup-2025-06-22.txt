@@ -1,0 +1,45 @@
+================================================================================
+PRIMARY SOURCE — Kaggle Acceptable Use Policy
+================================================================================
+Source URL : https://www.kaggle.com/aup
+Version     : "June 22, 2025 (active)"
+Captured    : 2026-07-21 by the repository owner (verbatim text below; a
+              screenshot was also captured for provenance).
+Cited by    : Experiment 42 — FINAL REJECT (decision record rev 3, issue #42).
+
+Relevance (why this is dispositive for experiment 42):
+The resource-abuse clause explicitly prohibits abusing Service resources,
+enumerating "server farming" and "activity unrelated to ML data science" among
+the banned uses. Running this project's Playwright/Chromium e2e CI suite on a
+Kaggle GPU kernel is non-ML-data-science activity driving CI compute — squarely
+within the prohibited categories. This is a direct, primary-source AUP
+violation, superseding the earlier Colab-analogy inference. Per the owner's
+rule, that makes the disposition REJECT, final — and the wall-clock measurement
+is moot because the measurement run itself would be the violating activity.
+
+-------------------------- VERBATIM AUP TEXT BELOW -----------------------------
+
+Effective: June 22, 2025
+
+Use of the Services is subject to this Acceptable Use Policy.
+
+Except as described in this AUP, capitalized terms have the meaning stated in the applicable Agreement between you and Kaggle or you and Google as applicable. For purposes of this AUP, Services has the meaning given to it in the Kaggle Terms of Use, available at https://www.kaggle.com/terms.
+
+You agree not to, and not to allow third parties to use the Services:
+
+    to violate, or encourage the violation of, the legal rights of others (for example, this may include adding, providing, or uploading data to the Services that violates the intellectual property or privacy rights of others);
+    to engage in, promote or encourage illegal activity (including the solicitation, access, generation, or storage of child sexual exploitation and child abuse material, or material that promotes, incites, or instructs in matters of crime, violence, illegal drugs, and violent extremism);
+    for any unlawful, invasive, infringing, defamatory or fraudulent purpose (for example, this may include phishing, or mirroring a website);
+    to intentionally distribute viruses, worms, Trojan horses, corrupted files, hoaxes, or other items of a destructive or deceptive nature;
+    to interfere with the use of the Services (for example, this may include intentionally jeopardizing the security of the Services by allowing someone else to log into the Services as you or attempting to obtain security information from other users);
+    to disable, interfere with or circumvent any aspect of the Services;
+    to generate, distribute, publish or facilitate unsolicited mass email, promotions, advertisements or other solicitations (“spam”); or
+    to abuse resources offered as part of the Services, including using such resources to engage in:
+        cryptomining
+        DDOS attacks
+        server farming
+        creation of harmful or offensive content
+        malicious activity, such as creation or use of malware, hacking tools, or tools for circumvention/obfuscation
+        activity unrelated to ML data science
+        excessive crawling of the content on the Services
+    to use the Services, or any interfaces provided with the Services, to access any other Google or Kaggle product or service in a manner that violates the terms of service of such other Google or Kaggle product or service.

@@ -2,6 +2,16 @@
 """
 Experiment 42 — Stage 2: MEASURED end-to-end e2e run on a Kaggle GPU kernel.
 
+STATUS: BUILT BUT NEVER DISPATCHED (retained as documentation). The final
+disposition (decision record rev 3, issue #42) is REJECT on primary-source
+Kaggle-AUP grounds — the AUP prohibits "activity unrelated to ML data science"
+and "server farming", so running this suite on a Kaggle kernel is a violation,
+and the measurement dispatch would ITSELF be the violating activity. The
+wall-clock number this script would have produced is therefore moot and was not
+collected. This file is kept as a record of the built measurement capability and
+of the proven run #5 recipe; do NOT dispatch it against Kaggle.
+
+
 Architect decision record rev 2 (issue #42) withdrew the preliminary REJECT and
 made Stage 2 GO: the make-or-break question (hardware WebGL on a Kaggle T4) is
 already PROVEN positive (run #5), and the driver-install cost was waived by the
