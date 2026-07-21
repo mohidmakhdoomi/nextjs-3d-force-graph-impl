@@ -47,4 +47,10 @@ Then remove `skipLibCheck` from `tsconfig.json`; add `patch-package` devDep + `p
 - `porch check 15`: build ✓ tests ✓.
 
 ### PR phase
-Signalled `porch done 15` → PR gate. Opened **PR #37** (review in body). `porch check 15`: pr_exists ✓ e2e_tests ✓. `porch gate 15` → **WAITING FOR HUMAN APPROVAL of the `pr` gate**. Architect notified. STOPPED per strict-mode protocol — will not run `porch approve`.
+Signalled `porch done 15` → PR gate. Opened **PR #37** (review in body). `porch check 15`: pr_exists ✓ e2e_tests ✓. `porch gate 15` → WAITING FOR HUMAN APPROVAL of the `pr` gate. Architect notified.
+
+### Review round 1 (architect, PR #37): REQUEST_CHANGES — lockfile name contamination
+`npm install`/`npm ci` in the worktree rewrote `package-lock.json` root `"name"` from the canonical `"primary"` to the worktree basename `"air-15"` (package.json declares no `name`, so npm falls back to the directory name). This is the "lockfile name looks worktree-contaminated" case in lessons-critical. Everything else approved.
+- Fix (commit `88fd90e`): restore `"name": "primary"` (one line) to match `origin/main`. Did NOT add a `name` to package.json — canonical main has none, and `npm ci` (unlike `npm install`) does not rewrite the lock, so the value holds.
+- Verified: diff vs `origin/main` no longer shows any root-name change; only legit additions are patch-package + its transitive deps. `npm ci` re-applies patches, name stays `primary`; `tsc --noEmit` 0; `npm test` 33/33.
+- Re-requested the `pr` gate. STOPPED per strict-mode — will not run `porch approve`.
