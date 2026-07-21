@@ -131,3 +131,17 @@ Applied:
   kept intentionally, NOT suppressed (per architect).
 - #34 cited in a PR comment too.
 Next: push, wait for CI green, then re-request the pr gate.
+
+## Merged — and an accuracy correction on "green"
+- pr gate human-approved by architect → porch created `chore(porch): 30 pr
+  gate-approved` (784de81) → CI re-ran on that commit.
+- **Merge-commit run 29790108219 (784de81) was GREEN VIA RETRY, not clean:**
+  click-to-focus (matrix:235) FAILED attempt 1 ("a real node click should
+  register and fix the node"), PASSED retry #1 → reported **"1 flaky"**, job green.
+  This is retries:2 working + flaky visibility preserved (per architect). Merged
+  PR #32 → merge commit a693dc79. Protocol 30 COMPLETE (porch).
+- Correction: earlier run 29782955443 (9656345) was actually clean (attempt-1
+  pass); my "retries absorbed the flake" note applied to the LATER merge-commit
+  run, not that one. Flaky pass is real, visible, and tracked in **#34**.
+- Post-merge: architect drives `afx cleanup` (not me). Their #14 builder will
+  rebase against the new CI shape.
