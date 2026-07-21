@@ -1,7 +1,7 @@
 id: bugfix-22
 title: verify-and-fix-fixed-node-righ
 protocol: bugfix
-phase: pr
+phase: verified
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -13,5 +13,5 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-21T04:14:33.857Z'
-updated_at: '2026-07-21T17:17:14.376Z'
+updated_at: '2026-07-21T17:17:32.073Z'
 pr_ready_for_human: false
