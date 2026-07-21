@@ -2,15 +2,27 @@ id: '44'
 title: add-an-opt-in-native-gpu-local
 protocol: aspir
 phase: implement
-plan_phases: []
-current_plan_phase: null
+plan_phases:
+  - id: lane_wrapper_core
+    title: 'Lane wrapper core: probe engine, candidate data, deterministic policy, unit tests'
+    status: in_progress
+  - id: full_lane_and_inertness_proof
+    title: Full-suite lane command, npm script, comment sync, default-inert proof
+    status: pending
+  - id: headless_investigation
+    title: Bounded headless-vs-headed investigation (FR5) and lane default
+    status: pending
+  - id: qualification_evidence_and_docs
+    title: Repeat-run qualification evidence (FR8) and documentation (FR9)
+    status: pending
+current_plan_phase: lane_wrapper_core
 gates:
   pr:
     status: pending
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-07-21T22:00:59.724Z'
-updated_at: '2026-07-21T22:21:14.751Z'
+updated_at: '2026-07-21T22:26:23.049Z'
