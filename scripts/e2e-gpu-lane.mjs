@@ -4,9 +4,10 @@
 // This wrapper is ADDITIONAL tooling, never the green gate: `npm run validate`
 // and CI stay on the qualified SwiftShader serial path. It probes the host for
 // a usable hardware-WebGL recipe, verifies the effective renderer through the
-// repo's own Playwright Chromium BEFORE trusting anything, and (phase 2) runs
-// the full Chromium e2e suite under the verified flags — falling back loudly
-// to default SwiftShader rendering when no hardware candidate verifies.
+// repo's own Playwright Chromium BEFORE trusting anything, and runs the full
+// Chromium e2e suite under the verified flags (build → production server →
+// suite, mirroring `test:smoke`) — falling back loudly to default SwiftShader
+// rendering when no hardware candidate verifies.
 //
 // Deterministic candidate lifecycle (spec FR3):
 //   1. prereq check   — unusable candidates are SKIPPED with an actionable
@@ -33,6 +34,7 @@
 // adapter; ANGLE→Vulkan is a known llvmpipe dead end on WSL2). Native-Linux
 // ANGLE-Vulkan proven on a Tesla T4 in experiment 42 run #5.
 
+import {spawn} from "node:child_process";
 import {existsSync, mkdirSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {pathToFileURL} from "node:url";
@@ -305,6 +307,37 @@ export function formatReport({mode, renderer, suite, wallClock}) {
     ].join("\n");
 }
 
+// Env for the actual suite run (spec FR4: full Chromium suite, workers/
+// retries/timeouts untouched — those stay the config's own defaults).
+// Hardware mode injects the verified recipe via the merged PW_CHROMIUM_ARGS
+// hook; fallback mode guarantees the config's default SwiftShader args.
+export function suiteEnvFor(mode, baseEnv, candidate = null, extraEnv = {}) {
+    if (mode === "hardware") {
+        const env = composeEnv(baseEnv, candidate, extraEnv);
+        env.E2E_ENGINES = "chromium";
+        env.PW_CHROMIUM_ARGS = candidate.flags.join(" ");
+        return env;
+    }
+    const env = fallbackEnv(baseEnv);
+    env.E2E_ENGINES = "chromium";
+    return env;
+}
+
+// Headed mode reaches Playwright through the CLI flag — no config change.
+export function playwrightTestArgs(headed) {
+    return headed ? ["playwright", "test", "--headed"] : ["playwright", "test"];
+}
+
+export function suiteResultLabel(exitCode) {
+    return exitCode === 0 ? "pass" : `fail (exit ${exitCode})`;
+}
+
+export function formatWallClock(totalSeconds, buildSeconds, suiteSeconds) {
+    return (
+        `${totalSeconds}s (build ${buildSeconds}s, suite ${suiteSeconds}s)`
+    );
+}
+
 // FR3 steps 2–3: try usable candidates in order with the injected probe until
 // one verifies as hardware; report every attempt. `probe` is injected so unit
 // tests never touch Playwright.
@@ -508,31 +541,33 @@ function parseArgs(argv) {
     return args;
 }
 
-async function main() {
-    const args = parseArgs(process.argv.slice(2));
-    const controls = parseControls(process.env);
+// Run one delegated stage (build or suite) with inherited stdio so its own
+// output streams through; the lane never re-implements what the stage does.
+function runStage(label, command, commandArgs, env) {
+    log(`running ${label}: ${command} ${commandArgs.join(" ")}`);
     const startedAt = Date.now();
-    const wallClock = () => `${Math.round((Date.now() - startedAt) / 1000)}s`;
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, commandArgs, {env, stdio: "inherit"});
+        child.on("error", reject);
+        child.on("close", (code) => {
+            resolve({
+                code: code ?? 1,
+                seconds: Math.round((Date.now() - startedAt) / 1000),
+            });
+        });
+    });
+}
 
-    if (!args.probeOnly) {
-        // Suite execution lands in plan phase 2 (full_lane_and_inertness_proof).
-        throw new LaneUsageError(
-            "full-suite execution is not wired yet — run with --probe-only",
-        );
-    }
-
+// Probe the host and settle on the run mode (FR2/FR3). Returns
+// {mode: "hardware", candidate, extraEnv, renderer} |
+// {mode: "software-fallback", renderer} | {mode: "abort"} (E2E_GPU_REQUIRE).
+async function resolveMode(controls) {
     if (controls.forceFallback) {
         fallbackWarning("forced by E2E_GPU_FORCE_FALLBACK=1 (no probe was run)");
-        console.log(
-            formatReport({
-                mode: "software-fallback",
-                renderer:
-                    "(not probed — default SwiftShader args would be used)",
-                suite: "skipped (--probe-only)",
-                wallClock: wallClock(),
-            }),
-        );
-        return 0;
+        return {
+            mode: "software-fallback",
+            renderer: "(not probed — default SwiftShader args used)",
+        };
     }
 
     const hostView = buildHostView({
@@ -561,15 +596,16 @@ async function main() {
     });
 
     if (selection.status === "hardware") {
-        console.log(
-            formatReport({
-                mode: "hardware",
-                renderer: selection.attempt.renderer,
-                suite: "skipped (--probe-only)",
-                wallClock: wallClock(),
-            }),
-        );
-        return 0;
+        return {
+            mode: "hardware",
+            candidate: selection.attempt.candidate,
+            extraEnv:
+                usable.find(
+                    (entry) =>
+                        entry.candidate === selection.attempt.candidate,
+                )?.extraEnv ?? {},
+            renderer: selection.attempt.renderer,
+        };
     }
 
     // Exhausted. Summarize every skip/failure (FR11) before deciding.
@@ -582,21 +618,88 @@ async function main() {
     }
     if (controls.requireHardware) {
         log("E2E_GPU_REQUIRE=1 — exiting non-zero instead of falling back");
-        return 1;
+        return {mode: "abort"};
     }
     fallbackWarning(
         "no usable hardware candidate (see per-candidate diagnostics above)",
     );
+    return {
+        mode: "software-fallback",
+        renderer: "(no hardware renderer — default SwiftShader args used)",
+    };
+}
+
+async function main() {
+    const args = parseArgs(process.argv.slice(2));
+    const controls = parseControls(process.env);
+    const startedAt = Date.now();
+    const elapsedSeconds = () => Math.round((Date.now() - startedAt) / 1000);
+
+    const outcome = await resolveMode(controls);
+    if (outcome.mode === "abort") {
+        return 1;
+    }
+
+    if (args.probeOnly) {
+        console.log(
+            formatReport({
+                mode: outcome.mode,
+                renderer: outcome.renderer,
+                suite: "skipped (--probe-only)",
+                wallClock: `${elapsedSeconds()}s`,
+            }),
+        );
+        return 0;
+    }
+
+    // Full lane: build + suite, mirroring `test:smoke` (build && playwright
+    // test; the production server comes from the config's webServer block).
+    // The build never needs recipe env; it runs under the untouched
+    // inherited env in both modes.
+    const build = await runStage("build", "npm", ["run", "build"], process.env);
+    if (build.code !== 0) {
+        // A failed build is a lane-internal hard failure in every mode (FR3).
+        log(`build FAILED (exit ${build.code}) — not running the suite`);
+        console.log(
+            formatReport({
+                mode: outcome.mode,
+                renderer: outcome.renderer,
+                suite: `not-run (build failed, exit ${build.code})`,
+                wallClock: `${elapsedSeconds()}s (build ${build.seconds}s)`,
+            }),
+        );
+        return build.code;
+    }
+
+    const headed =
+        outcome.mode === "hardware" && outcome.candidate.mode === "headed";
+    const suite = await runStage(
+        "suite",
+        "npx",
+        playwrightTestArgs(headed),
+        suiteEnvFor(outcome.mode, process.env, outcome.candidate,
+            outcome.extraEnv),
+    );
+
+    if (outcome.mode === "software-fallback") {
+        // FR3: the fallback notice appears at start AND with the final
+        // report, so fallback output can never read as hardware evidence.
+        fallbackWarning("this suite ran under SOFTWARE rendering (see above)");
+    }
     console.log(
         formatReport({
-            mode: "software-fallback",
-            renderer:
-                "(no hardware renderer — default SwiftShader args would be used)",
-            suite: "skipped (--probe-only)",
-            wallClock: wallClock(),
+            mode: outcome.mode,
+            renderer: outcome.renderer,
+            suite: suiteResultLabel(suite.code),
+            wallClock: formatWallClock(
+                elapsedSeconds(),
+                build.seconds,
+                suite.seconds,
+            ),
         }),
     );
-    return 0;
+    // The suite's own pass/fail semantics are the lane's exit code (FR3).
+    return suite.code;
 }
 
 const isMain =

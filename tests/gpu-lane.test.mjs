@@ -15,10 +15,14 @@ import {
     failureDiagnostic,
     fallbackEnv,
     formatReport,
+    formatWallClock,
     parseControls,
     partitionCandidates,
+    playwrightTestArgs,
     probeRenderer,
     runSelection,
+    suiteEnvFor,
+    suiteResultLabel,
 } from "../scripts/e2e-gpu-lane.mjs";
 
 // Host-view fixtures mirroring the shapes the lane must handle.
@@ -449,6 +453,62 @@ test("probeRenderer: a launch failure is a failed candidate with the error recor
     assert.match(attempt.error, /browser crashed on startup/);
     assert.equal(attempt.rendererClass, "none");
     assert.equal(transcripts.length, 1);
+});
+
+test("suiteEnvFor hardware: recipe env + PW_CHROMIUM_ARGS + chromium-only engine", () => {
+    const base = {PATH: "/usr/bin", LD_LIBRARY_PATH: "/opt/lib"};
+    const env = suiteEnvFor(
+        "hardware",
+        base,
+        candidateById("wsl2-d3d12-angle-gl"),
+        {DISPLAY: ":0"},
+    );
+    assert.equal(env.E2E_ENGINES, "chromium");
+    assert.equal(
+        env.PW_CHROMIUM_ARGS,
+        "--use-gl=angle --use-angle=gl --ignore-gpu-blocklist --disable-gpu-sandbox",
+    );
+    assert.equal(env.GALLIUM_DRIVER, "d3d12");
+    assert.equal(env.LD_LIBRARY_PATH, "/usr/lib/wsl/lib:/opt/lib");
+    assert.equal(env.DISPLAY, ":0");
+    // The base env object stays pristine for a later fallback spawn.
+    assert.equal(Object.hasOwn(base, "PW_CHROMIUM_ARGS"), false);
+    assert.equal(base.LD_LIBRARY_PATH, "/opt/lib");
+});
+
+test("suiteEnvFor fallback: default SwiftShader args guaranteed, no recipe leakage", () => {
+    // Even a shell-exported PW_CHROMIUM_ARGS must not survive into the
+    // fallback suite — fallback means the config's own SwiftShader defaults.
+    const base = {
+        PATH: "/usr/bin",
+        PW_CHROMIUM_ARGS: "--use-gl=angle",
+        LD_LIBRARY_PATH: "/opt/lib",
+    };
+    const env = suiteEnvFor("software-fallback", base);
+    assert.equal(Object.hasOwn(env, "PW_CHROMIUM_ARGS"), false);
+    assert.equal(env.E2E_ENGINES, "chromium");
+    assert.equal(Object.hasOwn(env, "GALLIUM_DRIVER"), false);
+    // Operator-owned values pass through untouched.
+    assert.equal(env.LD_LIBRARY_PATH, "/opt/lib");
+});
+
+test("playwrightTestArgs: headed reaches Playwright via the CLI flag only", () => {
+    assert.deepEqual(playwrightTestArgs(false), ["playwright", "test"]);
+    assert.deepEqual(playwrightTestArgs(true), [
+        "playwright",
+        "test",
+        "--headed",
+    ]);
+});
+
+test("suiteResultLabel preserves the suite's own exit semantics", () => {
+    assert.equal(suiteResultLabel(0), "pass");
+    assert.equal(suiteResultLabel(1), "fail (exit 1)");
+    assert.equal(suiteResultLabel(3), "fail (exit 3)");
+});
+
+test("formatWallClock breaks out build and suite stages", () => {
+    assert.equal(formatWallClock(312, 45, 267), "312s (build 45s, suite 267s)");
 });
 
 test("candidate data invariants: sandbox relaxations stay lane-only and evidence-ordered", () => {
