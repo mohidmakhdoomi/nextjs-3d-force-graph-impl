@@ -98,7 +98,7 @@ def main():
     print("=" * 72)
 
     # 1) Environment evidence (parallels the action's own nvidia-smi check).
-    sh(["bash", "-lc", "nvidia-smi -L || echo 'no nvidia-smi'"])
+    _, gpu_out = sh(["bash", "-lc", "nvidia-smi -L || echo 'no nvidia-smi'"])
     sh(["bash", "-lc", "cat /etc/os-release | head -3 || true"])
     sh(["bash", "-lc", "ls -1 /usr/lib/x86_64-linux-gnu/ | grep -iE 'egl|gles|gl\\.so|nvidia' || echo 'no GL/EGL vendor libs found'"])
     sh(["bash", "-lc", "which glxinfo eglinfo vulkaninfo 2>/dev/null || echo 'no gl diag tools'"])
@@ -144,9 +144,27 @@ def main():
             if entry.get("class") == "hardware" and hardware_hit is None:
                 hardware_hit = name
 
+    summary = {
+        "verdict": "hardware" if hardware_hit else "software_or_error",
+        "hardware_flag_set": hardware_hit,
+        "gpu": gpu_out.strip(),
+        "results": results,
+    }
+
+    # Write a structured artifact to the kernel working dir. Kaggle collects
+    # files written here as retrievable kernel OUTPUT — so `kaggle kernels
+    # output` fetches this verdict directly, independent of the action's
+    # (fragile) stdout-log parsing. This is the primary evidence channel.
+    try:
+        with open("webgl_probe_result.json", "w") as f:
+            json.dump(summary, f, indent=2, default=str)
+        print("Wrote webgl_probe_result.json (retrievable kernel output artifact).")
+    except Exception as e:  # noqa: BLE001
+        print(f"WARN: could not write result artifact: {e}")
+
     print("\n" + "=" * 72)
     print("PROBE RESULT (machine-readable):")
-    print(json.dumps(results, indent=2, default=str))
+    print(json.dumps(summary, indent=2, default=str))
     print("=" * 72)
 
     if hardware_hit:

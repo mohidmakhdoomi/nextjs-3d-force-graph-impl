@@ -43,3 +43,22 @@ Implemented:
 - Added a **credential-sniff step**: reads secret from `env` (never interpolated), parses JSON→`username`/`key` (both `::add-mask::`ed) routed to the action's username+key inputs, else passes through as `api_token`. Two SHA-pinned (`e6bafb6`) conditional action calls. Only non-secret `mode` leaves in clear.
 - Updated notes.md (status=GO, repro/dispatch, sniff design, go/no-go resolved).
 - Next: push branch, open PR with **`Refs #42`** (partial — issue stays open until probe result + recommendation), notify architect for immediate review.
+
+## 2026-07-21 — PR #45 merged; live probe dispatched
+
+- PR #45 opened; 3-way CMAP review = 2 APPROVE / 1 REQUEST_CHANGES. Required change: pin probe `playwright==1.61.1` (was `--upgrade`). Fixed in `cc7212e`. Also recorded + guarded the **Stage-2 hard-gate**: `playwright.config.ts` hardcodes `--use-angle=swiftshader` and reads no args env → `playwright test` forces software WebGL even on GPU; runner now fails fast until config is wired. (Stage-1 unaffected — probe launches Chromium directly.)
+- CI: first `cc7212e` run came back `cancelled` due to an isolated **shard 3/4 cancellation** (infra eviction; shards 1/2/4 + quality passed). Re-ran non-successful jobs (`gh run rerun --failed`) → **fully green** (all 7 jobs success). Not a real failure; not caused by my diff.
+- **Merged PR #45** (merge commit) per architect's standing "CI green → merge yourself → dispatch" instruction. Workflow now on `main`.
+- **Dispatched the live Stage-1 probe:** run `29859449200` (`workflow_dispatch`, machine_shape=NvidiaTeslaT4). Watching for the `UNMASKED_RENDERER_WEBGL` verdict. Kaggle adds queue/boot latency so this can take several minutes.
+
+## 2026-07-21 — Probe run #1 result: infra worked, but action's reporting is BROKEN
+
+Run `29859449200` (~4 min) outcome — three facts, evidence saved to `data/output/probe-run-29859449200.{log,clean.txt}`:
+1. ✅ **Credential sniff worked**: `Detected credential mode: string` → token is a raw access-token, routed to `api_token`, secret never echoed.
+2. ✅ **Kernel pushed & ran**: `Kernel version 1 successfully pushed` → `KernelWorkerStatus.RUNNING` (~3.5 min) → `KernelWorkerStatus.ERROR`.
+3. ❌ **Action reporting DEFECT**: on kernel ERROR the action tries to dump the log via `Get-Content | ConvertFrom-Json -AsHashtable` and **crashes** (`Conversion from JSON failed: Additional text encountered`). So the kernel's stdout (nvidia-smi + WebGL renderer + VERDICT) was **never surfaced**. Can't yet tell if ERROR = my intended `exit(1)` (software WebGL) or a genuine kernel crash. **This is itself a strong finding** reinforcing "crude/fragile reporting → reject for required CI."
+
+**v2 iteration (this commit)** — self-sufficient evidence channel, bypassing the action's bug:
+- Probe writes a structured `webgl_probe_result.json` artifact (retrievable kernel output), plus captures nvidia-smi.
+- Workflow: `continue-on-error` on the action step + an `if: always()` step that runs `kaggle kernels output mohidmakhdoomi/nextjs3dfg-webgl-probe` directly and prints the result JSON + reconstructed stdout, then a Verdict step that sets job pass/fail from the actual `verdict` (hardware vs software). kaggle CLI + `~/.kaggle` creds persist from the action's earlier steps.
+- Plan: PR → merge (CI green) → re-dispatch → read the real renderer verdict. Within the architect's sanctioned "few manual retries."
