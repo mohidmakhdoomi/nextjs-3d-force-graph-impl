@@ -1,6 +1,6 @@
 # Experiment 42: kaggle-action for free Kaggle GPU CI compute
 
-**Status**: In Progress — **design + security audit complete; live Stage‑1 probe gated on architect go/no‑go.**
+**Status**: In Progress — **design + security audit complete; architect GO on all 3 asks (issue #42 decision record, 2026‑07‑21); live Stage‑1 probe pending PR merge → manual dispatch.**
 **Preliminary disposition (pre‑probe)**: leaning **DEFER / REJECT for the required‑CI framing**; at most a *non‑required, ToS‑risky GPU‑qualification lane* whose sole benefit (real hardware WebGL) is still **unproven** and rides entirely on the Stage‑1 probe.
 
 **Date**: 2026-07-21
@@ -87,23 +87,22 @@ Repurposing free Kaggle Notebook/kernel GPU as a **general‑purpose CI compute 
 
 - [`kaggle_webgl_probe.py`](kaggle_webgl_probe.py) — Stage‑1 make‑or‑break WebGL renderer probe (6 GL flag sets; exits non‑zero unless hardware GL confirmed, so the log surfaces).
 - [`kaggle_e2e_runner.py`](kaggle_e2e_runner.py) — Stage‑2 reference full‑suite runner (Node 22.23.1 via nvm → `npm ci` → build → full Chromium e2e with winning flags). **Reference only**, not wired in.
-- [`kaggle-gpu-spike.yml`](kaggle-gpu-spike.yml) — SHA‑pinned, `workflow_dispatch`‑only prototype workflow, kept **inert** outside `.github/workflows/` so it cannot touch required CI. Includes promotion instructions.
+- [`../../.github/workflows/kaggle-gpu-spike.yml`](../../.github/workflows/kaggle-gpu-spike.yml) — SHA‑pinned, `workflow_dispatch`‑**only** probe workflow. Architect‑approved for promotion into `.github/workflows/`; still non‑required and never auto‑runs (no `push`/`pull_request`/`schedule` trigger). Includes a **format‑agnostic credential sniff** (below).
+
+### Credential‑format sniff (token shape unknown, write‑only secret)
+
+`KAGGLE_API_TOKEN` is write‑only, so nobody can inspect it. The workflow detects its shape **without ever echoing the value**: a first step reads the secret from `env` (never interpolated into the script text) and, if it parses as JSON containing `username`/`key`, `::add-mask::`es those and routes to the action's `username`+`key` inputs; otherwise it passes the secret straight through as `api_token`. Only a non‑secret `mode` (`string`|`json`) leaves the step in the clear. On auth failure the action surfaces the kaggle‑CLI error (non‑secret) and we iterate (probe is ~2 min; retries are cheap — architect‑accepted).
 
 ## Environment & Reproduction
 
-The prototype is **not installed**. To run the live Stage‑1 probe (after go/no‑go):
+Workflow promoted to `.github/workflows/kaggle-gpu-spike.yml` (via the approved PR). To run the live Stage‑1 probe after merge to `main`:
 ```bash
-# 1. Promote the inert workflow to the default branch (workflow_dispatch is not
-#    dispatchable from a feature branch until it exists on the default branch):
-cp experiments/42_kaggle_gpu_ci/kaggle-gpu-spike.yml .github/workflows/
-#    ...commit, open PR, merge to main.
-# 2. Trigger + watch:
 gh workflow run kaggle-gpu-spike.yml -f machine_shape=NvidiaTeslaT4
 gh run watch "$(gh run list --workflow=kaggle-gpu-spike.yml -L1 --json databaseId -q '.[0].databaseId')"
-# 3. On success, the log is discarded by the action — retrieve it directly:
-#    kaggle kernels output <username>/nextjs3dfg-webgl-probe
+# On kernel SUCCESS the action discards the log — retrieve it directly:
+#   kaggle kernels output <username>/nextjs3dfg-webgl-probe
 ```
-**Dependencies:** the workflow needs `secrets.KAGGLE_API_TOKEN` (present, created 2026‑07‑21) and a phone‑verified Kaggle account with GPU+internet enabled. `ubuntu-latest` provides `pwsh`.
+**Dependencies:** `secrets.KAGGLE_API_TOKEN` (present, created 2026‑07‑21) and a phone‑verified Kaggle account with GPU+internet enabled. `ubuntu-latest` provides `pwsh` + `python3`. **Manual dispatch only — no recurring/scheduled runs** (ToS constraint, per decision record).
 
 ---
 
@@ -146,16 +145,15 @@ gh run watch "$(gh run list --workflow=kaggle-gpu-spike.yml -L1 --json databaseI
 
 ## What Didn't Work / Obstacles
 
-- **Can't self‑serve the live run:** `workflow_dispatch` isn't dispatchable from a feature branch until the workflow is on the default branch → a live probe needs a merge to `main` (or the architect to trigger it). I won't push a Kaggle‑touching workflow to `main` or spend the user's credential against an external service under ToS ambiguity without an explicit nod.
-- **Token format unverifiable** without reading the secret (won't).
+- **Live run couldn't be self‑served from the builder branch:** `workflow_dispatch` isn't dispatchable until the workflow is on the default branch → needed a merge to `main`. Plus the live trigger is outward‑facing + uses the real credential + ToS‑ambiguous, so it was correctly the architect's call. **Resolved:** architect approved; promoted via reviewed PR (`Refs #42`), then dispatch.
+- **Token format unverifiable** (write‑only secret; won't read it) → handled by the format‑agnostic sniff rather than blocking.
 - Multiple independent priors (ToS, wall clock, reporting, reproducibility) already point away from adoption *before* the probe — the probe mainly decides DEFER vs REJECT and whether a narrow non‑required lane is even worth prototyping further.
 
-## Go/no‑go (for the architect)
+## Go/no‑go — RESOLVED (architect decision record, issue #42, 2026‑07‑21)
 
-Sent to architect. The decision is theirs because it is outward‑facing + uses the real credential + is ToS‑ambiguous:
-1. **Approve the live Stage‑1 probe?** (minimal ~2 min private kernel; how: I merge the inert workflow to `main` via PR, or you trigger it.)
-2. **Confirm `KAGGLE_API_TOKEN` format** (new access‑token string vs legacy `kaggle.json`) — determines `api_token` vs `username`+`key` inputs.
-3. **Accept the Kaggle‑ToS/account‑suspension risk** for a one‑off probe? (Sustained CI use is a separate, higher‑risk decision.)
+1. **Live Stage‑1 probe: GO.** Path: minimal PR adding only the `workflow_dispatch`‑only workflow (SHA‑pinned `e6bafb6`) → architect reviews → I merge → `gh workflow run`. Manual dispatch only.
+2. **Token format: unknown & unverifiable (write‑only secret) → made the workflow format‑agnostic** (sniff JSON‑vs‑string without echoing; fail fast with a non‑secret diagnostic on auth failure and iterate).
+3. **One‑off ToS/account risk: ACCEPTED** for a single short probe + a few manual auth/flag retries. **No recurring/scheduled runs.** Sustained‑CI‑use ToS exposure is recorded as an **adoption blocker**, not a probe blocker.
 
 ## Next Steps
 

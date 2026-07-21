@@ -33,3 +33,13 @@ Builder for **issue #42** — "Explore kaggle-action to speed up GitHub workflow
 **Better alternative flagged in notes:** sibling issues **#41** (parallel local e2e) and **#44** (opt-in native-GPU local lane) chase the same native-GPU goal WITHOUT a third-party service/credential/ToS exposure — likely the superior path.
 
 Preliminary disposition: **DEFER (leaning REJECT for required-CI framing)**, pending the single probe.
+
+## 2026-07-21 — Architect GO on all 3 asks → opening PR
+
+Decision record on issue #42: (1) probe GO — open minimal PR adding ONLY the `workflow_dispatch` workflow to `.github/workflows/`, they review immediately, I merge, then `gh workflow run`; (2) token format unknown/write-only → make workflow **sniff JSON-vs-string without echoing**; (3) one-off ToS accepted, **manual dispatch only, NO recurring runs**, record sustained-use ToS as adoption blocker.
+
+Implemented:
+- `git mv` spike workflow → `.github/workflows/kaggle-gpu-spike.yml`; still `workflow_dispatch`-only (no push/PR/schedule) so it can't touch the required Validation gate and can't auto-run.
+- Added a **credential-sniff step**: reads secret from `env` (never interpolated), parses JSON→`username`/`key` (both `::add-mask::`ed) routed to the action's username+key inputs, else passes through as `api_token`. Two SHA-pinned (`e6bafb6`) conditional action calls. Only non-secret `mode` leaves in clear.
+- Updated notes.md (status=GO, repro/dispatch, sniff design, go/no-go resolved).
+- Next: push branch, open PR with **`Refs #42`** (partial — issue stays open until probe result + recommendation), notify architect for immediate review.
