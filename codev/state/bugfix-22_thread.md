@@ -194,3 +194,36 @@ PR #43 (base main). porch check green (build + unit). CMAP (bugfix pr):
   and passes — codex's sandbox likely blocks subprocess/tmpdir. No committed-config suppression
   (per hot lesson). Rebuttal recorded as PR comment #issuecomment-5030356962.
 Requesting the `pr` gate (porch done); STOP and wait for human approval before merge.
+
+## CI failure on head ae74af7 — root-caused from shard-4 traces (gate on hold)
+
+Architect put the `pr` gate approval on hold: the new `tests/e2e/right-click-release.spec.ts`
+failed 3/3 on E2E shard 4/4 of run 29803086403 (all 6 in-test aim attempts missed each run).
+Downloaded playwright-test-results-4 (error-context.md + trace.zip x3) and root-caused with #34 rigor.
+
+**Definitive root cause = INVALID AIM POINT from a zoom over-shoot (architect hypothesis b):**
+- `zoomIntoClickRange` wheels `-2400` repeatedly. The 2-core runner's SwiftShader crawls
+  (**5 animation frames took 18.3s ≈ 3.6s/frame** in the trace), so the Trackball accumulates a
+  large pending zoom offset while `cameraDistance` reads a stable-looking **1.68** across several
+  250ms polls (no new frame rendered between reads) — this fools `waitForStableCameraDistance`.
+- `fixBestNode` pins a node at that moment → **valid on-screen point (407,256)**, fixedNodeCount 0→1.
+- One more frame then applies the whole accumulated offset, slamming the camera to the Trackball
+  **min distance 0.1** (graph center). The pinned node now projects to **(3414,2338)** — far outside
+  the **800×600** viewport. All 6 retries re-aim at that same off-screen point (camera frozen at the
+  floor) → `mouse.move` lands off-canvas → hover never commits → release never fires. retry1 identical
+  (off-screen (3678,2500)). Settle-frame count is irrelevant: the pointer was never over the node.
+- Secondary artifact: `nodeScreenPointById` reports `fixed:false` for the pinned id → duplicate node
+  `__data` instances share an id (harness reporting only; release still works locally 7/7 + native 3/3,
+  so the raycast-resolved node IS the pinned one). Hardening it to prefer the fx-defined instance.
+
+**Fix (waits + validation only; zoom dynamics unchanged; workers untouched; assertion unchanged):**
+1. New `waitForCameraRest` (graph-handle.ts): frame-based settle — resolves only after cameraDistance
+   holds across N consecutive real animation frames, so it is NOT fooled by slow-frame plateaus or a
+   mid-drain freeze (unlike the wall-clock 2-sample `waitForStableCameraDistance`). Drains the pending
+   zoom offset BEFORE the node is fixed, so the pinned node cannot drift off-screen afterward.
+2. Wrap zoom→rest→fix→on-screen-verify in a bounded reload-retry: a fresh page gives an offset-free
+   camera; only accept a fixed node whose projection is on-screen (rare degenerate-floor viewpoint → reload).
+3. Right-click loop: per-attempt `waitForCameraRest` + on-screen re-validation of the target before
+   dispatching; more settle frames + longer release poll. Off-screen drift self-heals instead of 6
+   identical misses.
+Next: implement, re-prove on CI green shards (local SwiftShader is not representative).
