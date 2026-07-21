@@ -1,7 +1,7 @@
 id: '30'
 title: ci-validation-workflow-takes-1
 protocol: air
-phase: pr
+phase: verified
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -13,5 +13,5 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-20T20:50:14.315Z'
-updated_at: '2026-07-21T00:22:41.619Z'
+updated_at: '2026-07-21T00:31:01.644Z'
 pr_ready_for_human: false
