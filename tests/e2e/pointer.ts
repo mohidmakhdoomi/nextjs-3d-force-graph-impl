@@ -43,17 +43,28 @@ export async function waitForAnimationFrames(
  * hover raycast to register the node BEFORE pointerdown/up, so the deferred
  * click reads a resolved hover. This only ADDS frame-based (self-scaling)
  * waits — it trims none, and it does not touch worker concurrency.
+ *
+ * The same mechanism — and therefore the same fix — applies to a RIGHT-click
+ * (issue #22). three-render-objects dispatches BOTH buttons from the single
+ * `pointerup` handler behind the same `requestAnimationFrame`, reading the same
+ * throttled `hoverObj`; only `ev.button` differs (0 → `onClick`, 2 →
+ * `onRightClick`). So a bare right-click on a fixed node loses the identical
+ * hover race and releases nothing — exactly the manual-matrix item-11 report —
+ * while a hover-first right-click reads a resolved hover and releases it. Pass
+ * `button: "right"` to exercise that path.
  */
 export async function settleHoverThenClick(
     page: Page,
     x: number,
     y: number,
     settleFrames = 5,
+    button: "left" | "right" = "left",
 ): Promise<void> {
     await page.mouse.move(x, y);
     // Let committed hover raycasts run at the new pointer position before the
-    // click is dispatched — so the deferred onClick reads a resolved hover.
+    // click is dispatched — so the deferred onClick/onRightClick reads a
+    // resolved hover.
     await waitForAnimationFrames(page, settleFrames);
-    await page.mouse.down();
-    await page.mouse.up();
+    await page.mouse.down({button});
+    await page.mouse.up({button});
 }

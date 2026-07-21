@@ -27,6 +27,18 @@ export type NodeScreenPoint = {
     distanceToCenter: number;
 };
 
+export type FixedNodeScreenPoint = {
+    x: number;
+    y: number;
+    id: string | number;
+};
+
+export type NodeScreenById = {
+    x: number;
+    y: number;
+    fixed: boolean;
+};
+
 
 export type CollectedErrors = {
     consoleErrors: string[];
@@ -37,6 +49,8 @@ declare global {
     interface Window {
         __graphProbe: () => GraphSnapshot | null;
         __graphNodeScreen: () => NodeScreenPoint | null;
+        __graphFixBestNode: () => FixedNodeScreenPoint | null;
+        __graphNodeScreenById: (id: string | number) => NodeScreenById | null;
         __webglContextLostCount: number;
     }
 }
@@ -170,16 +184,23 @@ export async function installGraphProbe(page: Page): Promise<void> {
             };
         };
 
-        window.__graphNodeScreen = () => {
+        // Shared picker: the best (closest-to-center, comfortably in front of
+        // the camera, within-margin) on-screen node, returned WITH its node
+        // data. When zoomed in the camera sits inside the node cloud and
+        // graph2ScreenCoords maps nodes BEHIND the camera to plausible on-screen
+        // coordinates, so only nodes in front along the view direction are valid
+        // click targets.
+        const bestOnScreenNode = (): {
+            node: any;
+            x: number;
+            y: number;
+            distanceToCenter: number;
+        } | null => {
             const handle = findHandle();
             if (handle === null) {
                 return null;
             }
 
-            // When zoomed in, the camera sits inside the node cloud and
-            // graph2ScreenCoords maps nodes BEHIND the camera to plausible
-            // on-screen coordinates. Only nodes comfortably in front of the
-            // camera along its view direction are valid click targets.
             const camera = handle.camera();
             const viewDirection = camera
                 .getWorldDirection(camera.position.clone())
@@ -187,7 +208,12 @@ export async function installGraphProbe(page: Page): Promise<void> {
 
             const margin = 60;
             const minDepth = 50;
-            let best: NodeScreenPoint | null = null;
+            let best: {
+                node: any;
+                x: number;
+                y: number;
+                distanceToCenter: number;
+            } | null = null;
             for (const node of collectNodeData(handle)) {
                 if (
                     typeof node.x !== "number" ||
@@ -224,10 +250,64 @@ export async function installGraphProbe(page: Page): Promise<void> {
                     coords.y - window.innerHeight / 2,
                 );
                 if (best === null || distanceToCenter < best.distanceToCenter) {
-                    best = {x: coords.x, y: coords.y, distanceToCenter};
+                    best = {node, x: coords.x, y: coords.y, distanceToCenter};
                 }
             }
             return best;
+        };
+
+        window.__graphNodeScreen = () => {
+            const best = bestOnScreenNode();
+            return best === null
+                ? null
+                : {
+                      x: best.x,
+                      y: best.y,
+                      distanceToCenter: best.distanceToCenter,
+                  };
+        };
+
+        // Deterministically FIX the best on-screen node (pin fx/fy/fz to its
+        // current position) and return its screen point + id. This lets a
+        // right-click-release test establish a known fixed node WITHOUT relying
+        // on the software-WebGL-flaky click/drag fix path (issue #34); the
+        // release itself is still exercised through a real right-click. The app
+        // is never modified — fx/fy/fz are the same public node fields the drag
+        // and click handlers set.
+        window.__graphFixBestNode = () => {
+            const best = bestOnScreenNode();
+            if (best === null) {
+                return null;
+            }
+            best.node.fx = best.node.x;
+            best.node.fy = best.node.y;
+            best.node.fz = best.node.z;
+            return {x: best.x, y: best.y, id: best.node.id};
+        };
+
+        // Re-read a specific node's screen point by id. A fixed node stays put
+        // (rotation paused, camera settled), so a right-click retry can re-aim
+        // at exactly the node it fixed.
+        window.__graphNodeScreenById = (id) => {
+            const handle = findHandle();
+            if (handle === null) {
+                return null;
+            }
+
+            const node = collectNodeData(handle).find(
+                (candidate) => candidate.id === id,
+            );
+            if (
+                node === undefined ||
+                typeof node.x !== "number" ||
+                typeof node.y !== "number" ||
+                typeof node.z !== "number"
+            ) {
+                return null;
+            }
+
+            const coords = handle.graph2ScreenCoords(node.x, node.y, node.z);
+            return {x: coords.x, y: coords.y, fixed: node.fx !== undefined};
         };
     });
 }
@@ -242,6 +322,19 @@ export async function pickNodeScreenPoint(
     page: Page,
 ): Promise<NodeScreenPoint | null> {
     return page.evaluate(() => window.__graphNodeScreen());
+}
+
+export async function fixBestNode(
+    page: Page,
+): Promise<FixedNodeScreenPoint | null> {
+    return page.evaluate(() => window.__graphFixBestNode());
+}
+
+export async function nodeScreenPointById(
+    page: Page,
+    id: string | number,
+): Promise<NodeScreenById | null> {
+    return page.evaluate((nodeId) => window.__graphNodeScreenById(nodeId), id);
 }
 
 /**
