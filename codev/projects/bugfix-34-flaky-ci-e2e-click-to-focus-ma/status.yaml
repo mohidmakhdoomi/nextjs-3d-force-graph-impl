@@ -1,7 +1,7 @@
 id: bugfix-34
 title: flaky-ci-e2e-click-to-focus-ma
 protocol: bugfix
-phase: pr
+phase: verified
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -13,5 +13,5 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-21T01:59:23.907Z'
-updated_at: '2026-07-21T03:05:35.260Z'
+updated_at: '2026-07-21T03:05:43.949Z'
 pr_ready_for_human: false
