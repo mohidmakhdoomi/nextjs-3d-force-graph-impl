@@ -2,7 +2,7 @@
 
 ## Metadata
 - **ID**: plan-2026-07-21-add-an-opt-in-native-gpu-local
-- **Status**: draft
+- **Status**: complete (all four phases implemented and CMAP-approved)
 - **Specification**: [codev/specs/44-add-an-opt-in-native-gpu-local.md](../specs/44-add-an-opt-in-native-gpu-local.md)
 - **Created**: 2026-07-21
 
