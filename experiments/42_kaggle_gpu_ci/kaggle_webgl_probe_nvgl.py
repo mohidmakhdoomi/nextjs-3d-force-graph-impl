@@ -19,6 +19,7 @@ Self-contained (Kaggle uploads only this one file). Writes
 unless a hardware renderer is obtained.
 """
 import json
+import os
 import re
 import subprocess
 import sys
@@ -75,33 +76,63 @@ def classify(renderer):
 
 
 def install_nvidia_gl():
-    """Best-effort install of the NVIDIA GL/EGL/Vulkan userspace matching the
-    mounted driver branch. Returns a dict of diagnostics. Never raises."""
+    """Best-effort install of the NVIDIA GL/EGL/Vulkan USERSPACE matching the
+    mounted kernel driver. Two attempts + verification. Never raises.
+
+    Why two: the userspace MUST match the loaded kernel module's exact point
+    release. Ubuntu's `libnvidia-gl-<branch>` is usually a different point
+    release (init failure — but a cheap, conclusive evidence attempt). The
+    runfile with `--no-kernel-modules` installs the EXACT `driver_version`
+    userspace against Kaggle's already-mounted kernel module — the only path
+    with a real chance. A 404 on the runfile means Kaggle's host runs a
+    non-public/Google-built driver, which is itself conclusive."""
     diag = {}
     _, drv = sh(["bash", "-lc", "nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1"])
     drv = drv.strip().splitlines()[-1].strip() if drv.strip() else ""
     diag["driver_version"] = drv
     branch = drv.split(".")[0] if re.match(r"^\d+", drv) else ""
     diag["branch"] = branch
-    if not branch:
+    if not drv:
         diag["install"] = "SKIPPED — could not read driver_version"
         return diag
-    # Try the exact-branch userspace GL (provides libEGL_nvidia, libGLX_nvidia,
-    # and the Vulkan ICD /usr/share/vulkan/icd.d/nvidia_icd.json), plus diag tools.
-    pkgs = [f"libnvidia-gl-{branch}", "vulkan-tools", "mesa-utils"]
-    code, out = sh(["bash", "-lc",
-                    "export DEBIAN_FRONTEND=noninteractive; apt-get update -y >/dev/null 2>&1; "
-                    f"apt-get install -y {' '.join(pkgs)} 2>&1 | tail -25"])
-    diag["apt_exit"] = code
-    diag["apt_tail"] = out.strip()[-1500:]
-    # Evidence of whether the NVIDIA vendor userspace actually landed.
-    _, ls = sh(["bash", "-lc",
-                "ls -1 /usr/share/vulkan/icd.d/ 2>/dev/null; "
-                "ls -1 /usr/share/glvnd/egl_vendor.d/ 2>/dev/null; "
-                "ls -1 /usr/lib/x86_64-linux-gnu/ | grep -iE 'nvidia|EGL_nvidia|GLX_nvidia' || echo '(no nvidia GL libs)'"])
-    diag["gl_files"] = ls.strip()
-    _, vk = sh(["bash", "-lc", "vulkaninfo --summary 2>&1 | grep -iE 'deviceName|driverName|GPU id' | head -10 || echo '(vulkaninfo unavailable)'"])
-    diag["vulkan_devices"] = vk.strip()
+
+    # Attempt 1 — apt branch package (cheap; point-release mismatch is evidence).
+    apt_code, apt_out = sh(["bash", "-lc",
+                            "export DEBIAN_FRONTEND=noninteractive; apt-get update -y >/dev/null 2>&1; "
+                            f"apt-get install -y libnvidia-gl-{branch} vulkan-tools "
+                            "mesa-utils mesa-utils-extra 2>&1 | tail -20"])
+    diag["apt_exit"] = apt_code
+    diag["apt_tail"] = apt_out.strip()[-1200:]
+
+    # Attempt 2 — runfile userspace-only, EXACT version match (--no-kernel-modules).
+    run_url = f"https://us.download.nvidia.com/tesla/{drv}/NVIDIA-Linux-x86_64-{drv}.run"
+    diag["runfile_url"] = run_url
+    rf_code, rf_out = sh(["bash", "-lc",
+                          f"curl -fsSL -o nvidia.run '{run_url}' && echo DOWNLOAD_OK "
+                          "|| echo 'DOWNLOAD_FAILED (404 => host driver not on public tesla server = conclusive)'; "
+                          "if [ -f nvidia.run ]; then sh nvidia.run --silent --no-kernel-modules 2>&1 | tail -20 "
+                          "|| echo RUNFILE_INSTALL_FAILED; fi; ldconfig 2>/dev/null || true"])
+    diag["runfile_exit"] = rf_code
+    diag["runfile_tail"] = rf_out.strip()[-1500:]
+
+    # Post-install verification captured into the artifact (per addendum).
+    def cat(path):
+        _, o = sh(["bash", "-lc", f"cat {path} 2>/dev/null || echo '(missing)'"])
+        return o.strip()[-400:]
+    diag["egl_vendor_10_nvidia_json"] = cat("/usr/share/glvnd/egl_vendor.d/10_nvidia.json")
+    diag["vulkan_nvidia_icd_json"] = cat("/usr/share/vulkan/icd.d/nvidia_icd.json")
+    _, vkinfo = sh(["bash", "-lc", "vulkaninfo --summary 2>&1 | grep -iE 'deviceName|driverName|apiVersion|GPU id' | head -12 || echo '(vulkaninfo unavailable)'"])
+    diag["vulkaninfo"] = vkinfo.strip()[-800:]
+    _, eglinfo = sh(["bash", "-lc", "eglinfo -B 2>&1 | head -20 || echo '(eglinfo unavailable)'"])
+    diag["eglinfo"] = eglinfo.strip()[-700:]
+    _, nvlibs = sh(["bash", "-lc", "ls -1 /usr/lib/x86_64-linux-gnu/ | grep -iE 'EGL_nvidia|GLX_nvidia|libnvidia-glcore|libnvidia-eglcore' || echo '(no nvidia GL libs)'"])
+    diag["nvidia_gl_libs"] = nvlibs.strip()
+
+    # If the NVIDIA Vulkan ICD landed, point the Vulkan loader at it so the
+    # angle-vulkan launch can enumerate the T4 (inherited by the browser proc).
+    if os.path.exists("/usr/share/vulkan/icd.d/nvidia_icd.json"):
+        os.environ["VK_ICD_FILENAMES"] = "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        diag["VK_ICD_FILENAMES"] = os.environ["VK_ICD_FILENAMES"]
     return diag
 
 
