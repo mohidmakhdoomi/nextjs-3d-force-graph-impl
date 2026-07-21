@@ -23,7 +23,7 @@ when no adapter is usable. Headline results:
 - **Canonical gate provably untouched** — comment-only config diff, env-unset
   config-load equality, gate files absent from the diff, clean-checkout
   `npm run validate` exit 0.
-- Delivered: wrapper (795 lines incl. docs-comments), 30 GPU-free unit tests
+- Delivered: wrapper (795 lines incl. docs-comments), 29 GPU-free unit tests
   riding the existing `npm test` glob, README section, this evidence record.
   `package.json` delta is one script line; no dependency/lockfile movement.
 

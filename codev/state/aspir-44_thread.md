@@ -113,3 +113,19 @@
 - Next: clean-worktree `npm run validate` proof (local lint is polluted by the
   untracked .claude/hooks harness file — the documented environment-noise
   class), then porch done → phase-4 CMAP.
+- Clean-checkout validate: run 1 = 21/22 — single `[firefox] matrix.spec.ts:224`
+  background-drag flake (azimuth 0.0038 < floor 1; pre-existing #11/#33
+  software-input-race class, zero e2e/app changes on this branch; preserved
+  verbatim in the review, NOT skipped — spec forbids touching the canonical
+  suite). Run 2 = 22/22 exit 0. Phase-4 CMAP: 3× APPROVE.
+
+## Review phase
+
+- Review doc finalized (summary, spec compliance, deviations, lessons,
+  consultation log, Flaky Tests, follow-ups). Doc updates routed to cold tier:
+  arch.md Validation Baseline gained the GPU-lane paragraph;
+  lessons-learned.md Validation Evidence gained renderer-probe+strict-switch,
+  probe-before-assuming, and timeout-race-reap/DI lessons. Hot tier untouched.
+- **PR #50 opened** (branch builder/aspir-44 → main, Closes #44). Test-count
+  typo in PR body/review corrected (29 new tests, 68 total). Awaiting PR CMAP
+  + human pr gate.
