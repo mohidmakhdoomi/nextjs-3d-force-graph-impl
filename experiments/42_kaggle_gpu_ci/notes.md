@@ -86,7 +86,11 @@ Repurposing free Kaggle Notebook/kernel GPU as a **general‑purpose CI compute 
 ## Prototype artifacts (this directory)
 
 - [`kaggle_webgl_probe.py`](kaggle_webgl_probe.py) — Stage‑1 make‑or‑break WebGL renderer probe (6 GL flag sets; exits non‑zero unless hardware GL confirmed, so the log surfaces).
-- [`kaggle_e2e_runner.py`](kaggle_e2e_runner.py) — Stage‑2 reference full‑suite runner (Node 22.23.1 via nvm → `npm ci` → build → full Chromium e2e with winning flags). **Reference only**, not wired in.
+- [`kaggle_e2e_runner.py`](kaggle_e2e_runner.py) — Stage‑2 reference full‑suite runner (Node 22.23.1 via nvm → `npm ci` → build → full Chromium e2e with winning flags). **Reference only**, not wired in. Ships a fail‑fast guard for the Stage‑2 hard‑gate (below).
+
+### Stage‑2 hard‑gate (recorded on PR #45, non‑blocking for the probe)
+
+`playwright.config.ts` **hardcodes** the chromium launch args `--use-angle=swiftshader --enable-unsafe-swiftshader` (lines 12–17) and reads **no** external args env. Consequence: running the real suite via `playwright test` would force **software** WebGL *even on a Kaggle GPU box*, so `PW_CHROMIUM_ARGS` is a no‑op. **Any future Stage‑2 GPU run is therefore hard‑gated on first changing the config** to (a) drop the forced‑swiftshader args for that lane and (b) inject the winning hardware‑GL flags (e.g. read them from env in `launchOptions.args`). `kaggle_e2e_runner.py` refuses to run until that wiring exists. **Stage‑1 is unaffected** — the probe launches Chromium directly with its own args, not through this config, so its renderer reading is valid. (Also note the probe pins `playwright==1.61.1` to match the repo's `@playwright/test`, so it tests the exact Chromium we ship.)
 - [`../../.github/workflows/kaggle-gpu-spike.yml`](../../.github/workflows/kaggle-gpu-spike.yml) — SHA‑pinned, `workflow_dispatch`‑**only** probe workflow. Architect‑approved for promotion into `.github/workflows/`; still non‑required and never auto‑runs (no `push`/`pull_request`/`schedule` trigger). Includes a **format‑agnostic credential sniff** (below).
 
 ### Credential‑format sniff (token shape unknown, write‑only secret)

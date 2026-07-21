@@ -66,9 +66,26 @@ def main():
     sh(node_env + "npm exec -- playwright install --with-deps chromium", cwd=wd)
     sh(node_env + "npm run build", cwd=wd)
 
-    # 4) Run the FULL Chromium e2e suite with hardware-GL flags. E2E_ENGINES
-    #    pins Chromium as in CI. PW_CHROMIUM_ARGS is consumed by playwright.config
-    #    only if wired to append launch args — see notes.md "reporting/flags" gap.
+    # 4) HARD GATE (recorded on PR #45): playwright.config.ts HARDCODES the
+    #    chromium launch args `--use-angle=swiftshader --enable-unsafe-swiftshader`
+    #    and reads NO external args env. So `playwright test` forces SOFTWARE
+    #    WebGL even on a GPU box, and PW_CHROMIUM_ARGS below is a NO-OP. A real
+    #    Stage-2 GPU run therefore REQUIRES first changing the config to (a) drop
+    #    the forced-swiftshader args for this lane and (b) inject WINNING_GL_FLAGS
+    #    (e.g. read them from env in launchOptions.args). Until then, a Stage-2
+    #    run would silently measure SwiftShader again — the exact failure this
+    #    guard prevents. (Stage-1 probe is unaffected: it launches Chromium
+    #    directly with its own args, not through this config.)
+    cfg = os.path.join(wd, "playwright.config.ts")
+    with open(cfg) as f:
+        cfg_text = f.read()
+    if "swiftshader" in cfg_text and "PW_CHROMIUM_ARGS" not in cfg_text:
+        sys.exit(
+            "STAGE-2 BLOCKED: playwright.config.ts still forces SwiftShader and "
+            "does not consume PW_CHROMIUM_ARGS. Wire hardware-GL flags into the "
+            "config before running the full suite on GPU (see PR #45 / notes.md)."
+        )
+
     env = dict(os.environ, E2E_ENGINES="chromium", PW_CHROMIUM_ARGS=WINNING_GL_FLAGS)
     code, _ = sh(node_env + "npm exec -- playwright test", cwd=wd, check=False, env=env)
 
