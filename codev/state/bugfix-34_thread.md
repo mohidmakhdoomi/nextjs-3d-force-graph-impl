@@ -91,4 +91,11 @@ CI-only flake at native speed — expected).
   (per lessons-critical). My files lint clean in isolation.
 - Scratch files deleted; not committed.
 
-## Status: advancing to PR (porch done → pr gate). Next: push, gh pr create, CMAP.
+## PR phase
+- PR #39 opened → main. Body: Summary / Root Cause / Fix / Test Plan, `Fixes #34`.
+- CMAP (bugfix/pr): **gemini=APPROVE(HIGH), codex=APPROVE(HIGH), claude=APPROVE(HIGH)**;
+  unanimous, zero KEY_ISSUES, no REQUEST_CHANGES. Codex flagged only a
+  review-sandbox `/tmp` read-only failure of the unrelated `audit-report` test
+  (not PR breakage; matches clean-checkout proof). Posted CMAP table as PR comment.
+- Requesting `pr` gate via `porch done`; STOP and wait for human approval.
+  Builder must NOT self-approve or merge until the gate is human-approved.
