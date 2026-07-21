@@ -25,6 +25,24 @@ totals into a zero-findings gate. Contributor commands and artifact names live i
 `README.md`; implementation details live in `.github/workflows/validation.yml`,
 `playwright.config.ts`, and `scripts/validate-audit-report.mjs`.
 
+An **opt-in native-GPU local lane** (`npm run test:e2e:gpu`,
+`scripts/e2e-gpu-lane.mjs`, spec 44) sits beside this gate, never inside it:
+it probes the host (WSL2 Mesa d3d12 for any vendor adapter; ANGLE
+Vulkan/GL on native Linux), verifies the effective
+`UNMASKED_RENDERER_WEBGL` against a SwiftShader/llvmpipe deny-list BEFORE
+trusting a run, then injects the verified flags through the config's
+env-gated `PW_CHROMIUM_ARGS` hook (env unset ⇒ byte-identical SwiftShader
+defaults) and runs the full Chromium suite — headless by default (the d3d12
+path needs no display; headed WSLg via `--mode=headed`) and ~6× faster than
+the SwiftShader serial baseline (qualified 2026-07 on WSL2/RTX 3080, 5/5
+full-suite passes at `retries: 0`). No usable adapter ⇒ the suite still runs
+under SwiftShader with a loud software-fallback banner; `E2E_GPU_REQUIRE=1`
+hard-fails instead (hardware-evidence integrity) and
+`E2E_GPU_FORCE_FALLBACK=1` exercises the fallback deterministically. The
+lane keeps `workers: 1` — parallelizing on top of it is issue #41's
+qualification, sequenced after spec 44. Recipe and evidence: `README.md`
+("Opt-in native-GPU e2e lane") and `codev/reviews/44-add-an-opt-in-native-gpu-local.md`.
+
 ## Dependency Classification and Lint Config
 
 Build-time and type-only packages are `devDependencies`: `postcss`,

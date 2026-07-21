@@ -12,6 +12,9 @@
 /test-results/
 /blob-report/
 /all-blob-reports/
+# opt-in GPU lane probe transcripts (scripts/e2e-gpu-lane.mjs); kept out of
+# test-results/ because Playwright wipes that dir at suite start
+/gpu-lane-logs/
 
 # next.js
 /.next/

@@ -12,13 +12,15 @@ const baseURL = "http://127.0.0.1:3000";
 // deterministic software-WebGL rasterizer as before. This indirection does not
 // change any default behavior.
 //
-// OPT-IN: an opt-in lane may set PW_CHROMIUM_ARGS to a hardware-WebGL flag set
-// instead of software SwiftShader. Experiment 42 added this hook to run the suite
-// on a real GPU; the *Kaggle* path was REJECTED on Kaggle-AUP grounds (see
-// experiments/42_kaggle_gpu_ci/notes.md) and its dispatch workflow was removed.
-// The hook is retained to serve issue #44 (opt-in native-GPU LOCAL lane), which
-// can set PW_CHROMIUM_ARGS to the ANGLE-Vulkan flag set proven in experiment 42
-// run #5 — on real local hardware, with no third party or ToS exposure.
+// OPT-IN: the native-GPU local lane (`npm run test:e2e:gpu`, issue #44 —
+// scripts/e2e-gpu-lane.mjs) consumes this hook: it probes the host, VERIFIES
+// the effective renderer through this repo's own Chromium, and only then sets
+// PW_CHROMIUM_ARGS to the verified hardware-WebGL flag set (falling back to
+// leaving it unset — i.e. these SwiftShader defaults — when no adapter
+// verifies). Experiment 42 added the hook for a Kaggle GPU path that was
+// REJECTED on Kaggle-AUP grounds (see experiments/42_kaggle_gpu_ci/notes.md);
+// the lane runs on real local hardware with no third party or ToS exposure.
+// The lane is additional evidence, never the green gate.
 const SWIFTSHADER_CHROMIUM_ARGS = [
     "--use-angle=swiftshader",
     "--enable-unsafe-swiftshader",
