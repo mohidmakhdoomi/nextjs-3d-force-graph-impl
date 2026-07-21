@@ -13,6 +13,7 @@ import {
     waitForStableCameraDistance,
     type GraphSnapshot,
 } from "./graph-handle";
+import {settleHoverThenClick} from "./pointer";
 
 // Camera-position deltas: rotation moved the camera ~440 units per 0.8 s in
 // prior qualifications, while a paused camera measured exactly 0. The floor
@@ -313,6 +314,12 @@ test("click-to-focus fixes the node, animates the camera, and reset restores the
     // resolution runs a render frame after pointerup, and dispatching the
     // next attempt's pointerdown would cancel a focus tween the previous
     // click already started.
+    //
+    // The click is issued hover-first (`settleHoverThenClick`): the library
+    // resolves the hovered node only in the render loop's throttled raycast and
+    // defers onClick a frame past pointerup, so under software WebGL a bare
+    // click can resolve against a not-yet-committed hover and fix nothing. See
+    // tests/e2e/pointer.ts for the mechanism (issue #34).
     let clickRegistered = false;
     let preClick: GraphSnapshot | null = null;
     for (let attempt = 0; attempt < 6 && !clickRegistered; attempt += 1) {
@@ -323,7 +330,7 @@ test("click-to-focus fixes the node, animates the camera, and reset restores the
         }
 
         preClick = await snapshotOrFail(page);
-        await page.mouse.click(point.x, point.y);
+        await settleHoverThenClick(page, point.x, point.y);
         try {
             await expect
                 .poll(
