@@ -1,0 +1,61 @@
+# Experiment 42 — prototype spike workflow (INERT / NOT INSTALLED).
+#
+# This file intentionally lives under experiments/ and NOT in
+# .github/workflows/, so it does not register, does not run on any push/PR, and
+# CANNOT touch the required Validation gate. It is the reference prototype the
+# issue asks for.
+#
+# To run the live Stage-1 probe (requires architect go/no-go — see notes.md
+# "Go/no-go" and the Kaggle-ToS finding):
+#   1. Copy this file to .github/workflows/kaggle-gpu-spike.yml
+#   2. Merge to the DEFAULT branch (main) — workflow_dispatch is not dispatchable
+#      from a feature branch until the workflow exists on the default branch.
+#   3. Trigger manually:  gh workflow run kaggle-gpu-spike.yml
+#   4. Watch:             gh run watch <run-id>
+#   5. Retrieve full kernel output on success:
+#        (the action prints the log automatically only on kernel *error*)
+#
+# Security posture (see notes.md "Security audit"):
+#   - Third-party action PINNED BY COMMIT SHA (v2.0.0), not a mutable tag.
+#   - workflow_dispatch only (never auto-runs; never a required check).
+#   - Minimal, read-only-ish job; the only secret used is KAGGLE_API_TOKEN.
+#   - Kernel is private by default (is_private=true).
+name: Kaggle GPU Spike (experiment 42 — manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      machine_shape:
+        description: Kaggle accelerator shape
+        default: NvidiaTeslaT4
+        type: choice
+        options: [NvidiaTeslaT4, NvidiaTeslaP100]
+
+# No elevated permissions; this job does not write to the repo.
+permissions:
+  contents: read
+
+jobs:
+  kaggle-webgl-probe:
+    name: Kaggle GPU WebGL probe (Stage 1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Run WebGL probe on Kaggle GPU kernel
+        # Frederisk/kaggle-action@v2.0.0 pinned by SHA (audited 2026-07-21).
+        uses: Frederisk/kaggle-action@e6bafb6bf66da87116cca560a7636422213cf354
+        with:
+          api_token: ${{ secrets.KAGGLE_API_TOKEN }}
+          title: nextjs3dfg-webgl-probe
+          code_file: experiments/42_kaggle_gpu_ci/kaggle_webgl_probe.py
+          language: python
+          kernel_type: script
+          is_private: 'true'
+          enable_gpu: 'true'
+          enable_internet: 'true'
+          machine_shape: ${{ inputs.machine_shape }}
+          # Bound the kernel so a hung probe cannot burn the weekly GPU quota.
+          timeout_seconds: '1200'
