@@ -39,4 +39,12 @@ Then remove `skipLibCheck` from `tsconfig.json`; add `patch-package` devDep + `p
 - `npm test` 33/33 pass (30 existing + 3 new toolchain invariants).
 - `npm run lint` clean for project files; only failures are in untracked `.claude/hooks/worktree-write-guard.cjs` (builder-harness noise, absent from clean checkouts — per lessons-critical, proven on a clean detached checkout, not suppressed in committed config).
 - `npm run build` exit 0, `skipLibCheck` stays `false` post-build.
-- Full `npm run validate` (lint+typecheck+build+playwright smoke) proven on a clean `git worktree --detach` + real `npm ci` (below).
+- Full `npm run validate` (lint+typecheck+build+playwright smoke) proven on a clean `git worktree --detach` + real `npm ci`.
+
+### Clean-checkout gate results (commit 82ea0ca)
+- `npm ci` → postinstall applied all 3 patches; `npm run lint` 0; `npm run typecheck` 0; `npm test` 33/33; `npm run build` 0 (skipLibCheck stays `false`).
+- `npm run test:smoke` (Playwright, chromium+firefox, webServer = `next start` = production start): **20/20 passed (11.9m)**. Graph UX unaffected — change is type-only + build flag + install-time patches.
+- `porch check 15`: build ✓ tests ✓.
+
+### PR phase
+Signalled `porch done 15` → PR gate. Opening PR (review in body), then `porch gate 15` and STOP for human approval.
