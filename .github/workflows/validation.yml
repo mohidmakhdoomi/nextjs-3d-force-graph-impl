@@ -9,10 +9,22 @@ on:
 permissions:
   contents: read
 
+# CI runs a decomposition of `npm run validate` that is contract-equivalent to
+# the single-command local gate: the `quality` job enforces lint + typecheck +
+# unit contracts + audit evidence, and the sharded `e2e` matrix enforces the
+# production build + the FULL Chromium (SwiftShader) e2e suite (no test dropped,
+# engine pinned via E2E_ENGINES=chromium). The `gate` job is the single stable
+# green status. `npm run validate` remains the one-command local gate.
+# See codev/resources/arch.md ("Validation Baseline").
+env:
+  NODE_VERSION: 22.23.1
+  NPM_VERSION: 10.9.8
+
 jobs:
-  validation:
+  quality:
+    name: Quality (lint, typecheck, unit, audit)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -27,29 +39,20 @@ jobs:
       - name: Verify toolchain
         shell: bash
         run: |
-          test "$(node --version)" = "v22.23.1"
-          test "$(npm --version)" = "10.9.8"
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(npm --version)" = "${NPM_VERSION}"
 
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Test baseline contracts
         run: npm test
-
-      - name: Install Chromium and system dependencies
-        run: npm exec -- playwright install --with-deps chromium
-
-      # Chromium (bundled SwiftShader) is a deterministic software-WebGL
-      # rasterizer and is the required CI gate. The Firefox arm of the
-      # two-engine matrix stays a documented LOCAL qualification gate: Firefox
-      # has no SwiftShader equivalent and cannot create a WebGL context on
-      # GPU-less GitHub Actions runners ("Exhausted GL driver options"). See
-      # codev/reviews/11-upgrade-and-behaviorally-quali.md
-      # ("CI enforcement vs. local qualification").
-      - name: Validate
-        env:
-          E2E_ENGINES: chromium
-        run: npm run validate
 
       - name: Capture full audit evidence
         if: always()
@@ -93,6 +96,125 @@ jobs:
           path: audit-results/production/
           if-no-files-found: error
 
+  e2e:
+    name: E2E (Chromium shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up exact Node baseline
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.23.1
+          cache: npm
+
+      - name: Verify toolchain
+        shell: bash
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(npm --version)" = "${NPM_VERSION}"
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Resolve Playwright version
+        id: playwright
+        shell: bash
+        run: |
+          version="$(node -p "require('@playwright/test/package.json').version")"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # Chromium (bundled SwiftShader) is a deterministic software-WebGL
+      # rasterizer and is the required CI gate. The Firefox arm of the
+      # two-engine matrix stays a documented LOCAL qualification gate: Firefox
+      # has no SwiftShader equivalent and cannot create a WebGL context on
+      # GPU-less GitHub Actions runners ("Exhausted GL driver options"). See
+      # codev/reviews/11-upgrade-and-behaviorally-quali.md
+      # ("CI enforcement vs. local qualification"). The browser binary is
+      # cached above; --with-deps still installs OS libraries each run and the
+      # install is a no-op download on a cache hit.
+      - name: Install Chromium and system dependencies
+        run: npm exec -- playwright install --with-deps chromium
+
+      - name: Build production application
+        run: npm run build
+
+      # The FULL e2e suite, split at the test level across 4 shards (config sets
+      # fullyParallel: true). Each shard runs strictly serially (workers: 1). No
+      # test is dropped — the union of the four shards is the whole suite. Blob
+      # reports are stitched back together by the merge-reports job.
+      - name: Run e2e shard
+        env:
+          E2E_ENGINES: chromium
+          PLAYWRIGHT_BLOB_REPORT: "1"
+        run: npm exec -- playwright test --shard=${{ matrix.shard }}/4
+
+      - name: Upload blob report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report/
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-test-results-${{ matrix.shard }}
+          path: test-results/
+          if-no-files-found: ignore
+
+  merge-reports:
+    name: Merge Playwright reports
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up exact Node baseline
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.23.1
+          cache: npm
+
+      - name: Verify toolchain
+        shell: bash
+        run: |
+          test "$(node --version)" = "v${NODE_VERSION}"
+          test "$(npm --version)" = "${NPM_VERSION}"
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v7
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: Merge into HTML report
+        run: npm exec -- playwright merge-reports --reporter html ./all-blob-reports
+
       - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v7
@@ -101,10 +223,22 @@ jobs:
           path: playwright-report/
           if-no-files-found: ignore
 
-      - name: Upload Playwright test results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-test-results
-          path: test-results/
-          if-no-files-found: ignore
+  gate:
+    name: Validation gate
+    needs: [quality, e2e]
+    # Always run, then FAIL unless both upstreams succeeded. A plain
+    # `needs:`-only gate is SKIPPED when an upstream fails/cancels, and a skipped
+    # required check can be misread as passing — this makes the gate go actively
+    # red on any failed, skipped, or cancelled upstream job. For the matrix `e2e`
+    # job, `needs.e2e.result` is `success` only when every shard passed.
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require quality and e2e to have succeeded
+        shell: bash
+        run: |
+          echo "quality result: ${{ needs.quality.result }}"
+          echo "e2e result:     ${{ needs.e2e.result }}"
+          test "${{ needs.quality.result }}" = "success"
+          test "${{ needs.e2e.result }}" = "success"
+          echo "quality + full sharded e2e passed — contract-equivalent to npm run validate"

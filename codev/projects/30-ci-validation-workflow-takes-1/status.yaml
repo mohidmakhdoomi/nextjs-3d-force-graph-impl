@@ -1,0 +1,17 @@
+id: '30'
+title: ci-validation-workflow-takes-1
+protocol: air
+phase: pr
+plan_phases: []
+current_plan_phase: null
+gates:
+  pr:
+    status: approved
+    requested_at: '2026-07-20T21:29:25.218Z'
+    approved_at: '2026-07-21T00:22:41.618Z'
+iteration: 1
+build_complete: false
+history: []
+started_at: '2026-07-20T20:50:14.315Z'
+updated_at: '2026-07-21T00:22:41.619Z'
+pr_ready_for_human: false
