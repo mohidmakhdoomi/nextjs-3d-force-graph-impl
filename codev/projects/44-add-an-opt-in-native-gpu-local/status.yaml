@@ -1,7 +1,7 @@
 id: '44'
 title: add-an-opt-in-native-gpu-local
 protocol: aspir
-phase: plan
+phase: implement
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -10,7 +10,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-07-21T22:00:59.724Z'
-updated_at: '2026-07-21T22:10:48.427Z'
+updated_at: '2026-07-21T22:13:00.917Z'
