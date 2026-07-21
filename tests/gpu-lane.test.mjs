@@ -16,6 +16,7 @@ import {
     fallbackEnv,
     formatReport,
     formatWallClock,
+    parseArgs,
     parseControls,
     partitionCandidates,
     playwrightTestArgs,
@@ -187,16 +188,14 @@ test("partitionCandidates: /dev/dxg without WSL libs is an actionable skip", () 
     }
 });
 
-test("partitionCandidates: headed candidates need a display; WSLg socket defaults DISPLAY=:0", () => {
-    // No DISPLAY, no WSLg socket: headed d3d12 candidates are skipped with the
-    // FR11 WSLg diagnostic.
-    const noDisplay = partitionCandidates({
-        ...wsl2Host,
-        display: null,
-        hasWslgSocket: false,
-    });
-    assert.equal(noDisplay.usable.length, 0);
-    const headedSkips = noDisplay.skipped.filter(
+test("partitionCandidates: headed mode (override) needs a display; WSLg socket defaults DISPLAY=:0", () => {
+    // The lane default is headless (FR5 outcome), so a display-less WSL2 host
+    // is fine naturally — but probed/run headed (--mode=headed), the display
+    // prereq applies: no DISPLAY, no WSLg socket ⇒ FR11 WSLg diagnostic.
+    const displayless = {...wsl2Host, display: null, hasWslgSocket: false};
+    const headed = partitionCandidates(displayless, CANDIDATES, "headed");
+    assert.equal(headed.usable.length, 0);
+    const headedSkips = headed.skipped.filter(
         ({candidate}) => candidate.hostClass === "wsl2",
     );
     assert.equal(headedSkips.length, 2);
@@ -204,12 +203,17 @@ test("partitionCandidates: headed candidates need a display; WSLg socket default
         assert.match(skip.diagnostic, /DISPLAY unset/);
         assert.match(skip.diagnostic, /WSLg not active/);
     }
-    // No DISPLAY but the WSLg socket exists: usable, with DISPLAY defaulted to
-    // the PR #43 recipe value.
-    const socketOnly = partitionCandidates({...wsl2Host, display: null});
+    // No DISPLAY but the WSLg socket exists: headed is usable, with DISPLAY
+    // defaulted to the PR #43 recipe value.
+    const socketOnly = partitionCandidates(
+        {...wsl2Host, display: null},
+        CANDIDATES,
+        "headed",
+    );
     assert.equal(socketOnly.usable.length, 2);
     for (const entry of socketOnly.usable) {
         assert.deepEqual(entry.extraEnv, {DISPLAY: ":0"});
+        assert.equal(entry.effectiveMode, "headed");
     }
 });
 
@@ -405,7 +409,7 @@ test("probeRenderer: a watchdog timeout still reaps a late-resolving browser", a
     assert.equal(closed, true, "late-resolving browser must be closed");
     // The transcript was written via the injected writer, with the error.
     assert.equal(transcripts.length, 1);
-    assert.match(transcripts[0].path, /probe-wsl2-d3d12-angle-gl\.log/);
+    assert.match(transcripts[0].path, /probe-wsl2-d3d12-angle-gl-headless\.log/);
     assert.match(transcripts[0].text, /ERROR: probe timeout/);
 });
 
@@ -453,6 +457,51 @@ test("probeRenderer: a launch failure is a failed candidate with the error recor
     assert.match(attempt.error, /browser crashed on startup/);
     assert.equal(attempt.rendererClass, "none");
     assert.equal(transcripts.length, 1);
+});
+
+test("parseArgs: matrix flags parse and validate; channel is probe-only", () => {
+    assert.deepEqual(parseArgs([]), {
+        probeOnly: false,
+        mode: null,
+        candidate: null,
+        channel: null,
+    });
+    assert.deepEqual(
+        parseArgs([
+            "--probe-only",
+            "--mode=headless",
+            "--candidate=wsl2-d3d12-angle-gl-egl",
+            "--channel=chromium",
+        ]),
+        {
+            probeOnly: true,
+            mode: "headless",
+            candidate: "wsl2-d3d12-angle-gl-egl",
+            channel: "chromium",
+        },
+    );
+    assert.throws(() => parseArgs(["--mode=windowed"]), LaneUsageError);
+    assert.throws(() => parseArgs(["--candidate=no-such-id"]), LaneUsageError);
+    assert.throws(() => parseArgs(["--bogus"]), LaneUsageError);
+    // A channel probe result does not transfer to a suite run (the config
+    // hook injects args only), so --channel without --probe-only must refuse.
+    assert.throws(() => parseArgs(["--channel=chromium"]), LaneUsageError);
+});
+
+test("partitionCandidates: headless default has no display prereq (FR5 outcome)", () => {
+    // The d3d12 recipe needs no display headless — a display-less WSL2 host
+    // (no WSLg at all) still gets both hardware candidates.
+    const displayless = {...wsl2Host, display: null, hasWslgSocket: false};
+    const natural = partitionCandidates(displayless);
+    assert.equal(natural.usable.length, 2);
+    for (const entry of natural.usable) {
+        assert.equal(entry.effectiveMode, "headless");
+        assert.deepEqual(entry.extraEnv, {});
+    }
+    // Without an override, entries carry the candidate's own mode.
+    for (const entry of partitionCandidates(wsl2Host).usable) {
+        assert.equal(entry.effectiveMode, entry.candidate.mode);
+    }
 });
 
 test("suiteEnvFor hardware: recipe env + PW_CHROMIUM_ARGS + chromium-only engine", () => {

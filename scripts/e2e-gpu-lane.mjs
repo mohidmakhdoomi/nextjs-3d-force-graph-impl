@@ -29,10 +29,15 @@
 //   E2E_GPU_REQUIRE=1         exit non-zero instead of falling back when no
 //                             candidate verifies (hardware-evidence integrity).
 //
-// Recipe provenance: WSL2 Mesa d3d12 headed recipe proven end-to-end on this
-// host class in bugfix-22 / PR #43 (ANGLE→GL and ANGLE→GL-EGL both reached the
+// Recipe provenance: WSL2 Mesa d3d12 recipe proven end-to-end on this host
+// class in bugfix-22 / PR #43 (ANGLE→GL and ANGLE→GL-EGL both reached the
 // adapter; ANGLE→Vulkan is a known llvmpipe dead end on WSL2). Native-Linux
-// ANGLE-Vulkan proven on a Tesla T4 in experiment 42 run #5.
+// ANGLE-Vulkan proven on a Tesla T4 in experiment 42 run #5. The FR5 matrix
+// (spec 44) then proved the d3d12 recipe does NOT need a display: default
+// headless (headless shell), new-headless (--channel=chromium), and headed
+// WSLg all reach the adapter with identical renderer strings and identical
+// full-suite timing — so the lane defaults to HEADLESS and headed remains one
+// `--mode=headed` away.
 
 import {spawn} from "node:child_process";
 import {existsSync, mkdirSync, writeFileSync} from "node:fs";
@@ -72,7 +77,8 @@ export const CANDIDATES = [
     {
         id: "wsl2-d3d12-angle-gl",
         summary:
-            "WSL2 Mesa d3d12 via ANGLE native-GL (proven: bugfix-22 / PR #43)",
+            "WSL2 Mesa d3d12 via ANGLE native-GL (proven: bugfix-22 / PR #43; " +
+            "headless validated by the spec-44 FR5 matrix + full-suite run)",
         hostClass: "wsl2",
         flags: [
             "--use-gl=angle",
@@ -82,12 +88,13 @@ export const CANDIDATES = [
         ],
         env: {GALLIUM_DRIVER: "d3d12"},
         envPrepend: {LD_LIBRARY_PATH: WSL_LIB_DIR},
-        mode: "headed",
+        mode: "headless",
     },
     {
         id: "wsl2-d3d12-angle-gl-egl",
         summary:
-            "WSL2 Mesa d3d12 via ANGLE GL-EGL (proven alternate, OpenGL ES 3.1)",
+            "WSL2 Mesa d3d12 via ANGLE GL-EGL (proven alternate, OpenGL ES " +
+            "3.1; headless validated by the spec-44 FR5 matrix)",
         hostClass: "wsl2",
         flags: [
             "--use-gl=angle",
@@ -97,7 +104,7 @@ export const CANDIDATES = [
         ],
         env: {GALLIUM_DRIVER: "d3d12"},
         envPrepend: {LD_LIBRARY_PATH: WSL_LIB_DIR},
-        mode: "headed",
+        mode: "headless",
     },
     {
         id: "native-linux-angle-vulkan",
@@ -169,12 +176,19 @@ export function buildHostView({platform, exists, env}) {
 }
 
 // Prereq check (FR3 step 1). Returns {usable, skipped}: usable entries carry
-// `extraEnv` (e.g. a defaulted DISPLAY) alongside the candidate; skipped
-// entries carry the FR11 cause + remedy diagnostic.
-export function partitionCandidates(hostView, candidates = CANDIDATES) {
+// `extraEnv` (e.g. a defaulted DISPLAY) and the `effectiveMode` (the
+// candidate's own mode unless overridden — the FR5 matrix probes headless
+// variants of headed candidates via the override). Skipped entries carry the
+// FR11 cause + remedy diagnostic.
+export function partitionCandidates(
+    hostView,
+    candidates = CANDIDATES,
+    modeOverride = null,
+) {
     const usable = [];
     const skipped = [];
     for (const candidate of candidates) {
+        const effectiveMode = modeOverride ?? candidate.mode;
         if (hostView.platform !== "linux") {
             skipped.push({
                 candidate,
@@ -207,7 +221,7 @@ export function partitionCandidates(hostView, candidates = CANDIDATES) {
                 continue;
             }
             let extraEnv = {};
-            if (candidate.mode === "headed") {
+            if (effectiveMode === "headed") {
                 if (!hostView.display && !hostView.hasWslgSocket) {
                     skipped.push({
                         candidate,
@@ -225,7 +239,7 @@ export function partitionCandidates(hostView, candidates = CANDIDATES) {
                     extraEnv = {DISPLAY: ":0"};
                 }
             }
-            usable.push({candidate, extraEnv});
+            usable.push({candidate, extraEnv, effectiveMode});
             continue;
         }
         // native-linux candidates
@@ -239,7 +253,7 @@ export function partitionCandidates(hostView, candidates = CANDIDATES) {
             });
             continue;
         }
-        usable.push({candidate, extraEnv: {}});
+        usable.push({candidate, extraEnv: {}, effectiveMode});
     }
     return {usable, skipped};
 }
@@ -343,9 +357,9 @@ export function formatWallClock(totalSeconds, buildSeconds, suiteSeconds) {
 // tests never touch Playwright.
 export async function runSelection({usable, probe, log}) {
     const attempts = [];
-    for (const {candidate, extraEnv} of usable) {
+    for (const {candidate, extraEnv, effectiveMode} of usable) {
         log(`probing candidate ${candidate.id} (${candidate.summary})`);
-        const attempt = await probe(candidate, extraEnv);
+        const attempt = await probe(candidate, extraEnv, effectiveMode);
         attempts.push(attempt);
         if (!attempt.error && attempt.rendererClass === "hardware") {
             log(
@@ -407,6 +421,7 @@ export async function probeRenderer(
     {
         baseEnv,
         headless,
+        channel = null,
         launcher = importChromium,
         totalTimeoutMs = PROBE_TOTAL_TIMEOUT_MS,
         launchTimeoutMs = PROBE_LAUNCH_TIMEOUT_MS,
@@ -417,7 +432,14 @@ export async function probeRenderer(
     const startedAt = Date.now();
     const transcript = [];
     const logLine = (line) => transcript.push(`${timestamp()} ${line}`);
-    const logPath = join(PROBE_LOG_DIR, `probe-${candidate.id}.log`);
+    // One transcript per matrix cell: mode (and channel, when probing the
+    // full-binary new-headless variant) distinguish repeat probes of the same
+    // candidate from each other instead of overwriting.
+    const logPath = join(
+        PROBE_LOG_DIR,
+        `probe-${candidate.id}-${headless ? "headless" : "headed"}` +
+            `${channel ? `-${channel}` : ""}.log`,
+    );
     const env = composeEnv(baseEnv, candidate, extraEnv);
     logLine(`candidate: ${candidate.id} (${candidate.summary})`);
     logLine(`flags: ${candidate.flags.join(" ")}`);
@@ -434,6 +456,15 @@ export async function probeRenderer(
         })}`,
     );
     logLine(`mode: ${headless ? "headless" : "headed"}`);
+    logLine(
+        `binary: ${
+            channel
+                ? `channel "${channel}" (full Chromium, new headless)`
+                : headless
+                  ? "playwright default headless (chromium headless shell)"
+                  : "playwright chromium (full binary, headed)"
+        }`,
+    );
 
     const attempt = {
         candidate,
@@ -457,6 +488,7 @@ export async function probeRenderer(
         const work = (async () => {
             launchPromise = chromium.launch({
                 headless,
+                ...(channel ? {channel} : {}),
                 args: candidate.flags,
                 env,
                 timeout: launchTimeoutMs,
@@ -529,14 +561,46 @@ function fallbackWarning(reason) {
     }
 }
 
-function parseArgs(argv) {
-    const args = {probeOnly: false};
+// Exported for tests. --mode/--candidate/--channel exist for the FR5
+// headless-vs-headed matrix and recipe debugging; a plain `npm run
+// test:e2e:gpu` uses none of them.
+export function parseArgs(argv) {
+    const args = {probeOnly: false, mode: null, candidate: null, channel: null};
     for (const arg of argv) {
         if (arg === "--probe-only") {
             args.probeOnly = true;
+        } else if (arg.startsWith("--mode=")) {
+            const value = arg.slice("--mode=".length);
+            if (value !== "headed" && value !== "headless") {
+                throw new LaneUsageError(
+                    `--mode must be "headed" or "headless", got "${value}"`,
+                );
+            }
+            args.mode = value;
+        } else if (arg.startsWith("--candidate=")) {
+            const value = arg.slice("--candidate=".length);
+            if (!CANDIDATES.some((candidate) => candidate.id === value)) {
+                throw new LaneUsageError(
+                    `unknown candidate "${value}" (known: ${CANDIDATES.map(
+                        (candidate) => candidate.id,
+                    ).join(", ")})`,
+                );
+            }
+            args.candidate = value;
+        } else if (arg.startsWith("--channel=")) {
+            args.channel = arg.slice("--channel=".length);
         } else {
             throw new LaneUsageError(`unknown argument: ${arg}`);
         }
+    }
+    if (args.channel && !args.probeOnly) {
+        // PW_CHROMIUM_ARGS injects launch args only — the suite cannot switch
+        // Playwright channel without config changes, so a channel probe must
+        // not pretend its result transfers to a suite run.
+        throw new LaneUsageError(
+            "--channel is probe-only (--probe-only): the suite cannot inject " +
+                "a Playwright channel through PW_CHROMIUM_ARGS",
+        );
     }
     return args;
 }
@@ -559,9 +623,9 @@ function runStage(label, command, commandArgs, env) {
 }
 
 // Probe the host and settle on the run mode (FR2/FR3). Returns
-// {mode: "hardware", candidate, extraEnv, renderer} |
+// {mode: "hardware", candidate, extraEnv, effectiveMode, renderer} |
 // {mode: "software-fallback", renderer} | {mode: "abort"} (E2E_GPU_REQUIRE).
-async function resolveMode(controls) {
+async function resolveMode(controls, args) {
     if (controls.forceFallback) {
         fallbackWarning("forced by E2E_GPU_FORCE_FALLBACK=1 (no probe was run)");
         return {
@@ -580,30 +644,40 @@ async function resolveMode(controls) {
             `wslLib=${hostView.hasWslLib} wslgSocket=${hostView.hasWslgSocket} ` +
             `DISPLAY=${hostView.display ?? "(unset)"}`,
     );
-    const {usable, skipped} = partitionCandidates(hostView);
+    const candidates = args.candidate
+        ? CANDIDATES.filter((candidate) => candidate.id === args.candidate)
+        : CANDIDATES;
+    const {usable, skipped} = partitionCandidates(
+        hostView,
+        candidates,
+        args.mode,
+    );
     for (const skip of skipped) {
         log(`candidate ${skip.candidate.id} SKIPPED: ${skip.diagnostic}`);
     }
 
     const selection = await runSelection({
         usable,
-        probe: (candidate, extraEnv) =>
+        probe: (candidate, extraEnv, effectiveMode) =>
             probeRenderer(candidate, extraEnv, {
                 baseEnv: process.env,
-                headless: candidate.mode !== "headed",
+                headless: effectiveMode !== "headed",
+                channel: args.channel,
             }),
         log,
     });
 
     if (selection.status === "hardware") {
+        const usableEntry = usable.find(
+            (entry) => entry.candidate === selection.attempt.candidate,
+        );
         return {
             mode: "hardware",
             candidate: selection.attempt.candidate,
-            extraEnv:
-                usable.find(
-                    (entry) =>
-                        entry.candidate === selection.attempt.candidate,
-                )?.extraEnv ?? {},
+            extraEnv: usableEntry?.extraEnv ?? {},
+            effectiveMode:
+                usableEntry?.effectiveMode ??
+                selection.attempt.candidate.mode,
             renderer: selection.attempt.renderer,
         };
     }
@@ -635,7 +709,7 @@ async function main() {
     const startedAt = Date.now();
     const elapsedSeconds = () => Math.round((Date.now() - startedAt) / 1000);
 
-    const outcome = await resolveMode(controls);
+    const outcome = await resolveMode(controls, args);
     if (outcome.mode === "abort") {
         return 1;
     }
@@ -672,7 +746,7 @@ async function main() {
     }
 
     const headed =
-        outcome.mode === "hardware" && outcome.candidate.mode === "headed";
+        outcome.mode === "hardware" && outcome.effectiveMode === "headed";
     const suite = await runStage(
         "suite",
         "npx",
