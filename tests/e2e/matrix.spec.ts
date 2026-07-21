@@ -30,16 +30,26 @@ const ZOOM_EPSILON = 0.5;
 const SETTLE_TIMEOUT_MS = process.env.CI ? 20_000 : 5_000;
 
 // The app enables pointer navigation ENABLE_DELAY_MS after component mount
-// (FocusGraph's `enableDelay` default). Inertness is proven against a floor
-// safely below that: a setTimeout(ENABLE_DELAY_MS) scheduled no earlier than
-// navigation cannot fire before ENABLE_DELAY_MS of wall-clock elapse, so a
-// sub-delay floor never races the boundary — unlike gating the check on a
+// (FocusGraph's `enableDelay` default). Inertness is proven against a floor just
+// below that boundary: a setTimeout(ENABLE_DELAY_MS) scheduled no earlier than
+// `navigationStart` cannot fire before ENABLE_DELAY_MS of wall-clock elapse, so
+// enablement is always observed >= ENABLE_DELAY_MS after navigation and any
+// floor < ENABLE_DELAY_MS is race-free — unlike gating the check on a
 // camera-settle waiter, which has no ordering relationship to the timer and on
 // the Firefox software-WebGL local gate finishes only ~0.8 s before enablement
-// (issue #33). The 1 s margin keeps the floor clear of the boundary while still
-// tripping on premature enablement.
+// (issue #33).
+//
+// `navigationStart` is the tightest race-free anchor available to the harness:
+// the timer is scheduled in the mount effect (~0.7 s after navigation here), and
+// that instant is not observable through the canvas-gated probe (the canvas —
+// and thus every snapshot — first appears ~2.7 s in, AFTER scheduling, and any
+// canvas-relative anchor races the timer). The mount offset is therefore folded
+// into the measurement, so the FLOOR margin is kept small (500 ms) to still trip
+// on a delay materially shorter than 4000 ms; a regression within ~0.7 s of the
+// boundary is beyond what a from-navigation floor can resolve without adding
+// test-only instrumentation to app code.
 const ENABLE_DELAY_MS = 4000;
-const INERT_FLOOR_MS = ENABLE_DELAY_MS - 1000;
+const INERT_FLOOR_MS = ENABLE_DELAY_MS - 500;
 
 async function snapshotOrFail(page: Parameters<typeof readGraphSnapshot>[0]): Promise<GraphSnapshot> {
     const snapshot = await readGraphSnapshot(page);

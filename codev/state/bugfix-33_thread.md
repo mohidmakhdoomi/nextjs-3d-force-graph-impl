@@ -110,3 +110,42 @@ untouched:
   together cover premature enablement).
 - App reverted to `enableDelay=4000` and rebuilt; `git diff` touches only
   `tests/e2e/matrix.spec.ts`. → fix complete; committing, then transitioning to pr.
+
+## PR
+
+- Commit `6484fda` on `builder/bugfix-33`.
+- **PR #40** opened against `main`: https://github.com/mohidmakhdoomi/nextjs-3d-force-graph-impl/pull/40
+  (Summary / Root Cause / Fix / Test Plan, `Fixes #33`).
+- 3-way CMAP review (gemini/codex/claude, `--protocol bugfix --type pr --project-id bugfix-33`):
+  - **gemini: APPROVE (HIGH)** — no key issues; "correctly decouples the inertness assertion
+    from the camera-settle waiter."
+  - **claude: APPROVE (HIGH)** — no key issues; "race-free by construction… minimal scope,
+    thorough evidence, no app code touched." Non-blocking note: `ENABLE_DELAY_MS` duplicates the
+    app default (deemed a reasonable trade-off vs importing app internals into the test).
+  - **codex: REQUEST_CHANGES (HIGH)** — the floor is measured from `navigationStart` (before the
+    mount that schedules the timer), so the ~0.7 s mount offset is folded into the measurement and
+    a *moderately* early enable (e.g. delay 4000→3100) can still read >3000 ms from nav and pass.
+    Wanted the check anchored to the mount/timer-scheduling instant, or tightened toward the real
+    4000 ms boundary.
+
+### Response to codex REQUEST_CHANGES (partial-address + rebuttal)
+
+- **Addressed**: raised `INERT_FLOOR_MS` from `ENABLE_DELAY_MS - 1000` (3000) to
+  `ENABLE_DELAY_MS - 500` (**3500**) — as tight to the 4000 ms boundary as the race-free
+  guarantee allows (enablement is structurally observed ≥ 4000 ms from navigation, so any floor
+  < 4000 never races). Re-validated **6/6** at real `enableDelay=4000` (3× Chromium + 3× Firefox);
+  still catches premature enablement (`enableDelay=2000` → 3/3 fail; `enableDelay=2500` Firefox →
+  3/3 fail).
+- **Rebuttal (residual gap is inherent to harness-only observation)**: the mount/timer-scheduling
+  instant (~0.7 s Firefox, ~1.0 s Chromium after navigation) is **not observable** through the
+  probe — the canvas, and thus every `readGraphSnapshot`, first appears ~2.7 s in, *after*
+  scheduling, and any canvas-relative anchor races the timer. So `navigationStart` is the only
+  race-free anchor, and the engine-dependent mount offset is folded into the floor's detection
+  threshold (empirically confirmed: `enableDelay=2500` **passes** on Chromium because its ~1.0 s
+  offset lifts enable-from-nav to ~3.5 s). Closing the 2500–4000 ms detection gap would require
+  adding a test-only timestamp hook to production `FocusGraph.tsx` — which violates this repo's
+  explicit "the app is never modified; harness-side observation only" discipline
+  (`graph-handle.ts` header) and the fix's harness-vs-app ownership call. The raised floor is a
+  strict improvement over both the old 3000 floor and the *flaky* original assertion, catches
+  grossly-premature enablement, and the actual #33 defect (the camera-settle race) is fully
+  eliminated. Flagged for the architect's judgement at the `pr` gate.
