@@ -87,6 +87,24 @@ Architect phone-verified the account; waited ~5.5 min; re-dispatched → run `29
 - **Run #5 (conditional — only if run #4 = llvmpipe):** the T4 is compute-only (no graphics libs mounted). Escalation, in-kernel: `nvidia-smi --query-gpu=driver_version` → `apt install` exact-matching `libnvidia-gl-<branch>` + NVIDIA Vulkan ICD → rerun EGL + angle-vulkan flag sets. Fragile/version-dependent; libs may be absent from Ubuntu's archive. **A failed attempt is conclusive evidence too.** Still within sanctioned retries.
 - Plan: I'll implement run #5 as a `workflow_dispatch` input toggle (`install_nvidia_gl`) so the SAME probe covers baseline (off) and escalation (on) — but only PR it if run #4 returns software, to keep PR #47's approved scope clean.
 
+## 2026-07-21 — Run #5 ESCALATION: HARDWARE WebGL ACHIEVED → experiment COMPLETE, REJECT for CI
+
+PRs #48 (escalation) + 2 addenda (runfile fallback + verification + VK_ICD_FILENAMES; `--disable-software-rasterizer` no-fallback sets) merged; run `29864472544` with `install_nvidia_gl=true`.
+- **RESULT: `verdict=hardware`.** Driver `580.159.04`; runfile `DOWNLOAD_OK`+install exit 0 (host driver IS on public tesla server); NVIDIA EGL/GLX/Vulkan userspace landed; vulkaninfo sees Tesla T4. `angle-vulkan` and `angle-vulkan-nofallback` → `ANGLE (NVIDIA … Tesla T4)` — the nofallback one (software disabled) is DEFINITIVE. `--use-gl=egl`/desktop-gl did NOT reach the GPU. Evidence: `data/output/probe-run-5-evidence.md`.
+- **So hardware WebGL on Kaggle GPU is PROVEN achievable** — but only via ~hundreds-of-MB exact-version driver runfile per cold kernel + ANGLE-Vulkan. A default kernel = SwiftShader (run #4).
+- **Final disposition: REJECT for CI adoption** (required gate AND standing non-required lane), capability retained as a documented one-off recipe. Drivers unchanged by the positive WebGL: worse wall clock (driver install every run), fragility (driver-version coupling → runfile 404 risk), Kaggle ToS/account risk, reproducibility-contract violation, confirmed action reporting defect. **Route the real need to #41/#44** (credential-free native-GPU).
+- notes.md finalized (status=Complete, 5-run results table, metrics, full Decision, Xvfb + d3d12 notes). Next: sync branch, commit final writeup, open final PR (`Refs #42` — issue stays open for #41/#44 follow-up; owner to decide close), notify architect, then Review phase / complete.
+
+## 2026-07-21 — HOLD: owner challenges REJECT → likely Stage-2 (measured e2e)
+
+Architect posted HOLD on PR #49. Owner is challenging the REJECT and the challenge is **valid** — I overreached on two of the drivers:
+- **Wall clock was PROJECTED, never MEASURED.** Issue #42's checklist explicitly required a measured end-to-end number vs the ~5-6 min sharded baseline. I reasoned "worse" but never ran the real suite. Real gap.
+- **ToS was argued by Colab ANALOGY, not Kaggle's actual terms text.** Overstated as a hard driver; architect is verifying against primary sources.
+- **Driver-install cost: WAIVED by owner.** So it can't count against the approach.
+That leaves reproducibility-contract (only bars the *required* gate, not a non-required lane) + the reporting defect (real but workable). So the honest disposition is **DEFER pending measurement**, not REJECT. The make-or-break (hardware WebGL) is PROVEN positive.
+- **Actions taken:** dropped the unpushed workflow-removal commit (`effcce2`) → workflow restored, branch back at `9af968f` (= origin). **NOT merging.** **Holding porch** at `hypothesis` (advancing to the completion gate would be premature with Stage-2 pending — architect said advancement "can" continue, permissive; will advance on explicit word).
+- **Stage-2 readiness:** a real end-to-end e2e run on Kaggle GPU (escalation driver install) with measured wall clock. Hard-gate to clear first: `playwright.config.ts` force-selects `--use-angle=swiftshader` and ignores env args → must add a CONDITIONAL hardware-GL override (env-driven) that leaves the required swiftshader CI path byte-identical. Awaiting direction.
+
 ## 2026-07-21 — Run #4 BASELINE VERDICT: SOFTWARE (make-or-break answered NO)
 
 Run `29862696170` (verified account, playwright 1.61.0, full probe) — result artifact written (evidence: `data/output/probe-run-4-evidence.md`):
@@ -94,3 +112,31 @@ Run `29862696170` (verified account, playwright 1.61.0, full probe) — result a
 - **Root cause confirmed**: T4 is compute-only; only Mesa GL userspace present, `--with-deps` pulled MORE Mesa, never NVIDIA GL. So ANGLE has no path to the GPU → SwiftShader. Same software class we already have on CI → **zero hardware-WebGL benefit**.
 - The issue's central premise ("real hardware WebGL on Kaggle GPU") is **FALSE for a default kernel**.
 - **Run #5 escalation built** (`kaggle_webgl_probe_nvgl.py` + `install_nvidia_gl` workflow input): apt-install matching `libnvidia-gl-<branch>` + Vulkan ICD, retry EGL/ANGLE-Vulkan. Last hardware-GL attempt; failure is equally conclusive. Recorded d3d12/WSL2 note (defer to #44). PR → merge → dispatch run #5 with `-f install_nvidia_gl=true`.
+
+## 2026-07-21 — Fresh respawn → Stage 2 GO: harness BUILT (measurement pending)
+
+Reoriented on rev-2 decision record: REJECT withdrawn (driver-install waived; ToS downgraded — no explicit Kaggle CI prohibition in reachable public terms; wall clock was PROJECTED never MEASURED). Disposition now **DEFER pending measurement**. Make-or-break already PROVEN positive (run #5 hardware WebGL). Porch stays at `hypothesis`. PR #49 held; recommendation to be rewritten from measured data.
+
+Built the Stage-2 harness (3 changes on `builder/experiment-42`):
+1. **`playwright.config.ts`** — env-gated Chromium args. `PW_CHROMIUM_ARGS` unset ⇒ **byte-identical** `["--use-angle=swiftshader","--enable-unsafe-swiftshader"]` (required gate + `npm run validate` untouched); set ⇒ splits to the injected hardware set. **Proven** by loading the real config: unset→swiftshader pair; set→run #5 ANGLE-Vulkan array. typecheck+lint green.
+2. **`kaggle_e2e_runner.py`** — rewritten to the proven run #5 recipe: runfile NVIDIA-GL install → Node 22.23.1 (nvm) → clone main → `npm ci` → `playwright install --with-deps chromium` → `npm run build` → **pre-flight renderer probe** (proves hardware under GL_FLAGS via the repo's own @playwright/test Chromium) → **FULL Chromium suite** (`E2E_ENGINES=chromium`, CI parity retries=2/240s, no test dropped). Per-stage wall-clock timing + `e2e_result.json` + tarred HTML report/JSON results to the kernel working dir. GL_FLAGS default = decisive `angle-vulkan-nofallback` set + `--no-sandbox`. Guard: aborts if cloned config lacks `PW_CHROMIUM_ARGS` (would silently measure SwiftShader).
+3. **`kaggle-gpu-spike.yml`** — added `stage` input (probe|e2e); e2e selects the runner + 3000s kernel timeout + job timeout-minutes 60; generalized output retrieval (cats e2e_result.json), `upload-artifact` of kernel-output, stage-aware verdict (e2e passes only if `verdict==pass_on_hardware` = full suite green on confirmed hardware).
+
+Baseline to beat (measured from recent validation.yml runs): **~5m32s–6m57s** sharded (4-shard Chromium/SwiftShader).
+
+Next: commit → push (validation.yml required gate runs on PR = clean-checkout proof default path unchanged) → notify architect that harness is ready and the e2e dispatch needs merge-to-main first (kernel clones main + workflow_dispatch reads default branch) + Kaggle-account go. Await approval to merge+dispatch; then measure and finalize recommendation.
+
+## 2026-07-21 — rev-3: FULL STOP → REJECT FINAL (Kaggle AUP, primary source)
+
+Architect STOP mid-flight, then rev-3 final directions. **Never dispatched stage=e2e** (was still waiting on the required gate for fix #3); verified kaggle-gpu-spike history shows only historical probe runs #1–#5, nothing in flight → nothing to cancel Kaggle-side.
+
+**Why REJECT is now final:** owner captured Kaggle's actual AUP (effective 2025-06-22, primary source) — the resource-abuse clause **explicitly** bars *"activity unrelated to ML data science"* and *"server farming."* Our e2e-CI-on-Kaggle-GPU is exactly that → dispositive violation. This CORRECTS rev-2's "no explicit prohibition found": that was a tooling limitation (client-rendered AUP page, machine-inaccessible), not absence. Wall-clock measurement is moot AND the dispatch would itself be the violating activity → not run.
+
+**Executed rev-3 directions:**
+1. Committed the verbatim AUP as `data/output/kaggle-aup-2025-06-22.txt` (provenance header + verbatim text), cited as the dispositive primary source.
+2. Rewrote notes.md → REJECT FINAL, AUP first / prior drivers as corroboration / run #5 hardware-WebGL capability documented for the record; corrected the rev-2 framing throughout (status, priors item 6, metrics ToS+wall-clock rows, decision, next steps, env/repro, references).
+3. **Removed** `.github/workflows/kaggle-gpu-spike.yml` (`git rm`) — no standing dispatch surface; even one-offs are prohibited non-ML activity.
+4. **Kept** the `playwright.config.ts` `PW_CHROMIUM_ARGS` hook (default byte-identical), re-purposed comment to note it serves **#44** (native-GPU LOCAL lane).
+5. Runner `kaggle_e2e_runner.py` retained + docstring note: built-but-never-dispatched (AUP).
+
+Next: commit → push (validation.yml gate) → retitle PR to COMPLETE/REJECT + `Closes #42` → drive porch to completion (`porch done 42` → experiment-complete gate pending → architect approves → push chore(porch) commit BEFORE merge) → merge on CI green. Also recommend owner revoke `KAGGLE_API_TOKEN` (nothing references it now).

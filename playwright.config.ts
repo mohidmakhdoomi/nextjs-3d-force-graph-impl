@@ -3,6 +3,30 @@ import process from "node:process";
 
 const baseURL = "http://127.0.0.1:3000";
 
+// Env-gated Chromium WebGL launch args.
+//
+// DEFAULT (PW_CHROMIUM_ARGS unset): byte-identical to the previous forced-
+// SwiftShader gate. Every local run, `npm run validate`, and the required CI
+// Validation gate leave PW_CHROMIUM_ARGS UNSET, so Chromium launches with
+// exactly ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] — the same
+// deterministic software-WebGL rasterizer as before. This indirection does not
+// change any default behavior.
+//
+// OPT-IN: an opt-in lane may set PW_CHROMIUM_ARGS to a hardware-WebGL flag set
+// instead of software SwiftShader. Experiment 42 added this hook to run the suite
+// on a real GPU; the *Kaggle* path was REJECTED on Kaggle-AUP grounds (see
+// experiments/42_kaggle_gpu_ci/notes.md) and its dispatch workflow was removed.
+// The hook is retained to serve issue #44 (opt-in native-GPU LOCAL lane), which
+// can set PW_CHROMIUM_ARGS to the ANGLE-Vulkan flag set proven in experiment 42
+// run #5 — on real local hardware, with no third party or ToS exposure.
+const SWIFTSHADER_CHROMIUM_ARGS = [
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader",
+];
+const chromiumLaunchArgs = process.env.PW_CHROMIUM_ARGS
+    ? process.env.PW_CHROMIUM_ARGS.split(/\s+/).filter((arg) => arg.length > 0)
+    : SWIFTSHADER_CHROMIUM_ARGS;
+
 const allProjects = [
     {
         name: "chromium",
@@ -10,10 +34,7 @@ const allProjects = [
             ...devices["Desktop Chrome"],
             viewport: {width: 800, height: 600},
             launchOptions: {
-                args: [
-                    "--use-angle=swiftshader",
-                    "--enable-unsafe-swiftshader",
-                ],
+                args: chromiumLaunchArgs,
             },
         },
     },
