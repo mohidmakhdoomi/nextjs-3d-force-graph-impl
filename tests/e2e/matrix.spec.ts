@@ -29,6 +29,28 @@ const ZOOM_EPSILON = 0.5;
 // Give CI generous headroom without changing the local qualification timing.
 const SETTLE_TIMEOUT_MS = process.env.CI ? 20_000 : 5_000;
 
+// The app enables pointer navigation ENABLE_DELAY_MS after component mount
+// (FocusGraph's `enableDelay` default). Inertness is proven against a floor just
+// below that boundary: a setTimeout(ENABLE_DELAY_MS) scheduled no earlier than
+// `navigationStart` cannot fire before ENABLE_DELAY_MS of wall-clock elapse, so
+// enablement is always observed >= ENABLE_DELAY_MS after navigation and any
+// floor < ENABLE_DELAY_MS is race-free — unlike gating the check on a
+// camera-settle waiter, which has no ordering relationship to the timer and on
+// the Firefox software-WebGL local gate finishes only ~0.8 s before enablement
+// (issue #33).
+//
+// `navigationStart` is the tightest race-free anchor available to the harness:
+// the timer is scheduled in the mount effect (~0.7 s after navigation here), and
+// that instant is not observable through the canvas-gated probe (the canvas —
+// and thus every snapshot — first appears ~2.7 s in, AFTER scheduling, and any
+// canvas-relative anchor races the timer). The mount offset is therefore folded
+// into the measurement, so the FLOOR margin is kept small (500 ms) to still trip
+// on a delay materially shorter than 4000 ms; a regression within ~0.7 s of the
+// boundary is beyond what a from-navigation floor can resolve without adding
+// test-only instrumentation to app code.
+const ENABLE_DELAY_MS = 4000;
+const INERT_FLOOR_MS = ENABLE_DELAY_MS - 500;
+
 async function snapshotOrFail(page: Parameters<typeof readGraphSnapshot>[0]): Promise<GraphSnapshot> {
     const snapshot = await readGraphSnapshot(page);
     expect(snapshot, "graph handle should stay reachable").not.toBeNull();
@@ -110,10 +132,15 @@ test("rotates the camera automatically until paused, then resumes", async ({page
 });
 
 test("keeps pointer navigation inert until the enable delay elapses", async ({page}) => {
+    // Reference for the enable-latency floor below. Captured before navigation
+    // so it precedes the mount that schedules the enable timer — the timer can
+    // then only fire at least ENABLE_DELAY_MS after this instant.
+    const navigationStart = Date.now();
     const errors = await openGraphPage(page);
 
     // Reach the imperative handle as early as possible — the enable timer
-    // starts at component mount and runs 4000 ms.
+    // starts at component mount and runs 4000 ms. Observing controls disabled
+    // here proves they do not start enabled.
     const early = await waitForGraphHandle(page);
     expect(
         early.controlsEnabled,
@@ -124,17 +151,23 @@ test("keeps pointer navigation inert until the enable delay elapses", async ({pa
     // this environment: SwiftShader plus force-engine warmup saturates the
     // main thread, and a measured wheel dispatch blocked ~6 s — past the
     // 4 s enable delay (recorded qualification evidence). The inert-before
-    // half is therefore verified numerically (controls start disabled and
-    // stay disabled until the delay elapses), and real input is exercised
-    // immediately after enablement.
-    await waitForStableCameraDistance(page);
-    const beforeEnablement = await snapshotOrFail(page);
-    expect(
-        beforeEnablement.controlsEnabled,
-        "navigation controls should still be disabled after camera placement",
-    ).toBe(false);
-
+    // half is therefore verified by timing: controls start disabled (asserted
+    // above) and do not enable until the delay elapses, and real input is
+    // exercised immediately after enablement.
+    //
+    // The enable latency is measured from `navigationStart` rather than gated
+    // on a camera-settle waiter: camera placement has no ordering relationship
+    // to the enable timer, so gating on it raced the boundary and spuriously
+    // observed controls already enabled (issue #33). A floor below the delay is
+    // race-free (the timer cannot fire that early) yet still fails on premature
+    // enablement — the invariant `enableLatencyMs >= INERT_FLOOR_MS` means the
+    // controls stayed inert across the whole `[0, INERT_FLOOR_MS)` window.
     await waitForPointerEnablement(page);
+    const enableLatencyMs = Date.now() - navigationStart;
+    expect(
+        enableLatencyMs,
+        "navigation controls must stay inert until the enable delay elapses",
+    ).toBeGreaterThanOrEqual(INERT_FLOOR_MS);
 
     // The same real input must work once enabled.
     const beforeZoom = await waitForStableCameraDistance(page);
