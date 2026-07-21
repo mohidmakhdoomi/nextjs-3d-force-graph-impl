@@ -71,3 +71,11 @@ PR #46 merged (CI green); re-dispatched → run `29860830320`. v2 retrieval WORK
 - **Root cause (diagnosed):** unverified Kaggle account → Kaggle silently disables BOTH internet and GPU (the action's README warns of exactly this). Both runs (#1, #2) failed at this same layer; the make-or-break WebGL question was never reached.
 - **Architect chose to phone-verify the account** (said "wait ~5 min"). Plan: wait, then re-dispatch the (already-merged v2) probe → this time expect internet+GPU present → finally read the hardware-vs-software `UNMASKED_RENDERER_WEBGL` verdict → then finalize adopt/defer/reject.
 - Standing reject drivers unchanged regardless of WebGL outcome: ToS on sustained CI use, queue/cold-start wall clock, the **confirmed** reporting defect, reproducibility-contract violation, Stage-2 config hard-gate. Sibling issues #41/#44 remain the credential-free alternative.
+
+## 2026-07-21 — Run #3 (verified account): diagnosis CONFIRMED; trivial probe bug fixed
+
+Architect phone-verified the account; waited ~5.5 min; re-dispatched → run `29861849190` (evidence: `data/output/probe-run-3-evidence.md`).
+- ✅ **GPU now present**: `nvidia-smi` → 2× Tesla T4. ✅ **Internet now works**: pip reached PyPI. So the phone-verification diagnosis was correct — account layer unblocked.
+- ❌ New trivial blocker (my bug): `playwright==1.61.1` has **no Python distribution** (Python `playwright` 1.61 line maxes at `1.61.0`; JS/Python patch numbers diverge). pip errored → probe exited before installing Chromium → still no artifact.
+- **Fixed**: pin `playwright==1.61.0` (same 1.61 Chromium as JS `@playwright/test@1.61.1`) + made browser-install non-fatal so the artifact is always written. PR → merge → re-dispatch (run #4).
+- **Crux still ahead**: kernel GL userspace is **Mesa-only** (no NVIDIA EGL/GL vendor driver) even with the T4 present → strong prior that Chromium WebGL still falls back to **llvmpipe software**, not the GPU. Run #4 measures it directly.

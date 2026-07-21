@@ -103,17 +103,21 @@ def main():
     sh(["bash", "-lc", "ls -1 /usr/lib/x86_64-linux-gnu/ | grep -iE 'egl|gles|gl\\.so|nvidia' || echo 'no GL/EGL vendor libs found'"])
     sh(["bash", "-lc", "which glxinfo eglinfo vulkaninfo 2>/dev/null || echo 'no gl diag tools'"])
 
-    # 2) Install Playwright + Chromium, version-PINNED to our repo's
-    #    @playwright/test (1.61.1) so the probe exercises the SAME Chromium build
-    #    we ship — otherwise a newer browser could report a different WebGL
-    #    renderer/flag behavior than our actual stack, invalidating the evidence.
-    sh([sys.executable, "-m", "pip", "install", "--quiet", "playwright==1.61.1"], check=True)
-    # --with-deps needs apt (root). Kaggle kernels run as root; if this is flaky,
-    # fall back to a plain install and let missing libs surface in the launch.
+    # 2) Install Playwright (Python), pinned to the SAME 1.61 line as our repo's
+    #    @playwright/test@1.61.1 so the probe exercises the same Chromium build.
+    #    NOTE: JS and Python patch numbers diverge — the Python `playwright`
+    #    package has NO 1.61.1 (its 1.61 line tops out at 1.61.0), and 1.61.x
+    #    ships the same Chromium revision, so 1.61.0 is the correct Python
+    #    counterpart. (Confirmed empirically: run #3 showed pip max = 1.61.0.)
+    sh([sys.executable, "-m", "pip", "install", "--quiet", "playwright==1.61.0"], check=True)
+    # Browser + system deps. --with-deps needs apt (root; Kaggle kernels are
+    # root). Keep ALL browser-install steps NON-FATAL so we always reach the
+    # probe loop and always write the result artifact — a launch failure then
+    # surfaces per-flag-set as class=error rather than aborting before evidence.
     code, _ = sh(["python", "-m", "playwright", "install", "--with-deps", "chromium"])
     if code != 0:
-        print("WARN: 'install --with-deps' failed; retrying without deps", flush=True)
-        sh(["python", "-m", "playwright", "install", "chromium"], check=True)
+        print("WARN: 'install --with-deps' failed; retrying browser-only", flush=True)
+        sh(["python", "-m", "playwright", "install", "chromium"])  # non-fatal
 
     from playwright.sync_api import sync_playwright  # noqa: E402
 

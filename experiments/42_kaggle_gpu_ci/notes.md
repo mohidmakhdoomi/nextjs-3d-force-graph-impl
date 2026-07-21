@@ -1,6 +1,6 @@
 # Experiment 42: kaggle-action for free Kaggle GPU CI compute
 
-**Status**: In Progress — **live runs #1 & #2 both blocked at the account layer (kernel got no internet + no GPU → stack can't install); root cause diagnosed as an unverified Kaggle account.** Architect is phone‑verifying the account (2026‑07‑21 ~19:2x); re‑dispatching the probe afterward to finally test whether Chromium gets a hardware `UNMASKED_RENDERER_WEBGL`. Disposition deferred until that verified run. (Note: even a positive WebGL result would not make this a *required*‑gate candidate — the ToS/wall‑clock/reporting‑defect/reproducibility drivers still apply; the verified run decides whether even a narrow non‑required lane has any merit.)
+**Status**: In Progress — **account verification CONFIRMED the diagnosis: run #3 (verified account) got 2× Tesla T4 GPU + working internet.** It then exposed a probe bug (Python `playwright` has no `1.61.1`; its 1.61 line tops out at `1.61.0`), now fixed. Re‑dispatching (run #4) to finally reach the hardware‑WebGL test. Disposition still deferred to that run. (Even a positive WebGL result would not make this a *required*‑gate candidate — ToS/wall‑clock/reporting‑defect/reproducibility drivers stand; the verified run decides whether a narrow non‑required lane has any merit.)
 
 **Date**: 2026-07-21
 
