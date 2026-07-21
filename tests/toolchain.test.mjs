@@ -84,6 +84,19 @@ const packageJson = JSON.parse(
 const packageLock = JSON.parse(
     await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
 );
+const tsconfig = JSON.parse(
+    await readFile(new URL("../tsconfig.json", import.meta.url), "utf8"),
+);
+
+// Issue #15: the upstream .d.ts defects that surface once skipLibCheck is off are
+// repaired by version-pinned patch-package patches applied on install — never by
+// ambient declarations or suppressions in our own tree. Each entry maps a patched
+// package to the lockfile path whose resolved version keys its patch filename.
+const expectedTypePatches = {
+    "3d-force-graph": "node_modules/3d-force-graph",
+    "three-forcegraph": "node_modules/three-forcegraph",
+    "@vercel/speed-insights": "node_modules/@vercel/speed-insights",
+};
 
 test("declares the exact Node and npm baseline", async () => {
     const nvmVersion = (
@@ -326,4 +339,54 @@ test("pins the TypeScript 6 language target exactly within the supported parser 
         false,
         `typescript-eslint typescript peer "${typescriptEslintPeer}" must exclude TypeScript 7`,
     );
+});
+
+test("checks library declarations by never enabling skipLibCheck", () => {
+    // skipLibCheck masks broken upstream .d.ts files across the whole graph, which
+    // is exactly the blind spot issue #15 removes. Its absence (or an explicit
+    // false) is what makes `tsc --noEmit` type-check library declarations.
+    assert.notEqual(
+        tsconfig.compilerOptions.skipLibCheck,
+        true,
+        "tsconfig.compilerOptions.skipLibCheck must not be true — it re-masks upstream .d.ts defects",
+    );
+});
+
+test("wires patch-package to apply upstream type patches on install", () => {
+    // The postinstall hook is what re-applies the patches on every clean
+    // `npm ci`, so removing skipLibCheck stays honest without touching our tree.
+    assert.equal(packageJson.scripts.postinstall, "patch-package");
+
+    const patchPackagePin = packageJson.devDependencies["patch-package"];
+    assert.equal(patchPackagePin, "8.0.1");
+    assert.match(patchPackagePin, /^\d+\.\d+\.\d+$/);
+    assert.equal(
+        packageLock.packages["node_modules/patch-package"].version,
+        patchPackagePin,
+    );
+});
+
+test("pins each upstream type patch to its locked version without suppressions", async () => {
+    for (const [packageName, lockPath] of Object.entries(expectedTypePatches)) {
+        const lockedVersion = packageLock.packages[lockPath].version;
+        // patch-package encodes the target as "<name-with-slashes-as-plus>+<version>.patch".
+        const patchFile = `${packageName.replaceAll("/", "+")}+${lockedVersion}.patch`;
+        const patch = await readFile(
+            new URL(`../patches/${patchFile}`, import.meta.url),
+            "utf8",
+        );
+
+        assert.ok(
+            patch.length > 0,
+            `${patchFile} must exist so the ${packageName} fix is reproducible`,
+        );
+        // Guard the acceptance criterion structurally: a patch may repair the
+        // upstream declaration, but must not smuggle in a blanket module stub or
+        // a blanket suppression that would recreate the original blind spot.
+        assert.doesNotMatch(
+            patch,
+            /declare module|@ts-ignore|@ts-nocheck|@ts-expect-error|skipLibCheck/,
+            `${patchFile} must not reintroduce an ambient stub or suppression`,
+        );
+    }
 });
