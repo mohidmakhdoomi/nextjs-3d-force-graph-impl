@@ -128,8 +128,12 @@ Why this is worth building (from issue #44):
    flag set the suite will use, logs it, and asserts it is not
    SwiftShader/llvmpipe before trusting a hardware run. A hardware-mode run
    whose renderer probe returns software must not silently proceed as if it
-   were hardware (it either falls back loudly or fails the probe step,
-   depending on the fallback decision at runtime).
+   were hardware. The deterministic policy (see FR3): unusable or unverified
+   candidates are skipped/failed loudly and the next candidate is tried;
+   exhausting all candidates produces a loud software fallback. By default
+   the lane never hard-fails because hardware is absent or unverifiable;
+   an opt-in strict switch (for qualification runs) converts
+   fallback-on-exhaustion into a hard failure.
 5. **Chromium-only lane.** The proven configurations are Chromium+ANGLE.
    Firefox hardware GL is out of scope (its local qualification arm stays
    software, unchanged).
@@ -296,19 +300,45 @@ The lane detects the host capability class without vendor hard-coding:
 Selection logic and its candidate list must be data-driven enough that adding
 a future recipe does not restructure the lane.
 
+Two env controls (working names; final names are a plan decision) make the
+selection deterministic and testable on any host:
+- **Forced fallback** (e.g. `E2E_GPU_FORCE_FALLBACK=1`): skip all hardware
+  candidates and go straight to the software-fallback path. This is how
+  Scenario 2 is proven on a GPU-capable host — fallback qualification must
+  not require a second, GPU-less machine.
+- **Strict hardware** (e.g. `E2E_GPU_REQUIRE=1`): if no candidate passes
+  renderer verification, exit non-zero instead of falling back. This is the
+  integrity guard for FR8 qualification runs, where a silent fallback would
+  pollute hardware evidence.
+Both are lane-only: they are read by the wrapper, not by any committed test
+or by `playwright.config.ts` default behavior.
+
 ### FR3 — Mandatory renderer verification and graceful fallback
 
 Before trusting a hardware run, the lane launches the repo's own Playwright
-Chromium under the selected flags and reads `UNMASKED_RENDERER_WEBGL`:
-- Hardware mode: string logged; assert it does **not** match
-  SwiftShader/llvmpipe (deny-list assertion, full string recorded). On
-  assertion failure, try the next candidate; when candidates are exhausted,
-  fall back.
+Chromium under the selected flags and reads `UNMASKED_RENDERER_WEBGL`. The
+candidate lifecycle is deterministic:
+
+1. **Prerequisite check**: a candidate whose environment prerequisites are
+   missing (e.g. headed WSLg candidate with `DISPLAY` unset, WSL2 candidate
+   with `/usr/lib/wsl/lib` absent) is **skipped** with a one-line actionable
+   reason (FR11) — it is not attempted and cannot crash the lane.
+2. **Renderer verification**: the candidate's probe launch reads the renderer
+   string; it is logged verbatim. Assert it does **not** match
+   SwiftShader/llvmpipe (deny-list assertion, full string recorded). A probe
+   that crashes, hangs past its timeout, or returns a software string is a
+   **failed candidate** — logged, then the next candidate is tried.
+3. **Exhaustion**: when all candidates are skipped or failed, the lane falls
+   back to software — never a hard failure by default. Under the strict
+   switch (FR2), exhaustion exits non-zero with the per-candidate log instead.
+
+- Hardware mode: verification passed; the suite runs under the verified flags.
 - Fallback mode: the suite still runs (default SwiftShader args) with an
   unmistakable warning at start **and** in the final report that this was a
   software run, so fallback output can never be mistaken for hardware
   evidence. The suite's own pass/fail exit semantics are preserved in both
-  modes.
+  modes; lane-internal errors unrelated to hardware absence (build failure,
+  malformed invocation) remain hard failures in all modes.
 
 ### FR4 — Full-suite execution, nothing dropped
 
@@ -322,13 +352,22 @@ evidence (FR8), never silently mirrored from CI.
 ### FR5 — Bounded headless investigation
 
 The proven config is **headed** via WSLg. Investigate whether headless
-Chromium (including `--headless=new`-class modes) + ANGLE can also reach
-hardware GL on this host; record the outcome (works / does not / partially,
-with renderer strings) in the review artifacts. If headless works, it may
-become the lane default with headed as documented alternative; if not, headed
-stays the default and the headless result is documented as attempted evidence.
-Timebox this — it must not balloon the project; a conclusive negative is a
-valid result.
+Chromium + ANGLE can also reach hardware GL on this host. The investigation
+is bounded to a fixed candidate matrix — for the recipe the probe selected
+(d3d12 on this host), run the FR3 renderer probe once per combination of:
+- headless modes: Playwright default headless and explicit `--headless=new`
+  (if distinguishable in the pinned Playwright version);
+- ANGLE backends already in the candidate list (GL, plus Vulkan if the
+  native-Linux candidate is defined for this host class).
+
+That is ≤4 probe runs, each with the standard probe timeout. **Stop
+condition**: the matrix is exhausted. Conclusive positive = at least one
+combination passes the deny-list assertion (record which); conclusive
+negative = all combinations return software strings or fail (record each
+string/failure verbatim). No iteration beyond the matrix — novel flag hunting
+is out of scope. If headless works, it may become the lane default with
+headed as documented alternative; if not, headed stays the default and the
+headless result is documented as attempted evidence.
 
 ### FR6 — Canonical gate provably untouched
 
@@ -355,8 +394,10 @@ least one contemporaneous serial SwiftShader local baseline wall-clock for
 comparison. Instability findings (if any) are recorded as lane findings with
 the FR/decision-7 discipline (no canonical retuning). If the host has no
 adapter at qualification time this criterion cannot be met — the work is not
-done until hardware evidence exists (the fallback path is qualified by a
-software run of the same lane).
+done until hardware evidence exists. The fallback path is qualified by at
+least one forced-fallback run of the same lane (FR2 control) on the same
+host. Hardware qualification runs use the strict switch (FR2) so an
+unnoticed mid-qualification fallback cannot contaminate the evidence.
 
 ### FR9 — Documentation
 
@@ -374,6 +415,23 @@ The lane's terminal output ends with a machine-greppable summary: mode
 (hardware/software-fallback), exact renderer string, engine, suite result,
 wall-clock. This is the artifact the stability evidence (FR8) and future #41
 qualification cite.
+
+### FR11 — Actionable operator diagnostics
+
+Every skipped or failed candidate produces a one-line diagnostic naming the
+cause and a remedy hint. At minimum these common local failure modes are
+covered explicitly:
+- `DISPLAY` unset / WSLg socket absent while a headed candidate is selected
+  ("WSLg not active — headed hardware mode unavailable");
+- `/dev/dxg` present but `/usr/lib/wsl/lib` missing (WSL GPU libs not
+  mounted);
+- d3d12 candidate whose probe returns llvmpipe (Mesa d3d12 driver missing or
+  not selected — hint at the Mesa package / env recipe);
+- probe crash or timeout (report the candidate and where its output/log is).
+Diagnostics go to the terminal as they happen and are summarized before the
+FR10 report. They must make the difference between "no adapter on this host"
+and "adapter present but recipe prerequisite missing" obvious to an operator
+who has not read this spec.
 
 ## Non-Functional Requirements
 
@@ -423,10 +481,11 @@ full Chromium suite runs and passes, final report says hardware + renderer +
 wall-clock.
 
 ### Scenario 2 — Graceful fallback
-Same command on a GPU-less host (or with the adapter path unavailable): a
-clear warning states no adapter was found, the suite runs under SwiftShader,
-the final report unmistakably says software-fallback. Exit code reflects the
-suite result.
+Same command on a GPU-less host (or on any host with the forced-fallback
+control set, e.g. `E2E_GPU_FORCE_FALLBACK=1` — this is how the scenario is
+proven on the GPU-capable qualification host): a clear warning states why no
+hardware candidate ran, the suite runs under SwiftShader, the final report
+unmistakably says software-fallback. Exit code reflects the suite result.
 
 ### Scenario 3 — Canonical gate untouched
 `git diff` on the PR shows no change to `.github/workflows/validation.yml` or
