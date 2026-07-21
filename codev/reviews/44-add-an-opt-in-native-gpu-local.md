@@ -2,13 +2,122 @@
 
 ## Metadata
 - **ID**: review-2026-07-21-add-an-opt-in-native-gpu-local
-- **Status**: in progress (evidence accumulating; finalized in the Review phase)
+- **Status**: complete
 - **Specification**: [codev/specs/44-add-an-opt-in-native-gpu-local.md](../specs/44-add-an-opt-in-native-gpu-local.md)
 - **Plan**: [codev/plans/44-add-an-opt-in-native-gpu-local.md](../plans/44-add-an-opt-in-native-gpu-local.md)
 
-This artifact accumulates the lane's qualification evidence phase by phase
-(FR5/FR6 now; FR8 stability runs and the final lessons in later phases), per
-the plan's "Phase 2–4 accumulation" note. All renderer strings are verbatim.
+## Summary
+
+Productized the PR #43 / experiment-42 hardware-WebGL evidence into
+`npm run test:e2e:gpu` (`scripts/e2e-gpu-lane.mjs`): an opt-in lane that
+probes the host, verifies `UNMASKED_RENDERER_WEBGL` through the repo's own
+Playwright Chromium before trusting anything, runs the full Chromium e2e
+suite on the verified hardware recipe, and falls back loudly to SwiftShader
+when no adapter is usable. Headline results:
+
+- **Hardware suite ≈ 97 s vs 594 s SwiftShader** (6.1× faster), 5/5
+  full-suite passes at `retries: 0`, zero flakes, per-test spread ≤ 1 s.
+- **Headless works** — the FR5 matrix showed the WSL2 Mesa d3d12 path needs
+  no display (all 4 cells hardware), so the lane defaults to headless and
+  runs on display-less WSL2 hosts; headed WSLg is one `--mode=headed` away.
+- **Canonical gate provably untouched** — comment-only config diff, env-unset
+  config-load equality, gate files absent from the diff, clean-checkout
+  `npm run validate` exit 0.
+- Delivered: wrapper (795 lines incl. docs-comments), 30 GPU-free unit tests
+  riding the existing `npm test` glob, README section, this evidence record.
+  `package.json` delta is one script line; no dependency/lockfile movement.
+
+## Spec Compliance
+
+- FR1 one-command lane ✓ (`test:e2e:gpu`; default-inert proven). FR2
+  probe-and-select with data-driven candidates + `E2E_GPU_FORCE_FALLBACK` /
+  `E2E_GPU_REQUIRE` ✓. FR3 deterministic lifecycle with mandatory deny-list
+  verification ✓. FR4 full suite, workers 1, retries 0, nothing trimmed ✓.
+  FR5 bounded matrix, conclusive positive, recorded below ✓. FR6 gate proof
+  below ✓. FR7 committed tests GPU-free (unit suite passes with no
+  GPU/browser/lane env) ✓. FR8 3+ consecutive qualified runs below ✓. FR9
+  README ✓. FR10 greppable report ✓. FR11 per-candidate diagnostics with
+  cause + remedy + transcript path ✓.
+- Confirmed Decisions 1–10 honored; notably 7/8: no canonical wait retuned,
+  no lane-only accommodation was even needed, `workers: 1` everywhere.
+
+## Deviations from Plan
+
+- None material. The only mid-flight additions came from CMAP feedback:
+  probe-transcript log destination named up front, fallback env scrub made
+  explicit (both were plan-review comments folded in before implementation),
+  and the probe timeout-cleanup fix + injectability (impl-review catch).
+- The review artifact was created in phase 3 rather than phase 4 — a
+  phase-review correction (the plan's phase-3 deliverable required FR5
+  evidence in this artifact, not the builder thread).
+
+## Lessons Learned
+
+- **Probe before designing around an assumed limitation.** "Hardware WebGL
+  needs headed WSLg" was received wisdom from PR #43; a four-probe matrix
+  falsified it in minutes and made the shipped tool strictly better
+  (headless default, no display dependency).
+- **Silent SwiftShader fallback is the central failure mode** of any GPU
+  lane; the deny-list renderer probe before the suite plus the
+  `E2E_GPU_REQUIRE=1` strict switch turned "we think it ran on hardware"
+  into an asserted, logged fact on every run.
+- **Dependency-injected side effects paid off immediately**: making the
+  probe's launcher/timeouts/transcript-writer injectable let the
+  orphaned-browser-on-timeout defect (a real CMAP catch) get deterministic
+  regression tests instead of an untestable fix.
+- **The evidence-accumulator review file should exist from the first
+  evidence-producing phase** — creating it lazily cost one review iteration.
+- Hardware timing did not break a single qualified SwiftShader wait — the
+  risk table's top concern never materialized (the waits are floors/polls,
+  not ceilings, so faster frames only tightened them).
+
+## Technical Debt
+
+- None added to the product. Lane-adjacent notes: the FR5 `--channel`
+  new-headless knowledge is probe-only (the suite cannot switch channel
+  through `PW_CHROMIUM_ARGS`); if a future need arises it requires its own
+  env-gated, default-inert config surface with fresh inertness proof.
+
+## Consultation Feedback
+
+- Spec iter-1: Gemini/Claude APPROVE, Codex REQUEST_CHANGES ×4 (fallback
+  determinism, fallback testability on GPU hosts, FR5 bounding, operator
+  UX) — all accepted, spec amended (FR2 controls, FR3 lifecycle, FR5 matrix,
+  FR11).
+- Plan iter-1: Gemini/Claude APPROVE, Codex COMMENT ×2 (probe-log
+  destination, fallback env scrub) — folded into the plan pre-implementation.
+- Impl lane_wrapper_core: Codex caught the watchdog/late-launch browser leak
+  (fixed + 3 focused tests); phase-scoped re-review 3× APPROVE.
+- Impl full_lane_and_inertness_proof: 3× APPROVE.
+- Impl headless_investigation: Codex process catch (evidence belongs in this
+  artifact) — fixed; iter-2 passed.
+- Impl qualification_evidence_and_docs: 3× APPROVE.
+
+## Architecture Updates
+
+Routed to the **cold** `codev/resources/arch.md` (reference detail; the hot
+`arch-critical.md` cap and map are untouched — "`npm run validate` is the
+green gate" already carries the invariant this lane must respect):
+
+- **Validation Baseline** gained a paragraph recording the opt-in native-GPU
+  lane: command, probe→verify→inject flow over the `PW_CHROMIUM_ARGS` hook,
+  headless default, 6× measured speedup, fallback/strict env controls,
+  never-the-gate status, and the #41 `workers: 1` sequencing.
+
+## Lessons Learned Updates
+
+Routed to the **cold** `codev/resources/lessons-learned.md` under the
+existing **Validation Evidence** section (no new top-level section, so the
+hot map in `lessons-critical.md` stays accurate; hot tier untouched):
+
+- Renderer-probe-before-suite + strict-switch pattern for hardware evidence
+  (silent SwiftShader fallback is the failure mode to design against).
+- Probe capability claims before designing around their absence (the 4-cell
+  matrix that falsified "needs headed WSLg").
+- Capture-outside-the-race + bounded reap + DI for timeout-racing browser
+  launches, so cleanup paths get deterministic tests.
+
+All renderer strings below are verbatim.
 
 ## FR5 — Headless-vs-headed investigation (plan phase: headless_investigation)
 
@@ -172,3 +281,19 @@ worktree (`git worktree add --detach <dir> HEAD` + real `npm ci`, commit
   spec (Decision 7/FR6) forbids modifying the canonical suite as part of this
   lane work; left for a dedicated follow-up if it recurs (tracking suggestion
   filed with the architect at PR time).
+
+## Follow-up Items
+
+- **#41 (local e2e parallelization)**: this lane removes the
+  SwiftShader-contention rationale for `workers: 1` locally; #41 should
+  qualify `workers > 1` **on this lane** using the FR8 methodology
+  (`E2E_GPU_REQUIRE=1`, 3+ consecutive runs, per-test results) and cite this
+  review's tables as the serial-hardware baseline (94–97 s suite).
+- The Firefox background-drag flake (above): if it recurs on future local
+  qualification runs, file a dedicated issue in the #33 family rather than
+  retuning inside unrelated work.
+- Recipe drift watch: the evidence is dated 2026-07 (Mesa 26.0.3, NVIDIA
+  driver 581.29, Playwright 1.61.1/Chromium 149). The lane probes rather than
+  assumes, so drift degrades to a loud fallback, not a wrong claim — but if
+  fallback starts appearing on this host, re-run `--probe-only` per candidate
+  and compare transcripts against this review.

@@ -43,6 +43,26 @@ gotcha, or constraint.
   identically across the three 0.172→0.185 upgrade in both Chromium and Firefox
   — treat the intermittent/blocked cases as a known harness delivery limitation,
   not an app defect, and qualify them with rate comparison against baseline.
+- Chromium silently falls back to SwiftShader when a GPU path fails, so any
+  "hardware run" claim needs a **renderer probe before the suite**: launch the
+  same browser/flag set the suite will use, read `UNMASKED_RENDERER_WEBGL`,
+  and deny-list assert (no SwiftShader/llvmpipe/software). For repeat-run
+  hardware evidence, pair the probe with a strict switch that hard-fails
+  instead of falling back (`E2E_GPU_REQUIRE=1`-style) — otherwise one silent
+  mid-series fallback poisons the whole series. Log the string verbatim every
+  run.
+- Probe capability claims before designing around their absence: "hardware
+  WebGL needs headed WSLg" was received wisdom from PR #43, but a cheap 4-cell
+  matrix (headless-shell/new-headless × two ANGLE backends, one probe each)
+  showed the Mesa d3d12 path needs **no display at all** — which flipped the
+  lane's default to headless and removed the WSLg dependency entirely. The
+  matrix cost minutes; the wrong assumption would have shipped a worse tool.
+- For wrapper code that must never wedge (timeouts racing a browser launch),
+  capture the launch promise **outside** the raced closure and reap it in
+  `finally` with a bounded close — a watchdog that wins before launch resolves
+  otherwise orphans the browser and can hold the process open. Make the
+  launcher/timeouts dependency-injectable so the timed-out-cleanup path has
+  deterministic unit coverage instead of being untestable.
 
 ## Toolchain and Worktree Hygiene
 
