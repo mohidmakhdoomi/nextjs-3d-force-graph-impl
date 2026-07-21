@@ -140,3 +140,12 @@ Architect STOP mid-flight, then rev-3 final directions. **Never dispatched stage
 5. Runner `kaggle_e2e_runner.py` retained + docstring note: built-but-never-dispatched (AUP).
 
 Next: commit → push (validation.yml gate) → retitle PR to COMPLETE/REJECT + `Closes #42` → drive porch to completion (`porch done 42` → experiment-complete gate pending → architect approves → push chore(porch) commit BEFORE merge) → merge on CI green. Also recommend owner revoke `KAGGLE_API_TOKEN` (nothing references it now).
+
+## 2026-07-21 — MERGED & COMPLETE (REJECT final)
+
+- Required gate GREEN on final commit 8793455 (validation.yml run 29868004586, ~6 min: 20:57:58→21:04:03 UTC — all 4 e2e shards + quality + gate + merge-reports success).
+- **Merged PR #49** (merge commit dc5f373); **issue #42 auto-closed** via `Closes #42`.
+- Porch: PROTOCOL COMPLETE (chore(porch) commits e775d2d/5391657/417cacb/652fee5/2f5ecb4/8793455 all in the PR/on main). Now at optional post-completion `verified` phase — left as-is for architect close-out (nothing runtime to verify: only merged code change is the byte-identical PW_CHROMIUM_ARGS hook + workflow removal + docs).
+- Final disposition: **REJECT for CI adoption**, dispositive on the primary-source Kaggle AUP (2025-06-22: bars "activity unrelated to ML data science" + "server farming"). stage=e2e was NEVER dispatched. Hardware-WebGL capability (run #5) documented; runner retained as built-but-not-run doc; config hook retained for #44.
+- **Open follow-up for owner:** revoke `KAGGLE_API_TOKEN` (nothing references it after workflow removal); route native-GPU need to #41/#44.
+- Thread committed to the PR → lands on main in codev/state/.
