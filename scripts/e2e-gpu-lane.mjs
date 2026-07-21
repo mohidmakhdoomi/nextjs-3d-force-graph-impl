@@ -356,11 +356,34 @@ const PROBE_PAGE_SCRIPT = `(() => {
     };
 })()`;
 
-async function probeRenderer(candidate, extraEnv, {baseEnv, headless}) {
+function writeTranscriptFile(logPath, text) {
+    mkdirSync(PROBE_LOG_DIR, {recursive: true});
+    writeFileSync(logPath, text);
+}
+
+async function importChromium() {
+    const {chromium} = await import("@playwright/test");
+    return chromium;
+}
+
+// Exported for the timed-out-probe cleanup tests: `launcher`, timeouts, and
+// transcript writing are injectable; defaults are the real Playwright path.
+export async function probeRenderer(
+    candidate,
+    extraEnv,
+    {
+        baseEnv,
+        headless,
+        launcher = importChromium,
+        totalTimeoutMs = PROBE_TOTAL_TIMEOUT_MS,
+        launchTimeoutMs = PROBE_LAUNCH_TIMEOUT_MS,
+        closeTimeoutMs = 5_000,
+        writeTranscript = writeTranscriptFile,
+    },
+) {
     const startedAt = Date.now();
     const transcript = [];
     const logLine = (line) => transcript.push(`${timestamp()} ${line}`);
-    mkdirSync(PROBE_LOG_DIR, {recursive: true});
     const logPath = join(PROBE_LOG_DIR, `probe-${candidate.id}.log`);
     const env = composeEnv(baseEnv, candidate, extraEnv);
     logLine(`candidate: ${candidate.id} (${candidate.summary})`);
@@ -390,29 +413,36 @@ async function probeRenderer(candidate, extraEnv, {baseEnv, headless}) {
         durationMs: 0,
     };
 
-    let browser = null;
+    // The launch promise is captured OUTSIDE the raced work so a watchdog win
+    // can still reap a late-resolving browser: without this, a timeout firing
+    // before launch resolves would orphan the Chromium process and keep the
+    // lane alive (Codex impl-review, iteration 1).
+    let launchPromise = null;
     let timer = null;
     try {
-        const {chromium} = await import("@playwright/test");
+        const chromium = await launcher();
         const work = (async () => {
-            browser = await chromium.launch({
+            launchPromise = chromium.launch({
                 headless,
                 args: candidate.flags,
                 env,
-                timeout: PROBE_LAUNCH_TIMEOUT_MS,
+                timeout: launchTimeoutMs,
             });
+            const browser = await launchPromise;
             const page = await browser.newPage();
             return page.evaluate(PROBE_PAGE_SCRIPT);
         })();
+        // If the watchdog settles the race first, `work` may still reject
+        // later (launch failure, closed browser); absorb it so a lost race
+        // can never surface as an unhandled rejection.
+        work.catch(() => {});
         const watchdog = new Promise((_, reject) => {
             timer = setTimeout(
                 () =>
                     reject(
-                        new Error(
-                            `probe timeout after ${PROBE_TOTAL_TIMEOUT_MS}ms`,
-                        ),
+                        new Error(`probe timeout after ${totalTimeoutMs}ms`),
                     ),
-                PROBE_TOTAL_TIMEOUT_MS,
+                totalTimeoutMs,
             );
         });
         const result = await Promise.race([work, watchdog]);
@@ -430,16 +460,21 @@ async function probeRenderer(candidate, extraEnv, {baseEnv, headless}) {
         }
     } finally {
         clearTimeout(timer);
-        if (browser) {
-            // Close must not wedge the lane on an already-hung browser.
+        if (launchPromise) {
+            // Reap the browser even when the watchdog won the race: await the
+            // (possibly still-pending) launch and close its browser, bounded
+            // so cleanup can never wedge the lane on a hung launch — the
+            // launch's own timeout eventually rejects and is absorbed.
             await Promise.race([
-                browser.close().catch(() => {}),
-                new Promise((resolve) => setTimeout(resolve, 5_000)),
+                launchPromise.then((browser) => browser.close()).catch(
+                    () => {},
+                ),
+                new Promise((resolve) => setTimeout(resolve, closeTimeoutMs)),
             ]);
         }
         attempt.durationMs = Date.now() - startedAt;
         logLine(`duration: ${attempt.durationMs}ms`);
-        writeFileSync(logPath, `${transcript.join("\n")}\n`);
+        writeTranscript(logPath, `${transcript.join("\n")}\n`);
     }
     return attempt;
 }

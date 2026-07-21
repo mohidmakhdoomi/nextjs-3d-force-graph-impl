@@ -17,6 +17,7 @@ import {
     formatReport,
     parseControls,
     partitionCandidates,
+    probeRenderer,
     runSelection,
 } from "../scripts/e2e-gpu-lane.mjs";
 
@@ -361,6 +362,93 @@ test("formatReport emits the exact greppable FR10 contract", () => {
     assert.equal(lines[3], "engine: chromium");
     assert.equal(lines[4], "suite: skipped (--probe-only)");
     assert.equal(lines[5], "wall-clock: 12s");
+});
+
+test("probeRenderer: a watchdog timeout still reaps a late-resolving browser", async () => {
+    // The launch resolves AFTER the watchdog has already failed the probe;
+    // the lane must close that late browser instead of orphaning a Chromium
+    // process that would keep the run alive.
+    let closed = false;
+    const fakeBrowser = {
+        close: async () => {
+            closed = true;
+        },
+        newPage: async () => ({
+            evaluate: async () => ({renderer: "late", vendor: "late"}),
+        }),
+    };
+    const launcher = async () => ({
+        launch: () =>
+            new Promise((resolve) => {
+                setTimeout(() => resolve(fakeBrowser), 100);
+            }),
+    });
+    const transcripts = [];
+    const attempt = await probeRenderer(
+        candidateById("wsl2-d3d12-angle-gl"),
+        {},
+        {
+            baseEnv: {},
+            headless: true,
+            launcher,
+            totalTimeoutMs: 10,
+            closeTimeoutMs: 2_000,
+            writeTranscript: (path, text) => transcripts.push({path, text}),
+        },
+    );
+    assert.match(attempt.error, /probe timeout after 10ms/);
+    assert.equal(attempt.rendererClass, "none");
+    assert.equal(closed, true, "late-resolving browser must be closed");
+    // The transcript was written via the injected writer, with the error.
+    assert.equal(transcripts.length, 1);
+    assert.match(transcripts[0].path, /probe-wsl2-d3d12-angle-gl\.log/);
+    assert.match(transcripts[0].text, /ERROR: probe timeout/);
+});
+
+test("probeRenderer: cleanup is bounded when the launch never resolves", async () => {
+    // A launch that hangs past its own timeout must not wedge the lane: the
+    // close race gives up after closeTimeoutMs and the attempt still returns.
+    const launcher = async () => ({
+        launch: () => new Promise(() => {}),
+    });
+    const attempt = await probeRenderer(
+        candidateById("wsl2-d3d12-angle-gl"),
+        {},
+        {
+            baseEnv: {},
+            headless: true,
+            launcher,
+            totalTimeoutMs: 10,
+            closeTimeoutMs: 20,
+            writeTranscript: () => {},
+        },
+    );
+    assert.match(attempt.error, /probe timeout after 10ms/);
+    assert.equal(attempt.rendererClass, "none");
+});
+
+test("probeRenderer: a launch failure is a failed candidate with the error recorded", async () => {
+    const launcher = async () => ({
+        launch: async () => {
+            throw new Error("browser crashed on startup");
+        },
+    });
+    const transcripts = [];
+    const attempt = await probeRenderer(
+        candidateById("wsl2-d3d12-angle-gl"),
+        {},
+        {
+            baseEnv: {},
+            headless: true,
+            launcher,
+            totalTimeoutMs: 1_000,
+            closeTimeoutMs: 20,
+            writeTranscript: (path, text) => transcripts.push({path, text}),
+        },
+    );
+    assert.match(attempt.error, /browser crashed on startup/);
+    assert.equal(attempt.rendererClass, "none");
+    assert.equal(transcripts.length, 1);
 });
 
 test("candidate data invariants: sandbox relaxations stay lane-only and evidence-ordered", () => {
