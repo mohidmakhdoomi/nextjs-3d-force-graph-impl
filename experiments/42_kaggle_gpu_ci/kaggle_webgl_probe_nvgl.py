@@ -25,13 +25,24 @@ import subprocess
 import sys
 import traceback
 
-# Only the flag sets that could plausibly reach an NVIDIA GL/Vulkan path.
+# Flag sets that could plausibly reach an NVIDIA GL/Vulkan path. The
+# *-nofallback sets add --disable-software-rasterizer so the result is BINARY:
+# a non-null renderer means real hardware; a null context means "no hardware GL"
+# with NO silent SwiftShader fallback to muddy the reading. The fallback-
+# permitting sets are kept for contrast (they reveal what Chromium picks when
+# allowed to fall back). All sets keep --headless=new --no-sandbox.
 FLAG_SETS = [
     ("baseline-headless", ["--headless=new", "--no-sandbox"]),
     ("egl", ["--headless=new", "--no-sandbox", "--use-gl=egl"]),
     ("angle-gl-egl", ["--headless=new", "--no-sandbox", "--use-gl=angle", "--use-angle=gl-egl"]),
     ("angle-vulkan", ["--headless=new", "--no-sandbox", "--use-gl=angle",
                       "--use-angle=vulkan", "--enable-features=Vulkan"]),
+    ("angle-gl-nofallback", ["--headless=new", "--no-sandbox", "--enable-gpu",
+                             "--use-gl=angle", "--use-angle=gl",
+                             "--ignore-gpu-blocklist", "--disable-software-rasterizer"]),
+    ("angle-vulkan-nofallback", ["--headless=new", "--no-sandbox", "--use-gl=angle",
+                                 "--use-angle=vulkan", "--enable-features=Vulkan",
+                                 "--ignore-gpu-blocklist", "--disable-software-rasterizer"]),
 ]
 SOFTWARE_MARKERS = ["swiftshader", "llvmpipe", "software", "microsoft basic"]
 HARDWARE_MARKERS = ["nvidia", "tesla", "t4", "angle (nvidia"]
