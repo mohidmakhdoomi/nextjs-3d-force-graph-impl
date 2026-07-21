@@ -95,6 +95,16 @@ PRs #48 (escalation) + 2 addenda (runfile fallback + verification + VK_ICD_FILEN
 - **Final disposition: REJECT for CI adoption** (required gate AND standing non-required lane), capability retained as a documented one-off recipe. Drivers unchanged by the positive WebGL: worse wall clock (driver install every run), fragility (driver-version coupling → runfile 404 risk), Kaggle ToS/account risk, reproducibility-contract violation, confirmed action reporting defect. **Route the real need to #41/#44** (credential-free native-GPU).
 - notes.md finalized (status=Complete, 5-run results table, metrics, full Decision, Xvfb + d3d12 notes). Next: sync branch, commit final writeup, open final PR (`Refs #42` — issue stays open for #41/#44 follow-up; owner to decide close), notify architect, then Review phase / complete.
 
+## 2026-07-21 — HOLD: owner challenges REJECT → likely Stage-2 (measured e2e)
+
+Architect posted HOLD on PR #49. Owner is challenging the REJECT and the challenge is **valid** — I overreached on two of the drivers:
+- **Wall clock was PROJECTED, never MEASURED.** Issue #42's checklist explicitly required a measured end-to-end number vs the ~5-6 min sharded baseline. I reasoned "worse" but never ran the real suite. Real gap.
+- **ToS was argued by Colab ANALOGY, not Kaggle's actual terms text.** Overstated as a hard driver; architect is verifying against primary sources.
+- **Driver-install cost: WAIVED by owner.** So it can't count against the approach.
+That leaves reproducibility-contract (only bars the *required* gate, not a non-required lane) + the reporting defect (real but workable). So the honest disposition is **DEFER pending measurement**, not REJECT. The make-or-break (hardware WebGL) is PROVEN positive.
+- **Actions taken:** dropped the unpushed workflow-removal commit (`effcce2`) → workflow restored, branch back at `9af968f` (= origin). **NOT merging.** **Holding porch** at `hypothesis` (advancing to the completion gate would be premature with Stage-2 pending — architect said advancement "can" continue, permissive; will advance on explicit word).
+- **Stage-2 readiness:** a real end-to-end e2e run on Kaggle GPU (escalation driver install) with measured wall clock. Hard-gate to clear first: `playwright.config.ts` force-selects `--use-angle=swiftshader` and ignores env args → must add a CONDITIONAL hardware-GL override (env-driven) that leaves the required swiftshader CI path byte-identical. Awaiting direction.
+
 ## 2026-07-21 — Run #4 BASELINE VERDICT: SOFTWARE (make-or-break answered NO)
 
 Run `29862696170` (verified account, playwright 1.61.0, full probe) — result artifact written (evidence: `data/output/probe-run-4-evidence.md`):
