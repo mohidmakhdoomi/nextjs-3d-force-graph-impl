@@ -181,3 +181,16 @@ flag to architect for transparency. Escalation not warranted (no architectural/a
 tests (incl. flaky-prone click-to-focus #6), smoke #11, and the new right-click-release #10.
 graph-handle refactor confirmed non-breaking. Acceptance criterion 3 satisfied. Next: porch check
 (build + unit), commit, porch done → PR phase.
+
+## PR phase — PR #43 opened; CMAP done
+PR #43 (base main). porch check green (build + unit). CMAP (bugfix pr):
+- Gemini APPROVE (HIGH, no issues); Claude APPROVE (HIGH, no issues).
+- Codex REQUEST_CHANGES (HIGH): (1) `npm run lint` fails on `.claude/hooks/worktree-write-guard.cjs`;
+  (2) `npm test` fails on `tests/audit-report.test.mjs`.
+- Both rebutted as untracked-harness / reviewer-sandbox environment noise, PROVEN on a clean
+  checkout (`git worktree add --detach HEAD` @ d5cc8a1 + real `npm ci`): lint exit 0, typecheck
+  exit 0, npm test 39/39. `.claude/hooks/` is untracked (git ls-files shows only .claude/skills/*),
+  absent from clean checkouts; audit-report.test.mjs is self-contained (mkdtemp+spawnSync, no net)
+  and passes — codex's sandbox likely blocks subprocess/tmpdir. No committed-config suppression
+  (per hot lesson). Rebuttal recorded as PR comment #issuecomment-5030356962.
+Requesting the `pr` gate (porch done); STOP and wait for human approval before merge.
