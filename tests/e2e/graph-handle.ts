@@ -287,22 +287,30 @@ export async function installGraphProbe(page: Page): Promise<void> {
 
         // Re-read a specific node's screen point by id. A fixed node stays put
         // (rotation paused, camera settled), so a right-click retry can re-aim
-        // at exactly the node it fixed.
+        // at exactly the node it fixed. three-forcegraph can expose more than
+        // one scene object whose `__data` carries the same node id (e.g. a mesh
+        // plus a label), so prefer the instance that actually holds the pinned
+        // fx/fy/fz — that is the one `fixBestNode` mutated and the one the
+        // library's raycast resolves as the hovered node — and fall back to the
+        // first match otherwise. Without this preference the lookup can report a
+        // duplicate, unpinned instance (`fixed: false`) for a node that IS fixed.
         window.__graphNodeScreenById = (id) => {
             const handle = findHandle();
             if (handle === null) {
                 return null;
             }
 
-            const node = collectNodeData(handle).find(
-                (candidate) => candidate.id === id,
+            const matches = collectNodeData(handle).filter(
+                (candidate) =>
+                    candidate.id === id &&
+                    typeof candidate.x === "number" &&
+                    typeof candidate.y === "number" &&
+                    typeof candidate.z === "number",
             );
-            if (
-                node === undefined ||
-                typeof node.x !== "number" ||
-                typeof node.y !== "number" ||
-                typeof node.z !== "number"
-            ) {
+            const node =
+                matches.find((candidate) => candidate.fx !== undefined) ??
+                matches[0];
+            if (node === undefined) {
                 return null;
             }
 
@@ -547,4 +555,70 @@ export async function waitForStableCameraDistance(
         throw new Error("graph handle unavailable after camera settled");
     }
     return snapshot;
+}
+
+/**
+ * Resolves once the camera distance holds steady across `stableFrames`
+ * consecutive REAL animation frames, draining any pending Trackball zoom offset.
+ *
+ * `waitForStableCameraDistance` samples on a wall-clock interval (250 ms) and
+ * returns after two close reads. Under GPU-less software rendering on a slow
+ * 2-core runner a single frame can take multiple seconds, so a rapid `-2400`
+ * wheel burst leaves a large zoom offset pending while consecutive wall-clock
+ * reads observe the SAME not-yet-advanced frame — an apparently "stable"
+ * plateau. `waitForStableCameraDistance` returns there, the next rendered frame
+ * then applies the whole accumulated offset and slams the camera to its minimum
+ * distance, and a node fixed on the plateau projects far off-screen (issue #22,
+ * shard-4 trace: cameraDistance 1.68 → 0.1, node (407,256) → (3414,2338)).
+ *
+ * Sampling once PER `requestAnimationFrame` instead defeats that: a slow-frame
+ * plateau spans few real frames, and any offset the render loop is still
+ * applying moves the distance and resets the stable counter, so this returns
+ * only when the camera is genuinely at rest. Frame-based, so it self-scales to
+ * render speed; `maxFrames` bounds the wait so a never-resting camera cannot
+ * hang the test (the caller re-validates and recovers).
+ */
+export async function waitForCameraRest(
+    page: Page,
+    {
+        stableFrames = 20,
+        epsilon = 0.5,
+        maxFrames = 600,
+    }: {stableFrames?: number; epsilon?: number; maxFrames?: number} = {},
+): Promise<void> {
+    await page.evaluate(
+        ({stableFrames, epsilon, maxFrames}) =>
+            new Promise<void>((resolve) => {
+                const distance = (): number => {
+                    const snapshot = window.__graphProbe();
+                    return snapshot === null
+                        ? Number.NaN
+                        : snapshot.cameraDistance;
+                };
+                let previous = distance();
+                let stable = 0;
+                let frame = 0;
+                const tick = (): void => {
+                    const current = distance();
+                    if (
+                        Number.isFinite(current) &&
+                        Number.isFinite(previous) &&
+                        Math.abs(current - previous) < epsilon
+                    ) {
+                        stable += 1;
+                    } else {
+                        stable = 0;
+                    }
+                    previous = current;
+                    frame += 1;
+                    if (stable >= stableFrames || frame >= maxFrames) {
+                        resolve();
+                        return;
+                    }
+                    requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+            }),
+        {stableFrames, epsilon, maxFrames},
+    );
 }
