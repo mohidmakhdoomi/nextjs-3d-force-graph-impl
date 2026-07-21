@@ -3,6 +3,27 @@ import process from "node:process";
 
 const baseURL = "http://127.0.0.1:3000";
 
+// Experiment 42 (Stage 2) — env-gated Chromium WebGL launch args.
+//
+// DEFAULT (PW_CHROMIUM_ARGS unset): byte-identical to the previous forced-
+// SwiftShader gate. Every local run, `npm run validate`, and the required CI
+// Validation gate leave PW_CHROMIUM_ARGS UNSET, so Chromium launches with
+// exactly ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] — the same
+// deterministic software-WebGL rasterizer as before. This indirection does not
+// change any default behavior.
+//
+// OPT-IN: only the non-required Kaggle-GPU experiment lane
+// (experiments/42_kaggle_gpu_ci/kaggle_e2e_runner.py) sets PW_CHROMIUM_ARGS, to
+// inject the hardware ANGLE-Vulkan flag set proven in experiment 42 run #5 and
+// measure the suite on a real Tesla T4. See experiments/42_kaggle_gpu_ci/notes.md.
+const SWIFTSHADER_CHROMIUM_ARGS = [
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader",
+];
+const chromiumLaunchArgs = process.env.PW_CHROMIUM_ARGS
+    ? process.env.PW_CHROMIUM_ARGS.split(/\s+/).filter((arg) => arg.length > 0)
+    : SWIFTSHADER_CHROMIUM_ARGS;
+
 const allProjects = [
     {
         name: "chromium",
@@ -10,10 +31,7 @@ const allProjects = [
             ...devices["Desktop Chrome"],
             viewport: {width: 800, height: 600},
             launchOptions: {
-                args: [
-                    "--use-angle=swiftshader",
-                    "--enable-unsafe-swiftshader",
-                ],
+                args: chromiumLaunchArgs,
             },
         },
     },

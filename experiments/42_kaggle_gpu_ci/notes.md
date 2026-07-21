@@ -1,6 +1,6 @@
 # Experiment 42: kaggle-action for free Kaggle GPU CI compute
 
-**Status**: **Complete — Disposition: REJECT for CI adoption** (documented capability retained). Five live runs. The make‑or‑break question is **answered POSITIVELY but with a heavy asterisk**: hardware WebGL on a Kaggle T4 **is achievable** (run #5: `ANGLE (NVIDIA … Tesla T4)`, proven with `--disable-software-rasterizer`) — but *only* after installing the exact‑version NVIDIA userspace via a ~hundreds‑of‑MB runfile on every cold kernel, using the ANGLE‑**Vulkan** path. A **default** kernel gives only SwiftShader software (run #4). Every non‑WebGL driver still argues against adoption: worse wall clock, async/queue + driver‑version **fragility**, **Kaggle‑ToS** account risk, reproducibility‑contract violation, and the **confirmed** action reporting defect. Credential‑free **#41/#44** reach the same native‑GPU goal without a third party, secret, or ToS exposure.
+**Status**: **In Progress — Stage 2 (measured e2e)**. Disposition: **DEFER pending wall‑clock measurement** (architect decision record **rev 2**, issue #42). The preliminary REJECT was **withdrawn**: (a) the ~hundreds‑of‑MB per‑run driver‑install cost was **waived by the owner**; (b) the ToS claim was **downgraded** — no explicit prohibition on CI‑style kernel use exists in Kaggle's reachable public terms (unlike Colab), so it was an over‑reach by analogy; and (c) the decisive wall‑clock driver was **projected, never measured**, which the issue's own checklist forbids. The make‑or‑break question is already **answered POSITIVELY** (run #5: `ANGLE (NVIDIA … Tesla T4)`, proven with `--disable-software-rasterizer`) — hardware WebGL on a Kaggle T4 **is achievable** via the exact‑version NVIDIA runfile + ANGLE‑**Vulkan** (a **default** kernel gives only SwiftShader, run #4). **Stage‑2 harness is now built** (env‑gated `playwright.config.ts` hook + a full measured e2e runner + a `stage` dispatch input) to obtain the one missing number — real end‑to‑end wall clock vs the ~5–6 min sharded gate — after which the **adopt‑as‑non‑required‑lane vs reject‑with‑measurement** recommendation is finalized. What does NOT change with any wall‑clock result: the reproducibility contract bars this from ever being the *required* gate (non‑required lane only), and credential‑free **#41/#44** remain the standing alternative for the native‑GPU need.
 
 **Date**: 2026-07-21
 
@@ -36,9 +36,9 @@ Protocol: EXPERIMENT (soft mode). A documented **defer/reject with evidence is a
 **Staged, probe‑first** — spend the cheapest possible evidence on the make‑or‑break question before uploading/running anything heavy:
 
 1. **Stage 1 — WebGL probe** (`kaggle_webgl_probe.py`): a ~2‑minute kernel that installs a headless Chromium and reads `UNMASKED_RENDERER_WEBGL` under six candidate GL flag sets. The **entire** value proposition is "real hardware WebGL"; if this returns SwiftShader/llvmpipe (as it does on GPU‑less GitHub runners), the hypothesis is falsified and we never run the full suite on Kaggle.
-2. **Stage 2 — full e2e trial** (`kaggle_e2e_runner.py`, reference only): *only if* Stage 1 passes — clone at a ref, install exact Node, `npm ci`, build, run the full Chromium suite with the winning flags, measure wall clock. Deliberately **not** wired into the workflow.
+2. **Stage 2 — full e2e trial** (`kaggle_e2e_runner.py`): *after* Stage 1 confirmed hardware WebGL (run #5) — install the exact‑version NVIDIA userspace (proven runfile recipe), install exact Node 22.23.1, clone `main`, `npm ci`, build, run the **full** Chromium suite with the winning ANGLE‑Vulkan flags, and **measure per‑stage + end‑to‑end wall clock**. **Now wired** into the workflow behind a `stage=e2e` dispatch input (architect rev‑2 GO), consuming the env‑gated hardware‑GL hook added to `playwright.config.ts`.
 
-This mirrors the protocol's "keep scope minimal for quick iteration" and minimizes token/quota/ToS exposure.
+This mirrors the protocol's "keep scope minimal for quick iteration" and minimizes token/quota/ToS exposure — Stage 2 runs only once, manually, to answer the single measured‑wall‑clock question.
 
 ---
 
@@ -85,12 +85,13 @@ Repurposing free Kaggle Notebook/kernel GPU as a **general‑purpose CI compute 
 ## Prototype artifacts (this directory)
 
 - [`kaggle_webgl_probe.py`](kaggle_webgl_probe.py) — Stage‑1 make‑or‑break WebGL renderer probe (6 GL flag sets; exits non‑zero unless hardware GL confirmed, so the log surfaces).
-- [`kaggle_e2e_runner.py`](kaggle_e2e_runner.py) — Stage‑2 reference full‑suite runner (Node 22.23.1 via nvm → `npm ci` → build → full Chromium e2e with winning flags). **Reference only**, not wired in. Ships a fail‑fast guard for the Stage‑2 hard‑gate (below).
+- [`kaggle_webgl_probe_nvgl.py`](kaggle_webgl_probe_nvgl.py) — run #5 **escalation** probe: reads the driver version, installs the matching `libnvidia-gl-<branch>` (apt) then the exact‑version runfile userspace, then retries the EGL/ANGLE‑Vulkan flag sets. Self‑contained so run #4's baseline script stays byte‑unchanged.
+- [`kaggle_e2e_runner.py`](kaggle_e2e_runner.py) — **Stage‑2 measured full‑suite runner (now wired, `stage=e2e`).** Reproduces the proven run #5 recipe (NVIDIA runfile userspace) → Node 22.23.1 via nvm → clone `main` → `npm ci` → `playwright install --with-deps chromium` → `npm run build` → **pre‑flight renderer probe** (launches the repo's own `@playwright/test` Chromium under the hardware flags and reads `UNMASKED_RENDERER_WEBGL`, to prove the kernel reaches the T4 before trusting the suite) → **full Chromium suite** (`E2E_ENGINES=chromium`, CI parity retries=2/240 s, **no test dropped, no timing trimmed**). Instruments **per‑stage + total wall‑clock timing**, writes a retrievable `e2e_result.json`, and tars the Playwright HTML report + JSON results into the kernel working dir. Injects the hardware flags via `PW_CHROMIUM_ARGS` (consumed by the env‑gated config). Ships a fail‑fast guard: aborts if the cloned `playwright.config.ts` does not read `PW_CHROMIUM_ARGS` (which would silently measure SwiftShader on the GPU box).
 
-### Stage‑2 hard‑gate (recorded on PR #45, non‑blocking for the probe)
+### Stage‑2 hard‑gate — **RESOLVED** (env‑gated hook added; architect rev‑2 GO)
 
-`playwright.config.ts` **hardcodes** the chromium launch args `--use-angle=swiftshader --enable-unsafe-swiftshader` (lines 12–17) and reads **no** external args env. Consequence: running the real suite via `playwright test` would force **software** WebGL *even on a Kaggle GPU box*, so `PW_CHROMIUM_ARGS` is a no‑op. **Any future Stage‑2 GPU run is therefore hard‑gated on first changing the config** to (a) drop the forced‑swiftshader args for that lane and (b) inject the winning hardware‑GL flags (e.g. read them from env in `launchOptions.args`). `kaggle_e2e_runner.py` refuses to run until that wiring exists. **Stage‑1 is unaffected** — the probe launches Chromium directly with its own args, not through this config, so its renderer reading is valid. (Also note the Python probe pins `playwright==1.61.0` — the same 1.61 Chromium line as the repo's JS `@playwright/test@1.61.1`; the Python package has no 1.61.1, per PR #47.)
-- [`../../.github/workflows/kaggle-gpu-spike.yml`](../../.github/workflows/kaggle-gpu-spike.yml) — SHA‑pinned, `workflow_dispatch`‑**only** probe workflow. Architect‑approved for promotion into `.github/workflows/`; still non‑required and never auto‑runs (no `push`/`pull_request`/`schedule` trigger). Includes a **format‑agnostic credential sniff** (below) and an `install_nvidia_gl` input that selects the escalation script for run #5.
+Previously `playwright.config.ts` **hardcoded** `--use-angle=swiftshader --enable-unsafe-swiftshader` and read no args env, so a Stage‑2 GPU run would have forced **software** WebGL even on a Kaggle GPU box. **Fixed in this change:** the chromium `launchOptions.args` now read from an optional `PW_CHROMIUM_ARGS` env — **unset ⇒ byte‑identical** `["--use-angle=swiftshader","--enable-unsafe-swiftshader"]` (verified by loading the real config: the required Validation gate and `npm run validate` are untouched); **set ⇒** the split flag array. Only the opt‑in Kaggle e2e runner sets it (to the run #5 ANGLE‑Vulkan set). Stage‑1 was always unaffected — the probe launches Chromium directly with its own args. (The Python probe pins `playwright==1.61.0` — the same 1.61 Chromium line as the repo's JS `@playwright/test@1.61.1`; the Python package has no 1.61.1, per PR #47.)
+- [`../../.github/workflows/kaggle-gpu-spike.yml`](../../.github/workflows/kaggle-gpu-spike.yml) — SHA‑pinned, `workflow_dispatch`‑**only** spike workflow. Non‑required, never auto‑runs (no `push`/`pull_request`/`schedule` trigger). Includes a **format‑agnostic credential sniff** (below), an `install_nvidia_gl` input (run #5 escalation), and a **`stage` input (`probe`|`e2e`)** that selects `kaggle_e2e_runner.py` with a 3000 s kernel timeout for the measured Stage‑2 run. Retrieves the result JSON + report, uploads them as a run artifact, and sets job status from the true verdict (e2e passes only when the full suite is green on **confirmed hardware**).
 - [`kaggle_webgl_probe_nvgl.py`](kaggle_webgl_probe_nvgl.py) — run #5 **escalation** probe: reads the driver version, `apt install`s the matching `libnvidia-gl-<branch>` + NVIDIA Vulkan ICD, then retries the EGL/ANGLE‑Vulkan flag sets. Self‑contained so run #4's baseline script stays byte‑unchanged.
 
 **GPU‑forcing techniques that do NOT apply here (record for #44):** `MESA_D3D12_DEFAULT_ADAPTER_NAME` / `GALLIUM_DRIVER=d3d12` is the **WSL2‑only** path (needs `/dev/dxg` + `libdxcore`, a Windows/WSL host); it is inapplicable in a Kaggle Linux container. That native‑GPU technique belongs to issue **#44**, not here.
@@ -120,10 +121,10 @@ gh run watch "$(gh run list --workflow=kaggle-gpu-spike.yml -L1 --json databaseI
 
 1. **Security:** the action is auditable (composite, no blob), token least‑exposed, uploads only the named script, egress limited to PyPI+kaggle.com. Safe to pin & spike. Residual: unpinned kaggle CLI.
 2. **Positioning:** can only be an *additive non‑required* lane (toolchain/OS differs from the reproducible gate). Required gate + `npm run validate` stay intact.
-3. **Wall‑clock prior:** async **batch + queue + cold start** structurally works against the "faster than 5–6 min" goal.
+3. **Wall‑clock prior:** async **batch + queue + cold start** structurally works against the "faster than 5–6 min" goal. **(A prior only — now being MEASURED in Stage 2 per rev‑2; the owner requires a measured number, not a projection.)**
 4. **Reliability prior:** a required check gated on Kaggle's scheduler adds an availability/flake source; 30 GPU‑h/week caps frequency.
 5. **Reporting:** crude (status string; log only surfaced on error) — a regression from Playwright blob/HTML + GH artifacts.
-6. **ToS:** using Kaggle GPU as CI infra is plausibly against Kaggle's terms; account‑suspension risk. Primary REJECT pressure for sustained use.
+6. **ToS:** ~~primary REJECT pressure~~ **DOWNGRADED (rev‑2):** no explicit CI prohibition in Kaggle's reachable public terms; enforcement is the quota system; residual generic resource‑abuse discretion; owner accepts the account risk. Unverified accounts get no internet/GPU (run #2). **No recurring/scheduled runs.**
 
 ### Live‑run findings (5 runs — the make‑or‑break question, ANSWERED)
 
@@ -149,10 +150,10 @@ did **not** reach the GPU.) Full detail: `data/output/probe-run-5-evidence.md`.
 | Action security | ✅ closed | Auditable composite; pin SHA `e6bafb6…`; residual = unpinned kaggle CLI |
 | Runs our stack | ✅ tested | Yes on a **verified** account; Node/driver installed in‑kernel ⇒ non‑reproducible ⇒ non‑required only |
 | **Hardware WebGL** | ✅ **PROVEN (run #5)** | Achievable via runfile NVIDIA userspace + ANGLE‑Vulkan; **software** on a default kernel (run #4) |
-| Wall clock vs 5–6 min | ❌ worse | Async queue + cold `npm ci`/browser + **now a ~hundreds‑of‑MB driver install every run** |
-| Reliability/quota | ❌ fragile | Scheduler availability + 30 GPU‑h/wk + **driver‑version coupling** (runfile 404s if host driver goes non‑public) |
-| Reporting | ❌ crude/broken | Action's log dump **crashes** on kernel ERROR (run #1); needed our own `kaggle kernels output` retrieval |
-| Kaggle ToS | ⚠️ blocker | Sustained CI use plausibly violates AUP; unverified accounts get no internet/GPU (run #2) → account‑suspension risk |
+| Wall clock vs 5–6 min | ⏳ **MEASURING (Stage 2)** | Prior was *projected* worse (async queue + cold `npm ci`/browser + driver install), but the owner requires a **measured** number — Stage‑2 e2e run pending. Baseline to beat: **~5m32s–6m57s** (recent 4‑shard `validation.yml` runs). |
+| Reliability/quota | ⚠️ fragile | Scheduler availability + 30 GPU‑h/wk + **driver‑version coupling** (runfile 404s if host driver goes non‑public). Bears on a *standing* lane, not a one‑off. |
+| Reporting | ⚠️ crude/broken | Action's log dump **crashes** on kernel ERROR (run #1); needed our own `kaggle kernels output` retrieval. Real, but worked around. |
+| Kaggle ToS | ⚠️ **downgraded** | rev‑2: no explicit CI prohibition in Kaggle's reachable public terms (the Colab‑analogy claim was an over‑reach); enforcement is the quota system (30 GPU‑h/wk, verified accounts). Residual generic resource‑abuse discretion; **owner accepts the account risk.** Unverified accounts get no internet/GPU (run #2). |
 
 ### Output Files
 
@@ -180,59 +181,69 @@ did **not** reach the GPU.) Full detail: `data/output/probe-run-5-evidence.md`.
 2. **Token format: unknown & unverifiable (write‑only secret) → made the workflow format‑agnostic** (sniff JSON‑vs‑string without echoing; fail fast with a non‑secret diagnostic on auth failure and iterate).
 3. **One‑off ToS/account risk: ACCEPTED** for a single short probe + a few manual auth/flag retries. **No recurring/scheduled runs.** Sustained‑CI‑use ToS exposure is recorded as an **adoption blocker**, not a probe blocker.
 
-## Decision / Recommendation — **REJECT for CI adoption; retain as a documented one‑off capability**
+## Decision / Recommendation — **INTERIM: DEFER pending Stage‑2 measurement** (rev‑2; final call after data)
 
-**What the experiment settled.** The headline premise of #42 — *real hardware WebGL on
-free Kaggle GPU* — is **TRUE and proven** (run #5: an unambiguous NVIDIA Tesla T4 WebGL
-renderer with software rasterization disabled). That is a genuine, positive result: it is
-achievable. **But the surrounding hypothesis — that this yields a faster, reliable, safe,
-CI‑integratable e2e lane — is FALSE**, on multiple independent axes that no amount of flag
-tuning fixes:
+> The architect's **decision record rev 2** (issue #42) withdrew the preliminary REJECT. This
+> section is now the honest *interim* posture; the final **adopt‑as‑non‑required‑lane vs
+> reject‑with‑measurement** recommendation will be written from the Stage‑2 measured data and
+> will replace this block (and PR #49's recommendation).
 
-1. **Required‑gate: REJECT (unequivocal).** The lane installs Node **and** a full NVIDIA
-   driver userspace inside a Python‑first image — a wholly different toolchain/OS than the
-   `npm ci` reproducibility contract. It can never be the reproducible required gate
-   (arch‑critical). The SwiftShader‑sharded gate + `npm run validate` stay as‑is.
-2. **Wall clock: worse, not better.** Async kernel queue + boot + cold `npm ci` + Playwright
-   browser download + `next build` — **plus** a ~hundreds‑of‑MB driver runfile install on
-   every cold kernel — against a ~5–6 min sharded target. It is structurally slower.
-3. **Reliability: fragile + quota‑bound.** Kaggle scheduler availability, 30 GPU‑h/week, and
-   a hard **driver‑version coupling**: run #5 worked only because the host's `580.159.04` was
-   published on `us.download.nvidia.com/tesla/`; a future Google‑built/non‑public driver →
-   runfile 404 → the lane silently loses hardware GL.
-4. **Kaggle ToS: account risk.** Using free Kaggle GPU as CI infrastructure plausibly
-   violates the AUP; unverified accounts are silently stripped of internet+GPU (run #2), and
-   sustained automated use risks account suspension. This is an outward‑facing, hard‑to‑reverse
-   exposure for the owner's account. **No recurring/scheduled runs** should be configured.
-5. **Reporting: crude, and the action is buggy.** `Frederisk/kaggle-action`'s log dump
-   **crashes** on kernel ERROR (run #1); usable results required our own `kaggle kernels
-   output` retrieval. That is a regression from Playwright blob/HTML + GH artifacts.
-6. **Stage‑2 is additionally hard‑gated** on rewiring `playwright.config.ts` (which currently
-   force‑selects SwiftShader) to inject the ANGLE‑Vulkan flags — see the Stage‑2 hard‑gate note.
+**What the experiment has already settled.** The headline premise of #42 — *real hardware
+WebGL on free Kaggle GPU* — is **TRUE and proven** (run #5: an unambiguous NVIDIA Tesla T4
+WebGL renderer with software rasterization disabled). The remaining question is purely
+operational: *is the integrated e2e lane fast/reliable/safe enough to be worth a standing
+non‑required lane?* Where each driver now stands after rev‑2:
 
-**Non‑required GPU‑qualification lane: also REJECT as a standing lane**, for reasons 2–5.
-The value it would add (native‑GPU WebGL evidence, e.g. the #22 item‑11 gap) is real, but the
-operational cost + ToS/account risk + fragility are not worth a *standing* lane when
-credential‑free alternatives exist.
+1. **Required‑gate: REJECT stands (unequivocal, unaffected by any measurement).** The lane
+   installs Node **and** a full NVIDIA driver userspace inside a Python‑first image — a wholly
+   different toolchain/OS than the `npm ci` reproducibility contract. It can never be the
+   reproducible required gate (arch‑critical). The SwiftShader‑sharded gate + `npm run validate`
+   stay as‑is. **This is about a *non‑required* GPU‑qualification lane only.**
+2. **Wall clock: UNKNOWN — being measured (Stage 2).** The earlier "structurally slower" claim
+   was a *projection*, and the issue's checklist explicitly requires a **measured** end‑to‑end
+   comparison. `kaggle_e2e_runner.py` now instruments per‑stage + total wall clock; the run is
+   pending. Baseline to beat: **~5m32s–6m57s** (recent 4‑shard `validation.yml`).
+3. **Driver‑install cost: WAIVED by the owner.** The ~hundreds‑of‑MB per‑run runfile install is
+   acceptable to the owner and **no longer counts against** the approach.
+4. **Reliability: fragile + quota‑bound (a *standing*‑lane concern).** Kaggle scheduler
+   availability, 30 GPU‑h/week, and a hard **driver‑version coupling**: run #5 worked only
+   because the host's `580.159.04` was published on `us.download.nvidia.com/tesla/`; a future
+   Google‑built/non‑public driver → runfile 404 → the lane silently loses hardware GL. Weighs on
+   a standing lane, not a one‑off capture.
+5. **Kaggle ToS: DOWNGRADED (rev‑2).** No explicit prohibition on CI‑style kernel use exists in
+   Kaggle's reachable public terms (the original claim reasoned by Colab analogy). Enforcement is
+   the quota system itself; residual is generic resource‑abuse discretion, and the **owner
+   accepts the account risk**. No longer a hard driver. Still: **no recurring/scheduled runs.**
+6. **Reporting: crude and the action is buggy — but worked around.** `Frederisk/kaggle-action`'s
+   log dump **crashes** on kernel ERROR (run #1); usable results required our own `kaggle kernels
+   output` retrieval (now standard in the workflow). Real friction, not a blocker.
+7. **Stage‑2 hard‑gate: RESOLVED.** `playwright.config.ts` now reads `PW_CHROMIUM_ARGS`
+   (default byte‑identical SwiftShader), so the suite can run on the real GPU without touching
+   the required gate.
 
-**Better path (recommended):** pursue **#41** (parallelize local e2e to hardware) and
-**#44** (opt‑in native‑GPU local lane) — they deliver the same native‑GPU WebGL goal **without**
-a third‑party service, a stored credential, or ToS exposure.
+**Net interim disposition:** with the two over‑reached drivers corrected (wall clock →
+measure; ToS → downgraded) and the driver‑install cost waived, the honest call is **DEFER
+pending the single measured wall‑clock number**, *not* REJECT. The make‑or‑break is positive;
+one measurement decides adopt‑non‑required vs reject.
 
-**Retain the capability (the one positive to keep):** the runfile+ANGLE‑Vulkan recipe in
-`data/output/probe-run-5-evidence.md` is a working, reproducible way to capture a **one‑off,
-manual** real‑GPU WebGL artifact on Kaggle if a specific native‑GPU repro is ever needed and
-no local GPU is available. Keep it as a documented tool, **not** wired into CI.
+**Independent of the wall‑clock result:** this can never be the *required* gate (reproducibility
+contract), and credential‑free **#41** (parallelize local e2e to hardware) / **#44** (opt‑in
+native‑GPU local lane) remain the standing alternative for the native‑GPU need — no third party,
+no stored credential, no ToS exposure. The run #5 runfile+ANGLE‑Vulkan recipe
+(`data/output/probe-run-5-evidence.md`) is retained as a documented one‑off capability regardless.
 
 ## Next Steps
 
-1. **Do not adopt** kaggle‑action into CI. Leave `kaggle-gpu-spike.yml` as a `workflow_dispatch`‑only,
-   non‑required manual probe (or remove it after this record lands — architect's call).
-2. **Route the underlying need to #41/#44** — link this experiment as evidence that native‑GPU
-   WebGL is worth chasing, just not via Kaggle.
-3. **If anyone re‑opens the Kaggle path**, the unblock/keep‑working conditions are: a verified
-   account, the host driver still published on the public tesla server, and acceptance of the
-   ToS/wall‑clock costs — all documented above.
+1. **Merge the Stage‑2 harness to `main`** (env‑gated config + e2e runner + `stage` input) — the
+   kernel clones `main` and `workflow_dispatch` reads the default branch, so the harness must land
+   before dispatch. The required `validation.yml` gate runs on the PR = clean‑checkout proof the
+   default path is unchanged.
+2. **Dispatch `stage=e2e`** on the verified Kaggle account (architect go), collect
+   `e2e_result.json` + the Playwright report artifact, and record the **measured** dispatch→
+   completion wall clock, per‑stage breakdown, and suite pass/flake profile.
+3. **Finalize the recommendation from that data** — rewrite this section and PR #49's
+   recommendation as adopt‑as‑non‑required‑lane **or** reject‑with‑measurement, and route the
+   native‑GPU need to #41/#44 either way. Issue #42 stays open until then.
 
 ## References
 

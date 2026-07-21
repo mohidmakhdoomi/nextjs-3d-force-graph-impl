@@ -112,3 +112,16 @@ Run `29862696170` (verified account, playwright 1.61.0, full probe) — result a
 - **Root cause confirmed**: T4 is compute-only; only Mesa GL userspace present, `--with-deps` pulled MORE Mesa, never NVIDIA GL. So ANGLE has no path to the GPU → SwiftShader. Same software class we already have on CI → **zero hardware-WebGL benefit**.
 - The issue's central premise ("real hardware WebGL on Kaggle GPU") is **FALSE for a default kernel**.
 - **Run #5 escalation built** (`kaggle_webgl_probe_nvgl.py` + `install_nvidia_gl` workflow input): apt-install matching `libnvidia-gl-<branch>` + Vulkan ICD, retry EGL/ANGLE-Vulkan. Last hardware-GL attempt; failure is equally conclusive. Recorded d3d12/WSL2 note (defer to #44). PR → merge → dispatch run #5 with `-f install_nvidia_gl=true`.
+
+## 2026-07-21 — Fresh respawn → Stage 2 GO: harness BUILT (measurement pending)
+
+Reoriented on rev-2 decision record: REJECT withdrawn (driver-install waived; ToS downgraded — no explicit Kaggle CI prohibition in reachable public terms; wall clock was PROJECTED never MEASURED). Disposition now **DEFER pending measurement**. Make-or-break already PROVEN positive (run #5 hardware WebGL). Porch stays at `hypothesis`. PR #49 held; recommendation to be rewritten from measured data.
+
+Built the Stage-2 harness (3 changes on `builder/experiment-42`):
+1. **`playwright.config.ts`** — env-gated Chromium args. `PW_CHROMIUM_ARGS` unset ⇒ **byte-identical** `["--use-angle=swiftshader","--enable-unsafe-swiftshader"]` (required gate + `npm run validate` untouched); set ⇒ splits to the injected hardware set. **Proven** by loading the real config: unset→swiftshader pair; set→run #5 ANGLE-Vulkan array. typecheck+lint green.
+2. **`kaggle_e2e_runner.py`** — rewritten to the proven run #5 recipe: runfile NVIDIA-GL install → Node 22.23.1 (nvm) → clone main → `npm ci` → `playwright install --with-deps chromium` → `npm run build` → **pre-flight renderer probe** (proves hardware under GL_FLAGS via the repo's own @playwright/test Chromium) → **FULL Chromium suite** (`E2E_ENGINES=chromium`, CI parity retries=2/240s, no test dropped). Per-stage wall-clock timing + `e2e_result.json` + tarred HTML report/JSON results to the kernel working dir. GL_FLAGS default = decisive `angle-vulkan-nofallback` set + `--no-sandbox`. Guard: aborts if cloned config lacks `PW_CHROMIUM_ARGS` (would silently measure SwiftShader).
+3. **`kaggle-gpu-spike.yml`** — added `stage` input (probe|e2e); e2e selects the runner + 3000s kernel timeout + job timeout-minutes 60; generalized output retrieval (cats e2e_result.json), `upload-artifact` of kernel-output, stage-aware verdict (e2e passes only if `verdict==pass_on_hardware` = full suite green on confirmed hardware).
+
+Baseline to beat (measured from recent validation.yml runs): **~5m32s–6m57s** sharded (4-shard Chromium/SwiftShader).
+
+Next: commit → push (validation.yml required gate runs on PR = clean-checkout proof default path unchanged) → notify architect that harness is ready and the e2e dispatch needs merge-to-main first (kernel clones main + workflow_dispatch reads default branch) + Kaggle-account go. Await approval to merge+dispatch; then measure and finalize recommendation.

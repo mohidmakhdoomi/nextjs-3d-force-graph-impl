@@ -1,6 +1,6 @@
-# Experiment 42 — Kaggle GPU WebGL probe (MANUAL DISPATCH ONLY).
+# Experiment 42 — Kaggle GPU spike (MANUAL DISPATCH ONLY).
 #
-# Approved by the architect (issue #42 decision record, 2026-07-21) as a
+# Approved by the architect (issue #42 decision records, 2026-07-21) as a
 # one-off, non-required spike. Guarantees it can never affect the required
 # Validation gate or spend Kaggle quota unattended:
 #   - Trigger is `workflow_dispatch` ONLY — it never runs on push/PR and is NOT
@@ -8,26 +8,38 @@
 #   - The third-party action is PINNED BY COMMIT SHA (audited v2.0.0), not a
 #     mutable tag.
 #   - The kernel is private (is_private=true); `timeout_seconds` bounds the run
-#     so a hung probe cannot burn the weekly GPU quota.
+#     so a hung job cannot burn the weekly GPU quota.
+#
+# Two stages (select with the `stage` input):
+#   - probe: Stage-1 WebGL renderer probe (baseline, or run #5 NVIDIA-GL
+#     escalation when install_nvidia_gl=true).
+#   - e2e:   Stage-2 MEASURED full Chromium e2e suite on the real GPU
+#     (kaggle_e2e_runner.py) — the run #5 driver recipe + Node 22.23.1 + npm ci
+#     + build + full suite with per-stage timing. Answers the wall-clock question.
 #
 # Run it:
-#   gh workflow run kaggle-gpu-spike.yml -f machine_shape=NvidiaTeslaT4
+#   gh workflow run kaggle-gpu-spike.yml -f stage=e2e -f machine_shape=NvidiaTeslaT4
 #   gh run watch "$(gh run list --workflow=kaggle-gpu-spike.yml -L1 \
 #                   --json databaseId -q '.[0].databaseId')"
-# On kernel SUCCESS the action discards the log; retrieve it directly:
-#   kaggle kernels output <username>/nextjs3dfg-webgl-probe
+# The result JSON + Playwright report are retrieved below and uploaded as an
+# artifact; on kernel SUCCESS the action discards its own log.
 name: Kaggle GPU Spike (experiment 42 — manual only)
 
 on:
   workflow_dispatch:
     inputs:
+      stage:
+        description: "Stage: probe (Stage-1 WebGL renderer) or e2e (Stage-2 measured full suite)"
+        default: probe
+        type: choice
+        options: [probe, e2e]
       machine_shape:
         description: Kaggle accelerator shape
         default: NvidiaTeslaT4
         type: choice
         options: [NvidiaTeslaT4, NvidiaTeslaP100]
       install_nvidia_gl:
-        description: "Run #5 escalation — apt-install matching NVIDIA GL userspace before probing (else baseline)"
+        description: "probe stage only — apt/runfile-install matching NVIDIA GL userspace before probing (run #5 escalation). Ignored for e2e (always installs)."
         default: 'false'
         type: choice
         options: ['false', 'true']
@@ -37,10 +49,10 @@ permissions:
   contents: read
 
 jobs:
-  kaggle-webgl-probe:
-    name: Kaggle GPU WebGL probe (Stage 1)
+  kaggle-gpu-spike:
+    name: Kaggle GPU spike (${{ inputs.stage }})
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -82,13 +94,35 @@ jobs:
           print(f"Detected credential mode: {mode} (secret contents never shown)")
           PY
 
+      # Resolve which kernel script to upload and how long to allow it.
+      #   e2e   -> kaggle_e2e_runner.py            (Stage-2 measured suite)
+      #   probe -> kaggle_webgl_probe_nvgl.py      (run #5 escalation, install_nvidia_gl=true)
+      #          | kaggle_webgl_probe.py           (baseline)
+      # The e2e stage does far more work (driver + Node + npm ci + browser +
+      # build + full suite), so it gets a longer kernel timeout.
+      - name: Resolve stage parameters
+        id: stage
+        shell: bash
+        run: |
+          if [ "${{ inputs.stage }}" = "e2e" ]; then
+            echo "code_file=experiments/42_kaggle_gpu_ci/kaggle_e2e_runner.py" >> "$GITHUB_OUTPUT"
+            echo "timeout_seconds=3000" >> "$GITHUB_OUTPUT"
+          elif [ "${{ inputs.install_nvidia_gl }}" = "true" ]; then
+            echo "code_file=experiments/42_kaggle_gpu_ci/kaggle_webgl_probe_nvgl.py" >> "$GITHUB_OUTPUT"
+            echo "timeout_seconds=1200" >> "$GITHUB_OUTPUT"
+          else
+            echo "code_file=experiments/42_kaggle_gpu_ci/kaggle_webgl_probe.py" >> "$GITHUB_OUTPUT"
+            echo "timeout_seconds=1200" >> "$GITHUB_OUTPUT"
+          fi
+          echo "dispatch_started=$(date -u +%FT%TZ)" >> "$GITHUB_OUTPUT"
+
       # --- Access-token-string credential path ---
       # continue-on-error: the action's own status/log-dump step crashes on this
       # kernel's log format (ConvertFrom-Json "Additional text encountered") and
       # never prints the kernel stdout — a real reporting defect. We let the job
       # proceed to the retrieval/verdict steps below, which read the actual
       # result artifact and set the true job status.
-      - name: Run WebGL probe on Kaggle GPU kernel (api_token)
+      - name: Run Kaggle GPU kernel (api_token)
         if: steps.sniff.outputs.mode == 'string'
         continue-on-error: true
         # Frederisk/kaggle-action@v2.0.0 pinned by SHA (audited 2026-07-21).
@@ -96,17 +130,17 @@ jobs:
         with:
           api_token: ${{ secrets.KAGGLE_API_TOKEN }}
           title: nextjs3dfg-webgl-probe
-          code_file: ${{ inputs.install_nvidia_gl == 'true' && 'experiments/42_kaggle_gpu_ci/kaggle_webgl_probe_nvgl.py' || 'experiments/42_kaggle_gpu_ci/kaggle_webgl_probe.py' }}
+          code_file: ${{ steps.stage.outputs.code_file }}
           language: python
           kernel_type: script
           is_private: 'true'
           enable_gpu: 'true'
           enable_internet: 'true'
           machine_shape: ${{ inputs.machine_shape }}
-          timeout_seconds: '1200'
+          timeout_seconds: ${{ steps.stage.outputs.timeout_seconds }}
 
       # --- Legacy username/key credential path ---
-      - name: Run WebGL probe on Kaggle GPU kernel (username/key)
+      - name: Run Kaggle GPU kernel (username/key)
         if: steps.sniff.outputs.mode == 'json'
         continue-on-error: true
         uses: Frederisk/kaggle-action@e6bafb6bf66da87116cca560a7636422213cf354
@@ -114,14 +148,14 @@ jobs:
           username: ${{ steps.sniff.outputs.username }}
           key: ${{ steps.sniff.outputs.key }}
           title: nextjs3dfg-webgl-probe
-          code_file: ${{ inputs.install_nvidia_gl == 'true' && 'experiments/42_kaggle_gpu_ci/kaggle_webgl_probe_nvgl.py' || 'experiments/42_kaggle_gpu_ci/kaggle_webgl_probe.py' }}
+          code_file: ${{ steps.stage.outputs.code_file }}
           language: python
           kernel_type: script
           is_private: 'true'
           enable_gpu: 'true'
           enable_internet: 'true'
           machine_shape: ${{ inputs.machine_shape }}
-          timeout_seconds: '1200'
+          timeout_seconds: ${{ steps.stage.outputs.timeout_seconds }}
 
       # The kaggle CLI + ~/.kaggle credentials were set up by the action above and
       # persist on the runner. By the time the action returns (even on its crash),
@@ -135,8 +169,12 @@ jobs:
           SLUG=nextjs3dfg-webgl-probe
           kaggle kernels output "$OWNER/$SLUG" -p kernel-output || true
           echo "=== retrieved files ==="; ls -la kernel-output || true
-          echo "=== webgl_probe_result.json (structured verdict) ==="
-          cat "kernel-output/webgl_probe_result.json" 2>/dev/null || echo "(no result artifact — kernel may have crashed before writing it)"
+          for f in webgl_probe_result.json e2e_result.json; do
+            if [ -f "kernel-output/$f" ]; then
+              echo "=== $f (structured verdict) ==="
+              cat "kernel-output/$f"; echo
+            fi
+          done
           echo "=== reconstructed kernel stdout ==="
           if [ -f "kernel-output/$SLUG.log" ]; then
             jq -r '.[].data' "kernel-output/$SLUG.log" 2>/dev/null \
@@ -144,17 +182,41 @@ jobs:
               || cat "kernel-output/$SLUG.log"
           fi
 
-      - name: Verdict (job status reflects the actual WebGL result)
+      # Make the result JSON + Playwright report downloadable from the run page.
+      - name: Upload kernel output artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-${{ inputs.stage }}-output
+          path: kernel-output
+          if-no-files-found: warn
+
+      - name: Verdict (job status reflects the actual result)
         if: always()
         shell: bash
         run: |
-          f=kernel-output/webgl_probe_result.json
-          if [ ! -f "$f" ]; then
-            echo "::warning::No result artifact — kernel crashed before writing it; inspect stdout above."
-            exit 1
+          if [ "${{ inputs.stage }}" = "e2e" ]; then
+            f=kernel-output/e2e_result.json
+            if [ ! -f "$f" ]; then
+              echo "::warning::No e2e_result.json — kernel crashed before writing it; inspect stdout above."
+              exit 1
+            fi
+            verdict="$(python3 -c "import json;print(json.load(open('$f')).get('verdict'))")"
+            renderer="$(python3 -c "import json;d=json.load(open('$f'));print(d.get('renderer'),'/',d.get('renderer_class'))")"
+            timings="$(python3 -c "import json;d=json.load(open('$f'));print('stages',d.get('stage_timings_sec'),'total_sec',d.get('total_sec'),'suite',d.get('suite'))")"
+            echo "Stage-2 e2e verdict: $verdict"
+            echo "renderer: $renderer"
+            echo "kernel timing: $timings"
+            # Job PASSES only if the FULL suite passed on confirmed hardware WebGL.
+            test "$verdict" = "pass_on_hardware"
+          else
+            f=kernel-output/webgl_probe_result.json
+            if [ ! -f "$f" ]; then
+              echo "::warning::No result artifact — kernel crashed before writing it; inspect stdout above."
+              exit 1
+            fi
+            verdict="$(python3 -c "import json;print(json.load(open('$f'))['verdict'])")"
+            flagset="$(python3 -c "import json;d=json.load(open('$f'));print(d.get('hardware_flag_set') or 'none')")"
+            echo "Kaggle GPU WebGL verdict: $verdict (hardware flag set: $flagset)"
+            test "$verdict" = "hardware"
           fi
-          verdict="$(python3 -c "import json;print(json.load(open('$f'))['verdict'])")"
-          flagset="$(python3 -c "import json;d=json.load(open('$f'));print(d.get('hardware_flag_set') or 'none')")"
-          echo "Kaggle GPU WebGL verdict: $verdict (hardware flag set: $flagset)"
-          # Job PASSES only if a real hardware renderer was obtained.
-          test "$verdict" = "hardware"
