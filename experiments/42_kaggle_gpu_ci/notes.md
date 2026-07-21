@@ -1,7 +1,6 @@
 # Experiment 42: kaggle-action for free Kaggle GPU CI compute
 
-**Status**: In Progress — **design + security audit complete; architect GO on all 3 asks (issue #42 decision record, 2026‑07‑21); live Stage‑1 probe pending PR merge → manual dispatch.**
-**Preliminary disposition (pre‑probe)**: leaning **DEFER / REJECT for the required‑CI framing**; at most a *non‑required, ToS‑risky GPU‑qualification lane* whose sole benefit (real hardware WebGL) is still **unproven** and rides entirely on the Stage‑1 probe.
+**Status**: In Progress — **account verification CONFIRMED the diagnosis: run #3 (verified account) got 2× Tesla T4 GPU + working internet.** It then exposed a probe bug (Python `playwright` has no `1.61.1`; its 1.61 line tops out at `1.61.0`), now fixed. Re‑dispatching (run #4) to finally reach the hardware‑WebGL test. Disposition still deferred to that run. (Even a positive WebGL result would not make this a *required*‑gate candidate — ToS/wall‑clock/reporting‑defect/reproducibility drivers stand; the verified run decides whether a narrow non‑required lane has any merit.)
 
 **Date**: 2026-07-21
 
