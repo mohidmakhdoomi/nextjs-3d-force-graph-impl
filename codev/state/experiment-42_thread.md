@@ -62,3 +62,12 @@ Run `29859449200` (~4 min) outcome — three facts, evidence saved to `data/outp
 - Probe writes a structured `webgl_probe_result.json` artifact (retrievable kernel output), plus captures nvidia-smi.
 - Workflow: `continue-on-error` on the action step + an `if: always()` step that runs `kaggle kernels output mohidmakhdoomi/nextjs3dfg-webgl-probe` directly and prints the result JSON + reconstructed stdout, then a Verdict step that sets job pass/fail from the actual `verdict` (hardware vs software). kaggle CLI + `~/.kaggle` creds persist from the action's earlier steps.
 - Plan: PR → merge (CI green) → re-dispatch → read the real renderer verdict. Within the architect's sanctioned "few manual retries."
+
+## 2026-07-21 — Probe run #2 (v2): ACCOUNT-LEVEL blocker found; architect verifying
+
+PR #46 merged (CI green); re-dispatched → run `29860830320`. v2 retrieval WORKED (fetched kernel stdout, bypassing the action bug). Verdict from the kernel stdout (evidence: `data/output/probe-run-2-evidence.md`):
+- ❌ **No internet**: `pip install playwright==1.61.1` → `Temporary failure in name resolution` (DNS) → probe crashed before writing the result artifact. Without egress, NOTHING in our stack can install (`npm ci`, browsers, `git clone`).
+- ❌ **No GPU**: `nvidia-smi: command not found`; only **Mesa software** GL libs present — despite `machine_shape=NvidiaTeslaT4`/`enable_gpu:true`.
+- **Root cause (diagnosed):** unverified Kaggle account → Kaggle silently disables BOTH internet and GPU (the action's README warns of exactly this). Both runs (#1, #2) failed at this same layer; the make-or-break WebGL question was never reached.
+- **Architect chose to phone-verify the account** (said "wait ~5 min"). Plan: wait, then re-dispatch the (already-merged v2) probe → this time expect internet+GPU present → finally read the hardware-vs-software `UNMASKED_RENDERER_WEBGL` verdict → then finalize adopt/defer/reject.
+- Standing reject drivers unchanged regardless of WebGL outcome: ToS on sustained CI use, queue/cold-start wall clock, the **confirmed** reporting defect, reproducibility-contract violation, Stage-2 config hard-gate. Sibling issues #41/#44 remain the credential-free alternative.
