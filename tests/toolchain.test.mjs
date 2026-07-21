@@ -57,6 +57,7 @@ const expectedGeneratedIgnores = [
     "next-env.d.ts",
     "playwright-report/**",
     "test-results/**",
+    "blob-report/**",
 ];
 const expectedDependencyBaseline = {
     dependencies: {
