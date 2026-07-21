@@ -137,3 +137,38 @@ hardware passes (HW-1 headed, HW-2 headless, Q-1..Q-3 headless).
 renderer, per-test results, wall-clocks, and retries policy recorded, plus
 the contemporaneous SwiftShader serial baseline (FB-1, 594 s suite) for the
 6.1× comparison and the forced-fallback qualification of Scenario 2.
+
+## Canonical gate proof on a clean checkout
+
+The worktree's `npm run lint` is polluted by an untracked builder-harness
+file (`.claude/hooks/worktree-write-guard.cjs` — 21 errors, absent from clean
+checkouts), so per the hot lesson the gate was proven on a detached clean
+worktree (`git worktree add --detach <dir> HEAD` + real `npm ci`, commit
+`dab9e49`):
+
+- **Run 1**: lint ✓, typecheck ✓, build ✓, e2e **21/22** — one failure:
+  `[firefox] matrix.spec.ts:224 "zooms in with the wheel and rotates with a
+  background drag"`, assertion "a background drag should rotate the camera"
+  received azimuth delta `0.0038` (< floor 1) — the synthetic background drag
+  did not register within the 5 s predicate window. Exit 1. Evidence
+  preserved verbatim (see Flaky Tests below).
+- **Run 2** (same clean worktree, no changes): lint ✓, typecheck ✓, build ✓,
+  e2e **22/22**, `VALIDATE EXIT: 0`. Both engines green.
+
+## Flaky Tests
+
+- `[firefox] tests/e2e/matrix.spec.ts:224 "zooms in with the wheel and
+  rotates with a background drag"` — failed once (1 of 2 clean-checkout
+  validate runs; passed on the immediate re-run and in the same run's
+  Chromium arm). **Pre-existing class, not introduced by this branch**: the
+  branch contains zero `tests/e2e/**` or `app/**` changes
+  (`git log main..HEAD -- tests/e2e/ app/` is empty), and the failure mode —
+  a synthetic drag losing the race against slow software-rendered frames on
+  the Firefox local arm — is the documented software-WebGL input-race family
+  (issue #11 measured drags registering intermittently under software
+  rendering; issue #33 documented the Firefox local-arm timing tail; this
+  class is exactly what the hardware lane exists to sidestep, and this test
+  passed in all 5 hardware/fallback Chromium lane runs). **Not skipped**: the
+  spec (Decision 7/FR6) forbids modifying the canonical suite as part of this
+  lane work; left for a dedicated follow-up if it recurs (tracking suggestion
+  filed with the architect at PR time).
