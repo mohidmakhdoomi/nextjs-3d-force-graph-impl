@@ -146,6 +146,12 @@ open a blank page; evaluate a canvas `webgl` context +
 `WEBGL_debug_renderer_info` → `UNMASKED_RENDERER_WEBGL` (fall back to
 `gl.RENDERER` if the extension is missing); bounded per-candidate timeout
 (30 s launch-to-verdict); crash/timeout/no-context ⇒ failed candidate.
+Each probe attempt writes a per-candidate transcript log (candidate id,
+flags, injected env keys, timestamps, result or error stack) to a dedicated
+gitignored directory that Playwright does not manage/wipe (Playwright clears
+its `outputDir` at suite start, so `test-results/` is unusable for this);
+FR11 crash/timeout diagnostics name that log path (Codex plan-review
+comment 1).
 Classification deny-list (case-insensitive): `swiftshader`, `llvmpipe`,
 `software`, `microsoft basic` ⇒ software; anything else with a non-empty
 string ⇒ hardware. Full string always recorded verbatim.
@@ -222,9 +228,15 @@ PW_CHROMIUM_ARGS: candidate.flags.join(" "), ...candidate.env}` plus
 change needed for headed mode). The production server comes from the
 config's own `webServer` block, exactly as `test:smoke`. Fallback mode runs
 the identical build+test flow with **no** lane env (`PW_CHROMIUM_ARGS`
-unset ⇒ default SwiftShader args) after printing the loud warning. Suite
-exit code is preserved as the lane exit code in both modes; wall-clock
-captured per stage (build, suite) and total. `workers`/`retries` are not
+unset ⇒ default SwiftShader args) after printing the loud warning. The
+fallback child env is built from the wrapper's **pristine inherited env**
+(recipe env objects are composed per-spawn, never written into
+`process.env`) with `PW_CHROMIUM_ARGS` explicitly removed — so a
+software-fallback run can never inherit `GALLIUM_DRIVER`,
+`LD_LIBRARY_PATH` prepends, or any candidate-specific state from the lane
+(Codex plan-review comment 2; operator-shell-set vars are their own and
+pass through untouched). Suite exit code is preserved as the lane exit code
+in both modes; wall-clock captured per stage (build, suite) and total. `workers`/`retries` are not
 touched anywhere (config defaults: `workers: 1`, local `retries: 0`).
 
 Note: recipe env (`GALLIUM_DRIVER`, `LD_LIBRARY_PATH`) is applied to the
@@ -477,7 +489,13 @@ future #41 qualification cites). No persistent telemetry.
 
 ## Consultation Log
 
-(To be filled by porch-driven 3-way plan review.)
+Plan iteration 1 (2026-07-21): Gemini APPROVE, Claude APPROVE, Codex COMMENT
+(non-blocking, HIGH confidence). Codex's two comments incorporated:
+(1) probe crash/timeout transcript logs get a named, Playwright-safe,
+gitignored destination that FR11 diagnostics reference; (2) fallback child
+env is composed from the pristine inherited env minus `PW_CHROMIUM_ARGS`,
+never from mutated lane state. Codex independently verified the plan's repo
+premises (npm test glob, test:smoke chain, PW_CHROMIUM_ARGS hook).
 
 ## Approval
 
@@ -489,6 +507,7 @@ advancement. PR gate remains human-approved.
 | Date | Change | Reason | Author |
 |------|--------|--------|--------|
 | 2026-07-21 | Initial plan | Draft from approved spec | Builder aspir-44 |
+| 2026-07-21 | Probe-log destination + fallback env scrub made explicit | Codex plan-review comments | Builder aspir-44 |
 
 ## Notes
 
