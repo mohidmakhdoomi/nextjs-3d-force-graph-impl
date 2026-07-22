@@ -87,9 +87,11 @@ test("shards the full Chromium e2e suite at the test level", () => {
     // fullyParallel makes --shard split at the TEST level. The worker count is
     // delegated to the tested resolver (scripts/e2e-workers.mjs, issue #41): CI is
     // hard-pinned to 1 so execution within a shard stays strictly serial (no
-    // SwiftShader contention), while local runs scale to hardware. The CI-serial
-    // matrix in that resolver is covered by tests/e2e-workers.test.mjs; here we
-    // assert only that the config delegates to it.
+    // SwiftShader contention); locally the default is also serial (1), with
+    // parallelism opt-in via E2E_WORKERS (Phase-3 qualification kept the gate
+    // serial). The CI-serial and default matrices in that resolver are covered by
+    // tests/e2e-workers.test.mjs; here we assert only that the config delegates
+    // to it.
     assert.match(playwrightConfig, /fullyParallel: true/);
     assert.match(playwrightConfig, /workers: resolveWorkers\(process\.env\)/);
     // CI-only retries (count 2) absorb pre-existing SwiftShader flake (issue #34)

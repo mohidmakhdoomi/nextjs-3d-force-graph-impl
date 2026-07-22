@@ -231,3 +231,11 @@ criterion 2b). Guardrails all honored:
   fixed to "faster but breaks the gate"; (2) helper inline comment still said
   "Scaled default" → fixed to "Serial default". Broad speedup-audit now clean.
   Wrote 41-phase_3-iter1-rebuttals.md. Signaling porch done → re-verification.
+
+- Phase 3 iter2 consult: **Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES**
+  (HIGH). Both Codex points ACCEPTED: (1) FR9 wanted full per-test pass/fail →
+  appended "Appendix — Per-test results (verbatim, FR9)" to the review with all
+  8×22 ✓/✘ verdicts (3 GPU parallel + GPU serial + 3 SwiftShader parallel +
+  SwiftShader serial default); (2) automation.test.mjs comment "local runs scale to
+  hardware" stale → fixed to serial-default + E2E_WORKERS opt-in. suite 121/121,
+  lint clean. Wrote 41-phase_3-iter2-rebuttals.md. Signaling porch done.

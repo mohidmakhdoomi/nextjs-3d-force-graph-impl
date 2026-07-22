@@ -177,3 +177,237 @@ No test was skipped or weakened.
   result must never be generalized.
 - **`retries: 0` did its job**: the amplified flake surfaced immediately instead
   of being silently absorbed.
+
+## Appendix — Per-test results (verbatim, FR9)
+
+Full per-test pass/fail (`✓`/`✘`) for every qualification run, captured
+verbatim from Playwright's `list` reporter (worker index prefixes the test).
+
+### GPU lane · PARALLEL run 1/3 (hardware, 10 workers)
+```
+Running 22 tests using 10 workers
+✓   8 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓   4 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓   5 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  10 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓   3 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓   9 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓   6 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓  12 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓   7 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  14 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓  13 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓  17 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓   2 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+✓  15 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓   1 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  19 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓  20 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓  18 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+22 passed (44.9s)
+```
+
+### GPU lane · PARALLEL run 2/3 (hardware, 10 workers)
+```
+Running 22 tests using 10 workers
+✓   6 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓  10 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓   5 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓   3 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓   2 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓   4 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓   8 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓  12 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓   1 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  14 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓  17 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓  13 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓   9 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+✓  15 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓   7 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  19 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  20 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓  18 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+22 passed (44.0s)
+```
+
+### GPU lane · PARALLEL run 3/3 (hardware, 10 workers)
+```
+Running 22 tests using 10 workers
+✓   7 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓   1 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓   8 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓   5 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓   2 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓   4 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓   6 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓  12 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓   3 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  14 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓  13 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓  17 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓   9 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+✓  10 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  20 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  16 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓  19 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✘  15 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  18 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+1 failed
+21 passed (46.9s)
+```
+
+### GPU lane · SERIAL baseline (hardware, 1 worker)
+```
+Running 22 tests using 1 worker
+✓   1 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓   2 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓   3 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓   4 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓   5 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓   6 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓   7 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓   8 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓   9 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  10 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+✓  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓  12 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓  13 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓  14 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓  15 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  17 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  18 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓  19 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓  20 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+22 passed (3.2m)
+```
+
+### SwiftShader · PARALLEL run 1/3 (10 workers)
+```
+Running 22 tests using 10 workers
+✓   9 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓   4 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes (1.1m)
+✓   3 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses (1.1m)
+✓   6 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize (1.2m)
+✘   7 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (1.2m)
+✘   8 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel (1.2m)
+✓  10 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control (1.9m)
+✓  12 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓  14 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓  15 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓  13 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓  17 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  18 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓  19 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  21 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓   5 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (2.8m)
+✘   2 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation (2.4m)
+✘  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (2.2m)
+✓  22 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓   1 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (3.1m)
+✓  20 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+4 failed
+18 passed (3.2m)
+```
+
+### SwiftShader · PARALLEL run 2/3 (10 workers)
+```
+Running 22 tests using 10 workers
+✓   3 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓   8 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓   5 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓   2 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize (1.1m)
+✓   9 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control (1.3m)
+✘   1 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (1.0m)
+✘   6 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel (1.1m)
+✓  12 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓  15 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓  13 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓  14 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  17 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓  20 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  19 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓  18 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓  16 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓   4 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (2.6m)
+✘  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (2.1m)
+✘   7 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation (2.4m)
+✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+✓  10 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (3.2m)
+4 failed
+18 passed (3.3m)
+```
+
+### SwiftShader · PARALLEL run 3/3 (10 workers)
+```
+Running 22 tests using 10 workers
+✓   8 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓  10 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓   4 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize (1.1m)
+✘   2 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓   3 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control (1.6m)
+✘   9 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses (1.2m)
+✓  12 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓  13 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✘   5 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel (1.3m)
+✓  14 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓  17 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓  18 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓  15 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  19 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  16 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  20 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓   6 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (2.8m)
+✘  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (2.2m)
+✘   7 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation (2.6m)
+✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+✓   1 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (3.1m)
+5 failed
+17 passed (3.3m)
+```
+
+### SwiftShader · SERIAL baseline / finalized default (1 worker)
+```
+Running 22 tests using 1 worker
+✓   1 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓   2 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓   3 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓   4 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✓   5 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (1.5m)
+✓   6 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (1.2m)
+✓   7 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓   8 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓   9 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  10 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (1.3m)
+✓  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+✓  12 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes
+✓  13 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes
+✓  14 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses
+✓  15 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel
+✘  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag
+✓  17 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+✓  18 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control
+✓  19 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize
+✓  20 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation
+✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz
+✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+1 failed
+21 passed (11.7m)
+```
