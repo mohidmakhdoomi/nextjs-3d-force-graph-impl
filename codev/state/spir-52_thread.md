@@ -126,3 +126,47 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
   marker — would false-pass without the explicit unverifiable class); WITH
   `webgl.sanitize-unmasked-renderer:false` ⇒ `"D3D12 (NVIDIA GeForce RTX 3080)"`.
 - Signalling `porch done 52` (build-complete → 3-way consult).
+
+### Implement — Phase 2 `two_engine_suite_and_inertness` (iteration 1)
+- Phase 1 3-way consult: unanimous APPROVE, KEY_ISSUES None. Committed
+  f3612e5 [Phase: engine_aware_core]. (Porch commits only status.yaml; builder
+  commits code per-phase.)
+- Phase 2 scope: engine-set-aware suiteEnvFor(plan,baseEnv); runFullLane uses the
+  full requested engine set + skip-empty dispatch + honest fallback + REQUIRE
+  abort; FR6 default-inert proof; playwright.config.ts UNCHANGED (Decision 9).
+
+### Phase 2 — build/verify results (on-host)
+- suiteEnvFor now plan-based (two-engine env: E2E_ENGINES=chromium,firefox +
+  Chromium recipe Mesa env, Firefox inherits it; firefox-only: Firefox Mesa env,
+  no PW_CHROMIUM_ARGS; fallback: SwiftShader chromium-only; skip-empty/abort
+  guarded to never produce a suite env). runFullLane uses the full requested set.
+- Unit tests: 54 pass. lint (my files) clean, typecheck clean.
+- On-host behavioral proofs:
+  - Two-engine HARDWARE full run (E2E_GPU_REQUIRE=1): 22/22 pass, mode hardware,
+    renderer.chromium ANGLE D3D12 + renderer.firefox raw D3D12, 208s (build 10s,
+    suite 196s), exit 0. [HW-1]
+  - Forced-fallback: mode software-fallback, chromium (software-fallback —
+    SwiftShader), firefox skipped; suite ran [chromium] tests only (E2E_ENGINES=
+    chromium; Firefox excluded, no masquerade); two loud banners. (SwiftShader is
+    slow — proven via 5/5 chromium tests before a manual timeout; full FB run =
+    Phase 3.)
+  - REQUIRE abort (chromium forced-miss via native-linux candidate): exit 1
+    before build/suite, per-engine log.
+  - skip-empty (--engine=firefox + FORCE_FALLBACK): no build/suite, "suite:
+    skipped (no verified engine)", exit 0.
+- FR6 default-inert proof: playwright.config.ts EMPTY diff vs main (byte-
+  identical — Firefox needs no config hook, Decision 9); no validation.yml/
+  package.json/lockfile delta; config-load with lane env unset lists both
+  [chromium] and [firefox] (22 tests). Recorded in review draft
+  (codev/reviews/52-...md, new file — staged for consult visibility).
+- Env hygiene note: a `timeout`-killed experiment orphaned a next-server on port
+  3000; killed by PID, port free. No worktree pollution.
+
+### Phase 2 — consult result + commit
+- iter1: Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES (real bug: headed
+  suite dispatch derived from Chromium-only field ⇒ a firefox-only --mode=headed
+  hardware run would wrongly run headless). Fixed: run-level plan.effectiveMode +
+  exported isHeadedRun(plan); removed redundant chromiumEffectiveMode; added
+  firefox-only headed decision test. Rebuttal written (ACCEPTED+FIXED both points).
+- iter2: unanimous APPROVE, KEY_ISSUES None. Committing [Phase:
+  two_engine_suite_and_inertness].

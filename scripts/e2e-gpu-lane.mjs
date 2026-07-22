@@ -429,6 +429,14 @@ export function reportModeLabel(planMode) {
     return planMode === "skip-empty" ? "skipped" : planMode;
 }
 
+// Whether the suite runs headed. Only a hardware run can be headed (fallback is
+// always the config's default headless), and only when the run's uniform
+// effective mode is "headed" (the --mode=headed override) — true for BOTH
+// Chromium-inclusive and Firefox-only hardware runs, not just Chromium.
+export function isHeadedRun(plan) {
+    return plan.mode === "hardware" && plan.effectiveMode === "headed";
+}
+
 // Build the ordered per-engine report entries for a run plan.
 export function reportEntriesFromPlan(plan, requestedEngines) {
     return requestedEngines
@@ -501,12 +509,16 @@ export function computeRunPlan({requestedEngines, verdicts = {}, controls}) {
             mode: "hardware",
             suiteEngines: [...requestedEngines],
             engines,
+            // The --mode override is applied uniformly across engines, so every
+            // verified engine shares one effective mode; it drives the headed
+            // suite dispatch (isHeadedRun) for Chromium-inclusive AND
+            // Firefox-only hardware runs alike.
+            effectiveMode:
+                verdicts[requestedEngines[0]]?.effectiveMode ?? "headless",
         };
         if (hasChromium) {
             plan.chromiumCandidate = verdicts.chromium.candidate;
             plan.chromiumExtraEnv = verdicts.chromium.extraEnv ?? {};
-            plan.chromiumEffectiveMode =
-                verdicts.chromium.effectiveMode ?? null;
         }
         if (requestsFirefox) {
             plan.firefoxRecipe = verdicts.firefox.candidate;
@@ -551,25 +563,50 @@ export function computeRunPlan({requestedEngines, verdicts = {}, controls}) {
     };
 }
 
-// Env for the actual suite run (spec 44 FR4: full Chromium suite, workers/
-// retries/timeouts untouched — those stay the config's own defaults).
-// Hardware mode injects the verified recipe via the merged PW_CHROMIUM_ARGS
-// hook; fallback mode guarantees the config's default SwiftShader args.
-//
-// NOTE (spec 52): this stays Chromium-scoped in plan phase engine_aware_core.
-// Plan phase two_engine_suite_and_inertness generalizes it to the requested
-// engine set (E2E_ENGINES=chromium,firefox with Firefox inheriting the Mesa env
-// from the suite process).
-export function suiteEnvFor(mode, baseEnv, candidate = null, extraEnv = {}) {
-    if (mode === "hardware") {
-        const env = composeEnv(baseEnv, candidate, extraEnv);
-        env.E2E_ENGINES = "chromium";
-        env.PW_CHROMIUM_ARGS = candidate.flags.join(" ");
+// Env for the actual suite run (spec 44 FR4 / spec 52 FR5: the full suite for
+// the resolved engine set, workers/retries/timeouts untouched — those stay the
+// config's own defaults). Consumes the run plan from computeRunPlan:
+//   - Hardware with Chromium in the set (Chromium alone OR Chromium+Firefox):
+//     inject the verified Chromium recipe's Mesa env into the suite process and
+//     set E2E_ENGINES to the resolved set; a two-engine run's Firefox INHERITS
+//     that same Mesa env with no new config hook (Decision 9). PW_CHROMIUM_ARGS
+//     stays Chromium-scoped.
+//   - Hardware, Firefox-only: inject the Firefox recipe's Mesa env directly
+//     (same GALLIUM_DRIVER + LD_LIBRARY_PATH); no PW_CHROMIUM_ARGS.
+//   - Software-fallback: the config's own SwiftShader defaults, Chromium only
+//     (Firefox is skipped, not run — Decision 6), exactly the #44 fallback.
+// skip-empty / abort run no suite, so calling this for them is a lane-internal
+// invariant violation (guarded below), not a reachable path.
+export function suiteEnvFor(plan, baseEnv) {
+    if (plan.mode === "hardware") {
+        const engineList = plan.suiteEngines.join(",");
+        if (plan.suiteEngines.includes("chromium")) {
+            const env = composeEnv(
+                baseEnv,
+                plan.chromiumCandidate,
+                plan.chromiumExtraEnv ?? {},
+            );
+            env.E2E_ENGINES = engineList;
+            env.PW_CHROMIUM_ARGS = plan.chromiumCandidate.flags.join(" ");
+            return env;
+        }
+        const env = composeEnv(
+            baseEnv,
+            plan.firefoxRecipe,
+            plan.firefoxExtraEnv ?? {},
+        );
+        env.E2E_ENGINES = engineList;
         return env;
     }
-    const env = fallbackEnv(baseEnv);
-    env.E2E_ENGINES = "chromium";
-    return env;
+    if (plan.mode === "software-fallback") {
+        const env = fallbackEnv(baseEnv);
+        env.E2E_ENGINES = "chromium";
+        return env;
+    }
+    throw new Error(
+        `suiteEnvFor: no suite runs for plan mode "${plan.mode}" ` +
+            "(skip-empty/abort must return before build/suite)",
+    );
 }
 
 // Headed mode reaches Playwright through the CLI flag — no config change.
@@ -1046,31 +1083,49 @@ async function runProbeOnly(args, controls, elapsedSeconds) {
     return 0;
 }
 
-// Full lane: build + suite, mirroring `test:smoke`.
-//
-// NOTE (spec 52): in plan phase engine_aware_core the suite run stays the
-// qualified #44 Chromium-only lane (the engine-aware probe added in this phase
-// is exercised via --probe-only). Plan phase two_engine_suite_and_inertness
-// generalizes this path to run the full requested engine set as one two-engine
-// suite (E2E_ENGINES=chromium,firefox), with the empty-engine-set skip and the
-// FR6 default-inert proof.
+// Full lane: build + suite, mirroring `test:smoke`. Probes the full requested
+// engine set, gates on computeRunPlan, and runs ONE Playwright invocation for
+// the resolved suite engine set (E2E_ENGINES=chromium,firefox for the default
+// two-engine hardware run; Chromium-only SwiftShader on honest fallback). An
+// empty engine set (Firefox-only, unverified) is never handed to Playwright.
 async function runFullLane(args, controls, elapsedSeconds) {
-    const suiteEngines = ["chromium"];
+    const requestedEngines = args.engines;
     const verdicts = controls.forceFallback
         ? {}
-        : await probeEngines(suiteEngines, args);
-    const plan = computeRunPlan({
-        requestedEngines: suiteEngines,
-        verdicts,
-        controls,
-    });
+        : await probeEngines(requestedEngines, args);
+    const plan = computeRunPlan({requestedEngines, verdicts, controls});
 
     if (plan.mode === "abort") {
+        // E2E_GPU_REQUIRE=1 and some requested engine did not verify hardware:
+        // fail before build/suite (Decision 5). Per-candidate diagnostics were
+        // already logged inline during probing.
         log(
-            "E2E_GPU_REQUIRE=1 — no hardware candidate verified; exiting " +
-                "non-zero instead of falling back",
+            "E2E_GPU_REQUIRE=1 — not every requested engine verified hardware " +
+                `(unverified: ${plan.unverified.join(", ")}); exiting non-zero ` +
+                "before build/suite",
         );
         return 1;
+    }
+
+    if (plan.mode === "skip-empty") {
+        // Empty engine set (Scenario 7): Firefox unverified and Chromium not
+        // requested. The lane MUST NOT invoke Playwright with an empty
+        // E2E_ENGINES (it trips the config's projects.length===0 guard), so it
+        // skips build/suite entirely and exits 0 — hardware absence is never a
+        // hard failure by default.
+        log(
+            "no verified engine to run (Firefox unverified, Chromium not " +
+                "requested) — skipping build and suite",
+        );
+        console.log(
+            formatReport({
+                mode: reportModeLabel(plan.mode),
+                engines: reportEntriesFromPlan(plan, requestedEngines),
+                suite: "skipped (no verified engine)",
+                wallClock: `${elapsedSeconds()}s`,
+            }),
+        );
+        return 0;
     }
 
     if (plan.mode === "software-fallback") {
@@ -1092,7 +1147,7 @@ async function runFullLane(args, controls, elapsedSeconds) {
         console.log(
             formatReport({
                 mode: reportModeLabel(plan.mode),
-                engines: reportEntriesFromPlan(plan, suiteEngines),
+                engines: reportEntriesFromPlan(plan, requestedEngines),
                 suite: `not-run (build failed, exit ${build.code})`,
                 wallClock: `${elapsedSeconds()}s (build ${build.seconds}s)`,
             }),
@@ -1100,22 +1155,11 @@ async function runFullLane(args, controls, elapsedSeconds) {
         return build.code;
     }
 
-    const headed =
-        plan.mode === "hardware" && plan.chromiumEffectiveMode === "headed";
-    const env =
-        plan.mode === "hardware"
-            ? suiteEnvFor(
-                  "hardware",
-                  process.env,
-                  plan.chromiumCandidate,
-                  plan.chromiumExtraEnv,
-              )
-            : suiteEnvFor("software-fallback", process.env);
     const suite = await runStage(
         "suite",
         "npx",
-        playwrightTestArgs(headed),
-        env,
+        playwrightTestArgs(isHeadedRun(plan)),
+        suiteEnvFor(plan, process.env),
     );
 
     if (plan.mode === "software-fallback") {
@@ -1124,7 +1168,7 @@ async function runFullLane(args, controls, elapsedSeconds) {
     console.log(
         formatReport({
             mode: reportModeLabel(plan.mode),
-            engines: reportEntriesFromPlan(plan, suiteEngines),
+            engines: reportEntriesFromPlan(plan, requestedEngines),
             suite: suiteResultLabel(suite.code),
             wallClock: formatWallClock(
                 elapsedSeconds(),

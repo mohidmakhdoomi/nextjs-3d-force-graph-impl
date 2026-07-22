@@ -22,6 +22,7 @@ import {
     fallbackEnv,
     formatReport,
     formatWallClock,
+    isHeadedRun,
     parseArgs,
     parseControls,
     partitionCandidates,
@@ -524,13 +525,14 @@ function chromiumHardwareVerdict() {
         effectiveMode: "headless",
     };
 }
-function firefoxHardwareVerdict() {
+function firefoxHardwareVerdict(effectiveMode = "headless", extraEnv = {}) {
     return {
         engine: "firefox",
         verified: true,
         renderer: FIREFOX_HW,
         candidate: FIREFOX_PROBE_RECIPE,
-        extraEnv: {},
+        extraEnv,
+        effectiveMode,
     };
 }
 function firefoxSoftwareVerdict() {
@@ -560,7 +562,7 @@ test("computeRunPlan: both engines hardware ⇒ combined two-engine hardware run
     assert.equal(plan.engines.firefox.renderer, FIREFOX_HW);
     // Suite-env carriers for Phase 2.
     assert.equal(plan.chromiumCandidate.id, "wsl2-d3d12-angle-gl");
-    assert.equal(plan.chromiumEffectiveMode, "headless");
+    assert.equal(plan.effectiveMode, "headless");
     assert.equal(plan.firefoxRecipe.id, "wsl2-d3d12-firefox");
 });
 
@@ -633,6 +635,49 @@ test("computeRunPlan: single-engine Firefox hardware runs Firefox alone", () => 
     assert.equal(plan.engines.firefox.renderer, FIREFOX_HW);
     assert.equal(plan.firefoxRecipe.id, "wsl2-d3d12-firefox");
     assert.equal(Object.hasOwn(plan, "chromiumCandidate"), false);
+    assert.equal(plan.effectiveMode, "headless");
+});
+
+test("isHeadedRun: the headed suite decision covers Firefox-only hardware (not just Chromium)", () => {
+    // Regression guard (Codex phase-2 review): a hardware --engine=firefox
+    // --mode=headed run must dispatch headed. The plan's run-level effectiveMode
+    // (not a Chromium-only field) drives this, so Firefox-only headed works.
+    const chromiumHeaded = computeRunPlan({
+        requestedEngines: ["chromium"],
+        verdicts: {
+            chromium: {
+                ...chromiumHardwareVerdict(),
+                effectiveMode: "headed",
+                extraEnv: {DISPLAY: ":0"},
+            },
+        },
+        controls: nonStrict,
+    });
+    assert.equal(chromiumHeaded.effectiveMode, "headed");
+    assert.equal(isHeadedRun(chromiumHeaded), true);
+
+    const firefoxHeaded = computeRunPlan({
+        requestedEngines: ["firefox"],
+        verdicts: {firefox: firefoxHardwareVerdict("headed", {DISPLAY: ":0"})},
+        controls: nonStrict,
+    });
+    assert.equal(firefoxHeaded.effectiveMode, "headed");
+    // The bug was here: without a run-level effectiveMode this returned false.
+    assert.equal(isHeadedRun(firefoxHeaded), true);
+    // The headed DISPLAY extraEnv reaches the Firefox suite env.
+    assert.equal(suiteEnvFor(firefoxHeaded, {PATH: "/usr/bin"}).DISPLAY, ":0");
+
+    // Default headless hardware and software-fallback are never headed.
+    const headless = computeRunPlan({
+        requestedEngines: ["chromium", "firefox"],
+        verdicts: {
+            chromium: chromiumHardwareVerdict(),
+            firefox: firefoxHardwareVerdict(),
+        },
+        controls: nonStrict,
+    });
+    assert.equal(isHeadedRun(headless), false);
+    assert.equal(isHeadedRun({mode: "software-fallback"}), false);
 });
 
 test("computeRunPlan: single-engine Firefox unverified, non-strict ⇒ empty-set skip (exit 0), no suite", () => {
@@ -916,15 +961,20 @@ test("partitionCandidates: headless default has no display prereq (FR5 outcome)"
     }
 });
 
-test("suiteEnvFor hardware: recipe env + PW_CHROMIUM_ARGS + chromium-only engine", () => {
+test("suiteEnvFor two-engine hardware: E2E_ENGINES=chromium,firefox; Firefox inherits the Chromium recipe's Mesa env", () => {
     const base = {PATH: "/usr/bin", LD_LIBRARY_PATH: "/opt/lib"};
-    const env = suiteEnvFor(
-        "hardware",
-        base,
-        candidateById("wsl2-d3d12-angle-gl"),
-        {DISPLAY: ":0"},
-    );
-    assert.equal(env.E2E_ENGINES, "chromium");
+    const plan = {
+        mode: "hardware",
+        suiteEngines: ["chromium", "firefox"],
+        chromiumCandidate: candidateById("wsl2-d3d12-angle-gl"),
+        chromiumExtraEnv: {DISPLAY: ":0"},
+        firefoxRecipe: FIREFOX_PROBE_RECIPE,
+        firefoxExtraEnv: {},
+    };
+    const env = suiteEnvFor(plan, base);
+    // The resolved set is passed verbatim; Firefox has no separate wiring — it
+    // inherits GALLIUM_DRIVER + LD_LIBRARY_PATH from the injected Mesa env.
+    assert.equal(env.E2E_ENGINES, "chromium,firefox");
     assert.equal(
         env.PW_CHROMIUM_ARGS,
         "--use-gl=angle --use-angle=gl --ignore-gpu-blocklist --disable-gpu-sandbox",
@@ -937,6 +987,38 @@ test("suiteEnvFor hardware: recipe env + PW_CHROMIUM_ARGS + chromium-only engine
     assert.equal(base.LD_LIBRARY_PATH, "/opt/lib");
 });
 
+test("suiteEnvFor single-engine Chromium hardware: exact #44 env (E2E_ENGINES=chromium)", () => {
+    const base = {PATH: "/usr/bin", LD_LIBRARY_PATH: "/opt/lib"};
+    const plan = {
+        mode: "hardware",
+        suiteEngines: ["chromium"],
+        chromiumCandidate: candidateById("wsl2-d3d12-angle-gl"),
+        chromiumExtraEnv: {},
+    };
+    const env = suiteEnvFor(plan, base);
+    assert.equal(env.E2E_ENGINES, "chromium");
+    assert.equal(
+        env.PW_CHROMIUM_ARGS,
+        "--use-gl=angle --use-angle=gl --ignore-gpu-blocklist --disable-gpu-sandbox",
+    );
+    assert.equal(env.GALLIUM_DRIVER, "d3d12");
+});
+
+test("suiteEnvFor Firefox-only hardware: Firefox Mesa env, E2E_ENGINES=firefox, NO PW_CHROMIUM_ARGS", () => {
+    const base = {PATH: "/usr/bin", LD_LIBRARY_PATH: "/opt/lib"};
+    const plan = {
+        mode: "hardware",
+        suiteEngines: ["firefox"],
+        firefoxRecipe: FIREFOX_PROBE_RECIPE,
+        firefoxExtraEnv: {},
+    };
+    const env = suiteEnvFor(plan, base);
+    assert.equal(env.E2E_ENGINES, "firefox");
+    assert.equal(Object.hasOwn(env, "PW_CHROMIUM_ARGS"), false);
+    assert.equal(env.GALLIUM_DRIVER, "d3d12");
+    assert.equal(env.LD_LIBRARY_PATH, "/usr/lib/wsl/lib:/opt/lib");
+});
+
 test("suiteEnvFor fallback: default SwiftShader args guaranteed, no recipe leakage", () => {
     // Even a shell-exported PW_CHROMIUM_ARGS must not survive into the
     // fallback suite — fallback means the config's own SwiftShader defaults.
@@ -945,12 +1027,26 @@ test("suiteEnvFor fallback: default SwiftShader args guaranteed, no recipe leaka
         PW_CHROMIUM_ARGS: "--use-gl=angle",
         LD_LIBRARY_PATH: "/opt/lib",
     };
-    const env = suiteEnvFor("software-fallback", base);
+    const env = suiteEnvFor({mode: "software-fallback", suiteEngines: ["chromium"]}, base);
     assert.equal(Object.hasOwn(env, "PW_CHROMIUM_ARGS"), false);
     assert.equal(env.E2E_ENGINES, "chromium");
     assert.equal(Object.hasOwn(env, "GALLIUM_DRIVER"), false);
     // Operator-owned values pass through untouched.
     assert.equal(env.LD_LIBRARY_PATH, "/opt/lib");
+});
+
+test("suiteEnvFor: skip-empty / abort never produce a suite env (no empty E2E_ENGINES)", () => {
+    // Scenario 7 invariant: an empty engine set must never reach Playwright.
+    // runFullLane returns before build/suite for these modes; suiteEnvFor
+    // refuses them outright as a belt-and-suspenders guard.
+    assert.throws(
+        () => suiteEnvFor({mode: "skip-empty", suiteEngines: []}, {}),
+        /no suite runs for plan mode "skip-empty"/,
+    );
+    assert.throws(
+        () => suiteEnvFor({mode: "abort", suiteEngines: []}, {}),
+        /no suite runs for plan mode "abort"/,
+    );
 });
 
 test("playwrightTestArgs: headed reaches Playwright via the CLI flag only", () => {
