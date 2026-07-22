@@ -26,22 +26,33 @@ totals into a zero-findings gate. Contributor commands and artifact names live i
 `playwright.config.ts`, and `scripts/validate-audit-report.mjs`.
 
 An **opt-in native-GPU local lane** (`npm run test:e2e:gpu`,
-`scripts/e2e-gpu-lane.mjs`, spec 44) sits beside this gate, never inside it:
-it probes the host (WSL2 Mesa d3d12 for any vendor adapter; ANGLE
-Vulkan/GL on native Linux), verifies the effective
-`UNMASKED_RENDERER_WEBGL` against a SwiftShader/llvmpipe deny-list BEFORE
-trusting a run, then injects the verified flags through the config's
-env-gated `PW_CHROMIUM_ARGS` hook (env unset ⇒ byte-identical SwiftShader
-defaults) and runs the full Chromium suite — headless by default (the d3d12
-path needs no display; headed WSLg via `--mode=headed`) and ~6× faster than
-the SwiftShader serial baseline (qualified 2026-07 on WSL2/RTX 3080, 5/5
-full-suite passes at `retries: 0`). No usable adapter ⇒ the suite still runs
-under SwiftShader with a loud software-fallback banner; `E2E_GPU_REQUIRE=1`
-hard-fails instead (hardware-evidence integrity) and
-`E2E_GPU_FORCE_FALLBACK=1` exercises the fallback deterministically. The
-lane keeps `workers: 1` — parallelizing on top of it is issue #41's
-qualification, sequenced after spec 44. Recipe and evidence: `README.md`
-("Opt-in native-GPU e2e lane") and `codev/reviews/44-add-an-opt-in-native-gpu-local.md`.
+`scripts/e2e-gpu-lane.mjs`, specs 44 + 52) sits beside this gate, never inside
+it: it probes the host **per engine** and verifies the effective
+`UNMASKED_RENDERER_WEBGL` against a software deny-list (SwiftShader, llvmpipe,
+softpipe, lavapipe, swrast, software, Microsoft Basic) BEFORE trusting a run,
+then runs the full **two-engine (Chromium + Firefox)** suite
+(`E2E_ENGINES=chromium,firefox`) in one invocation. Chromium injects verified
+ANGLE flags through the config's env-gated `PW_CHROMIUM_ARGS` hook (env unset ⇒
+byte-identical SwiftShader defaults); Firefox uses the **same** WSL2 Mesa d3d12
+env with **no ANGLE flags** and inherits it from the suite process, so it needs
+no `playwright.config.ts` change. Because Firefox privacy-sanitizes the unmasked
+renderer to `Generic Renderer`, the lane reads Firefox's raw renderer through an
+ephemeral **probe-only** `webgl.sanitize-unmasked-renderer:false` preference (the
+committed `firefox` project keeps `webgl.force-enabled:true` only); a sanitized
+string classifies as *unverifiable*, never hardware. Headless by default (the
+d3d12 path needs no display; headed WSLg via `--mode=headed`),
+`--engine=chromium|firefox|all` selects the engine set, and the two-engine
+hardware suite runs ~6× faster per test than the SwiftShader baseline (qualified
+2026-07 on WSL2/RTX 3080: 4 fully-green two-engine runs at `retries: 0`). Honest
+fallback: no usable adapter ⇒ Chromium runs under SwiftShader with a loud banner
+while Firefox is **skipped** (no portable software equivalent — never an llvmpipe
+masquerade); `E2E_GPU_REQUIRE=1` hard-fails if any requested engine is
+unverified, `E2E_GPU_FORCE_FALLBACK=1` exercises the fallback deterministically.
+CI stays `E2E_ENGINES=chromium` SwiftShader-only; the lane keeps `workers: 1`
+(parallelizing on top is issue #41's qualification, sequenced after). Recipe and
+evidence: `README.md` ("Opt-in native-GPU e2e lane") and
+`codev/reviews/44-add-an-opt-in-native-gpu-local.md` +
+`codev/reviews/52-firefox-hardware-webgl-gpu-lane.md`.
 
 ## Dependency Classification and Lint Config
 

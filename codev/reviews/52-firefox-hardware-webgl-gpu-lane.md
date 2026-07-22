@@ -243,6 +243,33 @@ because it blocked the gate.
   problem; the honest move was to qualify it (0/4 here) and document it, not to
   paper over it with retries.
 
+## Architecture Updates
+
+Routed to the **cold** `codev/resources/arch.md` (reference detail; the hot
+`arch-critical.md` cap and map are untouched — the "`npm run validate` is the
+green gate" invariant already governs this lane, and no new top-level arch.md
+section was added):
+
+- The **Validation Baseline** native-GPU-lane paragraph (added by spec 44) was
+  updated **in place** to the two-engine reality: per-engine probe + the expanded
+  software deny-list, `E2E_ENGINES=chromium,firefox` in one invocation, Firefox's
+  Mesa-env inheritance with no `playwright.config.ts` hook, the probe-only
+  `webgl.sanitize-unmasked-renderer:false` read + the `unverifiable` verdict, the
+  `--engine=chromium|firefox|all` selector, the honest Firefox-skip fallback,
+  CI-stays-Chromium, and a pointer to this review.
+
+## Lessons Learned Updates
+
+Routed to the **cold** `codev/resources/lessons-learned.md` under the existing
+**Validation Evidence** section (no new top-level section, so the hot
+`lessons-critical.md` map stays accurate; hot tier untouched):
+
+- A privacy-sanitized capability string defeats a known-bad deny-list (it passes
+  and false-reads as good) — read the raw value through the un-sanitizing path (a
+  probe-only preference confined to the ephemeral probe browser) and classify the
+  sanitized string as explicitly *unverifiable*, distinct from hardware and
+  known-software.
+
 ## Consultation Feedback
 
 - **Plan phase `engine_aware_core`** (impl consult, iteration 1): Gemini APPROVE,

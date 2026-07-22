@@ -209,3 +209,14 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
 ### Phase 3 — consult result
 - Unanimous APPROVE (Gemini/Codex/Claude), KEY_ISSUES None. All 3 implement phases
   complete + approved. Advancing porch (→ review/PR).
+
+### Review phase
+- Porch → review phase (checks: pr_exists, review_has_arch_updates,
+  review_has_lessons_updates, e2e_tests, done). test:e2e script absent ⇒
+  e2e_tests check is a no-op skip (|| echo).
+- Routed arch/lessons to COLD docs (hot tier untouched — canonical-gate invariant
+  already covers the lane; no new top-level sections):
+  - arch.md Validation Baseline native-GPU-lane paragraph → two-engine reality.
+  - lessons-learned.md Validation Evidence → sanitized-capability-string lesson.
+- Added ## Architecture Updates + ## Lessons Learned Updates to review 52.
+- Opening PR (→ pr gate for architect integration review).
