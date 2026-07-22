@@ -325,6 +325,28 @@ sanitization preference being applied — a probe that reports the sanitized
   `--engine=firefox` applies the same honesty rules: verify or (strict) fail;
   non-strict with no hardware reports Firefox unverified/skipped rather than
   presenting llvmpipe as a qualified fallback.
+- **Single-engine `--engine=firefox`, non-strict, Firefox fails verification
+  (explicit empty-engine-set rule).** Firefox is skipped (Decision 6, no software
+  masquerade) and — because Chromium was not requested — the resolved suite engine
+  set is **empty**. The lane MUST NOT invoke Playwright with an empty
+  `E2E_ENGINES` value: `playwright.config.ts` throws on an engine list that matches
+  no known engine (the "matched no known engines" guard), so an empty set would
+  crash the suite rather than run nothing. Instead the lane **skips the build and
+  suite entirely**, emits the engine-aware report with
+  `renderer.firefox: skipped (unverified — <reason>)` and
+  `suite: skipped (no verified engine)`, and exits **0** — consistent with the
+  #44 lane's "hardware absence is never a hard failure by default." An operator who
+  needs this to fail uses `E2E_GPU_REQUIRE=1` (next bullet).
+- **`E2E_GPU_REQUIRE=1 --engine=firefox` with no hardware** ⇒ exit non-zero
+  **before** build/suite (Decision 5), same as any strict unverified engine.
+- **`E2E_GPU_FORCE_FALLBACK=1 --engine=firefox` (vacuous combination).**
+  Force-fallback means "skip probing and take the software path"; Firefox has no
+  software path (Decision 6). This is treated as the same non-strict no-op as the
+  empty-engine-set rule above: **Firefox skipped, no build/suite, report
+  `renderer.firefox: skipped (unverified — forced fallback, Firefox has no software
+  equivalent)`, exit 0.** It is deliberately **not** a `LaneUsageError` (unlike
+  `E2E_GPU_FORCE_FALLBACK=1 E2E_GPU_REQUIRE=1`, which stays a usage error): a
+  benign env+flag combination should degrade to an honest skip, not a hard failure.
 Lane-internal errors unrelated to hardware absence (build failure, malformed
 invocation, contradictory controls) remain hard failures in every mode.
 
@@ -364,18 +386,39 @@ Before the two-engine lane is documented as trusted: **at least three consecutiv
 full two-engine hardware runs** (both engines' raw renderer strings asserted) with
 `retries: 0`, each run's per-test pass/fail, wall-clock, and the combined
 two-engine wall-clock recorded in the review artifacts, alongside a contemporaneous
-baseline for comparison. If the Firefox synthetic-input flake recurs, it is
-recorded as a lane finding and handled per Decision 10 (fixed/qualified separately
-or explicitly accepted+documented — never masked). The forced-fallback path is
+baseline for comparison.
+
+**Merge/qualification gate (explicit).** The stability evidence satisfies the gate
+when **either**:
+- (a) **≥3 consecutive fully-green** two-engine hardware runs are recorded (no test
+  fails, `retries: 0`), **or**
+- (b) the runs are green **except** for the single known Firefox background-drag
+  synthetic-input flake (`tests/e2e/matrix.spec.ts:224`), and that flake is
+  dispositioned per Decision 10 — **either** fixed and requalified, **or** explicitly
+  accepted and documented as a local qualification flake (with its recurrence rate
+  from these runs recorded). Under (b) the flake is **never** masked with retries and
+  the canonical assertion is **never** weakened.
+
+Any failure **other** than that one known, documented flake blocks the gate: it must
+be root-caused (and either fixed or, if a genuinely new flake, itself explicitly
+qualified) before the lane is documented as trusted — a green-except-known-flake
+record is acceptable, an unexplained failure is not. The forced-fallback path is
 qualified by at least one `E2E_GPU_FORCE_FALLBACK=1` run showing Chromium
 SwiftShader + Firefox-skipped. Hardware qualification runs use `E2E_GPU_REQUIRE=1`
 so an unnoticed mid-qualification fallback cannot contaminate the evidence.
 
 ### FR9 — Documentation
 
-The lane's documentation (README and/or the codev resource that #44 established;
-discoverable from README) is updated to cover: the two-engine command and what it
-does; the Firefox probe recipe (Mesa env + probe-only prefs) and the
+The concrete documentation target is **`README.md`'s existing "Opt-in native-GPU
+e2e lane" section** (the doc surface #44 established, currently around README
+lines 138–232), updated **in place** to the two-engine reality — including its
+`=== E2E GPU LANE REPORT ===` example block (the per-engine `renderer.chromium` /
+`renderer.firefox` keys of FR10) and its "Env controls and flags" table (the new
+`--engine=chromium|firefox|all` selector of FR7). The contemporaneous run evidence
+(FR8) lives in this feature's review, `codev/reviews/52-firefox-hardware-webgl-gpu-lane.md`,
+which the README section links the way it currently links #44's review. No new
+top-level doc file is created. The updated section covers: the two-engine command
+and what it does; the Firefox probe recipe (Mesa env + probe-only prefs) and the
 `webgl.sanitize-unmasked-renderer` rationale (why Chromium's deny-list alone is
 too weak for Firefox); how to read the engine-aware report; the honest-fallback
 semantics (Firefox skipped, never a software masquerade); the known Firefox
@@ -492,6 +535,15 @@ understand the Firefox probe recipe and sanitization-pref rationale, run it, and
 correctly interpret a two-engine hardware vs. Chromium-fallback+Firefox-skipped
 report.
 
+### Scenario 7 — Single-engine Firefox, non-strict, no hardware (empty engine set)
+`npm run test:e2e:gpu -- --engine=firefox` (or with `E2E_GPU_FORCE_FALLBACK=1`) on a
+host where Firefox does not verify hardware: the resolved suite engine set is empty,
+so the lane **does not** invoke Playwright (no `E2E_ENGINES=""` crash), skips
+build/suite, prints `renderer.firefox: skipped (unverified — <reason>)` and
+`suite: skipped (no verified engine)`, and exits 0. The same invocation with
+`E2E_GPU_REQUIRE=1` instead exits non-zero before build/suite with the per-engine
+diagnostic.
+
 ## Known Stability Caveat
 
 Hardware rendering did **not** eliminate Firefox's existing synthetic
@@ -523,6 +575,40 @@ used to weaken the canonical assertion.
 - **Sequencing**: #41 (parallelization) may consume this two-engine lane's
   qualification; this spec should land (or record two-engine hardware evidence)
   first.
+
+## Consultation Log
+
+### Specify — iteration 1 (Gemini, Codex, Claude)
+
+Verdicts: **Gemini APPROVE** (HIGH), **Claude APPROVE** (HIGH), **Codex
+REQUEST_CHANGES** (HIGH). All three independently verified the spec's codebase
+claims (Chromium-only lane structure, current `SOFTWARE_RENDERER_MARKERS`,
+hardcoded `engine: chromium` report, `E2E_ENGINES` handling, feasibility-report
+figures) and found them accurate; the approach was judged fully feasible with no
+architecture or Baked-Decision changes needed. All feedback was clarification of
+under-specified edge behavior. Changes made:
+
+1. **Single-engine `--engine=firefox` non-strict fallback outcome** (raised by all
+   three; Gemini supplied the concrete failure mode). Firefox-only + non-strict +
+   failed verification yields an **empty** suite engine set, and an empty
+   `E2E_ENGINES` throws in `playwright.config.ts`. FR4 now states explicitly: the
+   lane does not invoke Playwright with an empty engine set, skips build/suite,
+   reports Firefox skipped + `suite: skipped (no verified engine)`, and exits 0
+   (non-strict never hard-fails on hardware absence); `E2E_GPU_REQUIRE=1` makes it
+   exit non-zero before build/suite. Added **Scenario 7** to make it testable.
+2. **Vacuous `E2E_GPU_FORCE_FALLBACK=1 --engine=firefox`** (Claude). FR4 now
+   specifies it as the same honest no-op skip (exit 0), deliberately **not** a
+   `LaneUsageError`, distinguishing it from the genuinely contradictory
+   `FORCE_FALLBACK=1 + REQUIRE=1` usage error.
+3. **FR8 merge-gate ambiguity on a recurring known flake** (Codex). FR8 now gives an
+   explicit two-branch gate: (a) ≥3 consecutive fully-green two-engine hardware
+   runs, **or** (b) green-except-the-known-documented Firefox background-drag flake
+   dispositioned per Decision 10 (never masked). Any failure beyond that one known
+   flake blocks the gate.
+4. **FR9 vague doc target** (Codex). FR9 now names the concrete target:
+   `README.md`'s existing "Opt-in native-GPU e2e lane" section, updated in place
+   (report block + env/flags table), with run evidence in
+   `codev/reviews/52-…`. No new top-level doc file.
 
 ## References
 
