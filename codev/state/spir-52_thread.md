@@ -77,4 +77,7 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
   3. Regression guard: existing Chromium `--mode`/`--candidate`/`--channel` surface + all its
      tests stay green (only report-key assertions updated); any other red = regression (Codex2).
   Updated Expert Review + Change Log sections.
-- Committing "[Spec 52] Plan with multi-agent review", then continue porch.
+- Committed "[Spec 52] Plan with multi-agent review" (665fd9b).
+- `porch done 52` (checks pass) → **GATE: plan-approval reached** (no rebuttal — no
+  REQUEST_CHANGES). Requested via `porch gate 52`, notified architect. STOPPED, waiting
+  for human `porch approve 52 plan-approval`. (Strict mode: builder does NOT approve.)
