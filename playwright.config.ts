@@ -113,9 +113,11 @@ export default defineConfig({
     //     an invalid value is a loud WorkerConfigError, never a silent serial).
     // Local `retries: 0` (below) is preserved so flakes still surface immediately.
     // The timing-sensitive matrix.spec.ts assertions were originally qualified
-    // against a contention-free serial environment; the parallel local default is
-    // qualified by repeated full two-engine runs on the native-GPU lane (issue
-    // #41), while CI keeps that serial contract automatically via the guard above.
+    // against a contention-free serial environment; this parallel local default
+    // is being qualified by repeated full two-engine runs on the native-GPU lane
+    // (issue #41) — that evidence, not this wiring, decides whether it remains the
+    // default or reverts to serial. CI keeps its serial contract automatically via
+    // the guard above regardless of that outcome.
     fullyParallel: true,
     workers: resolveWorkers(process.env),
     // CI-only retries absorb SwiftShader rendering nondeterminism. The
