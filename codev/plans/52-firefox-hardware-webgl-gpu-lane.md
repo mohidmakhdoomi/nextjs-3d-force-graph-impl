@@ -171,6 +171,18 @@ verbatim. (Note: the existing `software` marker does not match `softpipe`/
 no software marker, which is exactly why the explicit sanitized verdict is
 required to avoid a false-hardware pass.)
 
+**Per-engine FR11 diagnostics (explicit `failureDiagnostic` update).**
+`failureDiagnostic` gains an explicit **`unverifiable`** branch so a Firefox
+`Generic Renderer` verdict produces the FR11 "probe returned the sanitized
+renderer — set/verify the probe-only `webgl.sanitize-unmasked-renderer: false`
+preference" hint, **not** the software branch's Mesa/adapter hint. Without this new
+branch, `unverifiable` would fall through to the software default (lines ~299–308
+today) and mislead the operator. Crash/timeout and software diagnostics name the
+**engine** (Chromium vs Firefox) and point at the engine-tagged transcript path.
+The existing Chromium diagnostics (Mesa d3d12 not selected, no-context, WSL libs
+missing, crash/timeout) keep their current wording and remedy hints unchanged; the
+Firefox recipe reuses the same host-prereq skip diagnostics.
+
 **Two-engine verification gating (pure decision function).** Given the requested
 engine set (`all` ⇒ {chromium, firefox}) and each engine's verdict, decide the run
 shape — a pure function, unit-tested:
@@ -216,12 +228,30 @@ unknown throws, default `all`); the verification-gating decision function across
 all branches above (both-verify, non-strict fallback with/without Chromium in the
 set, REQUIRE abort, force-fallback with/without Chromium, empty-set skip); the
 per-engine `formatReport` contract (hardware two-engine, fallback, skip-empty);
-Firefox recipe host-prereq gating reusing the fake host view. Existing Chromium
-tests are preserved or consciously migrated to the new report keys (documented in
-the Change Log).
+Firefox recipe host-prereq gating reusing the fake host view; and the **per-engine
+FR11 diagnostics** — a dedicated case asserting the Firefox sanitized-`Generic
+Renderer` `unverifiable` diagnostic emits the probe-only-preference hint (and
+**not** the Mesa hint), plus engine-named crash/timeout wording and engine-tagged
+transcript paths — so the operator-facing failure surface cannot silently regress
+during the refactor.
+
+**Existing Chromium CLI/debug surface must stay green (regression guard).** The
+engine-aware refactor MUST preserve the current single-engine Chromium behavior and
+its existing tests, not merely "migrate" them: `--mode=headed|headless`,
+`--candidate=<id>`, `--channel=<name>` (probe-only), the candidate-data invariants,
+the probe matrix/`runSelection` ordering, and the `composeEnv`/`fallbackEnv`/
+`partitionCandidates` semantics all keep working. Every existing test in
+`tests/gpu-lane.test.mjs` remains present and green, **except** those asserting the
+old single `engine: chromium` / `renderer:` report lines, which are deliberately
+updated to the new per-engine keys (FR10). The only intended test deltas are (a)
+the report-key contract change and (b) additive new cases; any other pre-existing
+Chromium test going red is a refactor regression to fix, not a migration — each
+such change is itemized in the Change Log.
 
 #### Acceptance Criteria
-- [ ] `npm test` green (migrated + new cases) with no GPU/browser/lane env.
+- [ ] `npm test` green with no GPU/browser/lane env — **every** pre-existing
+      Chromium test still present and green (only the report-key assertions
+      updated), plus the new Firefox/selector/gating/FR11 cases.
 - [ ] `node scripts/e2e-gpu-lane.mjs --probe-only` on this host reports **both**
       `renderer.chromium` (ANGLE D3D12) and `renderer.firefox`
       (`D3D12 (NVIDIA GeForce RTX 3080)`), both classified hardware.
@@ -512,11 +542,35 @@ artifact future #41 qualification cites). No persistent telemetry.
 
 ## Expert Review
 
-**Date**: (pending — porch runs 3-way consultation on this plan draft)
-**Model**: Gemini, Codex, Claude
-**Key Feedback**: (to be recorded after consultation)
+**Date**: 2026-07-21 (plan iteration 1)
+**Model**: Gemini (APPROVE, HIGH), Codex (COMMENT, HIGH), Claude (APPROVE, HIGH)
 
-**Plan Adjustments**: (to be recorded after consultation)
+**Key Feedback**: All three independently verified the plan's codebase claims
+against `scripts/e2e-gpu-lane.mjs` and `playwright.config.ts` and found complete
+FR/Decision/Scenario coverage, clean phase isolation, and a sound "engine dimension
+as data" approach; no blocking issues and no architecture concerns. Non-blocking
+refinements raised:
+- **Claude**: `failureDiagnostic` needs an explicit `unverifiable` branch, else a
+  Firefox `Generic Renderer` verdict falls into the software default branch and
+  emits the wrong Mesa hint instead of the FR11 probe-preference hint.
+- **Codex (1)**: explicitly require unit coverage for the new Firefox-specific FR11
+  diagnostics (sanitized renderer, per-engine crash/timeout wording, engine-tagged
+  transcript naming) so the operator-facing failure surface doesn't regress.
+- **Codex (2)**: Phase 1 should explicitly preserve **and keep green** the existing
+  Chromium `--mode`/`--candidate`/`--channel` debug surface and its tests, not just
+  "consciously migrate" them.
+
+**Plan Adjustments**:
+- Added a "Per-engine FR11 diagnostics (explicit `failureDiagnostic` update)"
+  paragraph to Phase 1 requiring the new `unverifiable` branch + engine-named
+  crash/timeout wording (Claude, Codex 1).
+- Expanded the Phase 1 unit-test targets to require a dedicated FR11 diagnostic case
+  (sanitized ⇒ probe-preference hint, not Mesa) plus engine-tagged transcript
+  assertions (Codex 1).
+- Added an "Existing Chromium CLI/debug surface must stay green (regression guard)"
+  paragraph and tightened the Phase 1 acceptance criterion so every pre-existing
+  Chromium test stays present/green (only report-key assertions updated); any other
+  red is a refactor regression, not a migration (Codex 2).
 
 ## Approval
 
@@ -528,6 +582,7 @@ human-approved.
 | Date | Change | Reason | Author |
 |------|--------|--------|--------|
 | 2026-07-21 | Initial implementation plan | Draft from approved spec 52 | Builder spir-52 |
+| 2026-07-21 | Explicit `failureDiagnostic` `unverifiable` branch + FR11 diagnostic test coverage + Chromium CLI/debug regression guard | Plan iter-1 consultation (Claude, Codex) | Builder spir-52 |
 
 ## Notes
 

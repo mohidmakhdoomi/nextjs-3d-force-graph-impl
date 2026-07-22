@@ -64,4 +64,17 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
   if(firefox) branches). Firefox recipe = same Mesa env, no ANGLE flags. Probe-only
   sanitize pref stays in wrapper; committed firefox project keeps webgl.force-enabled only.
 - porch checks pass (plan_exists, has_phases_json, min_two_phases=3).
-- Committing "[Spec 52] Initial implementation plan", then `porch done 52` for consult.
+- Committed "[Spec 52] Initial implementation plan" (e2aa5ca); ran `porch done 52` → consult.
+
+### Plan — consultation iter1 results + revision
+- Verdicts: Gemini APPROVE (HIGH), Claude APPROVE (HIGH), Codex COMMENT (HIGH). No blockers,
+  no architecture concerns; all verified codebase claims + complete FR/Decision/Scenario coverage.
+  Incorporated 3 non-blocking refinements into Phase 1:
+  1. Explicit `failureDiagnostic` `unverifiable` branch → Firefox Generic Renderer emits the
+     probe-preference hint, not the software/Mesa hint (Claude + Codex1).
+  2. Required FR11 diagnostic unit coverage (sanitized hint, engine-named crash/timeout,
+     engine-tagged transcripts) (Codex1).
+  3. Regression guard: existing Chromium `--mode`/`--candidate`/`--channel` surface + all its
+     tests stay green (only report-key assertions updated); any other red = regression (Codex2).
+  Updated Expert Review + Change Log sections.
+- Committing "[Spec 52] Plan with multi-agent review", then continue porch.
