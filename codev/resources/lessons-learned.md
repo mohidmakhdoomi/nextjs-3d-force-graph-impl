@@ -10,6 +10,13 @@ gotcha, or constraint.
   waits expensive. Pause animation first; if the initial pause requires a forced
   click, prove the control's center receives pointer events and keep later
   interactions on ordinary Playwright clicks.
+- When a browser privacy-sanitizes a capability string (e.g. Firefox sanitizes the
+  unmasked WebGL renderer to `Generic Renderer`), a known-bad deny-list is
+  insufficient — the sanitized value passes it and false-reads as good. Read the
+  raw value through the un-sanitizing path (Firefox's probe-only
+  `webgl.sanitize-unmasked-renderer:false`, confined to an ephemeral probe browser,
+  never the committed profile) and classify the sanitized string as explicitly
+  *unverifiable*, distinct from both hardware and known-software.
 - When a diagnostic command intentionally returns nonzero for findings, do not
   normalize status blindly. Preserve the original exit and validate the
   machine-readable report structure so advisory evidence remains distinct from

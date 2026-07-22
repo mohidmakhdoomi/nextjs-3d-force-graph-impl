@@ -1,0 +1,40 @@
+id: '52'
+title: add-firefox-hardware-webgl-to-
+protocol: spir
+phase: verified
+plan_phases:
+  - id: engine_aware_core
+    title: >-
+      Engine-aware core: per-engine probe recipes, Firefox probe + sanitize pref, expanded deny-list, --engine selector,
+      per-engine report, unit tests
+    status: complete
+  - id: two_engine_suite_and_inertness
+    title: Two-engine suite wiring, honest fallback + empty-engine-set skip, FR6 default-inert proof
+    status: complete
+  - id: qualification_evidence_and_docs
+    title: Firefox-inclusive repeat-run evidence (FR8), flake disposition (Decision 10), README docs (FR9)
+    status: complete
+current_plan_phase: null
+gates:
+  spec-approval:
+    status: approved
+    requested_at: '2026-07-22T02:28:48.071Z'
+    approved_at: '2026-07-22T02:29:48.445Z'
+  plan-approval:
+    status: approved
+    requested_at: '2026-07-22T02:39:33.597Z'
+    approved_at: '2026-07-22T02:42:26.015Z'
+  pr:
+    status: approved
+    requested_at: '2026-07-22T04:58:23.267Z'
+    approved_at: '2026-07-22T05:05:43.969Z'
+  verify-approval:
+    status: approved
+    requested_at: '2026-07-22T05:08:42.471Z'
+    approved_at: '2026-07-22T05:09:38.637Z'
+iteration: 1
+build_complete: true
+history: []
+started_at: '2026-07-22T02:21:18.654Z'
+updated_at: '2026-07-22T05:09:39.824Z'
+pr_ready_for_human: false
