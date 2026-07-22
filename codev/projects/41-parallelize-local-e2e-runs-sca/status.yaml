@@ -1,9 +1,18 @@
 id: '41'
 title: parallelize-local-e2e-runs-sca
 protocol: spir
-phase: plan
-plan_phases: []
-current_plan_phase: null
+phase: implement
+plan_phases:
+  - id: phase_1
+    title: Pure worker-resolution helper + unit tests
+    status: in_progress
+  - id: phase_2
+    title: Wire helper into config, migrate consumer, update comment
+    status: pending
+  - id: phase_3
+    title: Qualify parallel execution, finalize default, document
+    status: pending
+current_plan_phase: phase_1
 gates:
   spec-approval:
     status: approved
@@ -21,4 +30,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-22T21:24:31.366Z'
-updated_at: '2026-07-22T21:43:24.156Z'
+updated_at: '2026-07-22T21:43:43.899Z'
