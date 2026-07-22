@@ -81,3 +81,48 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
 - `porch done 52` (checks pass) → **GATE: plan-approval reached** (no rebuttal — no
   REQUEST_CHANGES). Requested via `porch gate 52`, notified architect. STOPPED, waiting
   for human `porch approve 52 plan-approval`. (Strict mode: builder does NOT approve.)
+
+### Implement — Phase 1 `engine_aware_core` (iteration 1)
+- plan-approval gate APPROVED by architect; `porch next` advanced to implement /
+  plan phase `engine_aware_core`.
+- Scope (Phase 1 only): engine-aware core in `scripts/e2e-gpu-lane.mjs` +
+  `tests/gpu-lane.test.mjs`. NO two-engine suite wiring (that's Phase 2).
+- Design decisions:
+  - Engine dimension as DATA: keep Chromium `CANDIDATES`; add single
+    `FIREFOX_PROBE_RECIPE` (Mesa env, no ANGLE flags, probe-only prefs
+    webgl.force-enabled + webgl.sanitize-unmasked-renderer:false).
+  - `classifyRenderer` now returns none|software|unverifiable|hardware;
+    "Generic Renderer" ⇒ unverifiable (Firefox sanitized). Deny-list expanded
+    with softpipe/lavapipe/swrast.
+  - `probeRenderer` engine-aware (launcher dispatch chromium|firefox; firefox
+    passes firefoxUserPrefs not args); transcripts gain engine prefix
+    (probe-<engine>-<id>-<mode>.log).
+  - `computeRunPlan` = pure two-engine gating fn (hardware / software-fallback /
+    skip-empty / abort) — fully unit-tested, consumed by --probe-only now and by
+    the full lane in Phase 2.
+  - `formatReport` migrated to per-engine keys (engines:, renderer.<engine>:).
+  - `--engine=chromium|firefox|all` added to parseArgs (default all).
+  - Phase 1 transitional: full-lane suite path stays #44 Chromium-only (uses
+    computeRunPlan for ["chromium"]); engine-aware probe exercised via
+    --probe-only. Phase 2 generalizes suiteEnvFor + main to the requested set.
+
+### Phase 1 — build/verify results (on-host, WSL2 RTX 3080)
+- `npm run build` ✓; `npm test` ✓ (90 tests, incl. 51 gpu-lane: 0 fail);
+  `npm run typecheck` clean; `npx eslint scripts/e2e-gpu-lane.mjs
+  tests/gpu-lane.test.mjs` clean (exit 0). The 21 `npm run lint` errors are ALL
+  in untracked `.claude/hooks/worktree-write-guard.cjs` (builder-harness file,
+  absent from clean checkouts) — environment noise per lessons-critical, not a
+  project failure. Full clean-worktree `npm run validate` proof deferred to Phase 3.
+- Manual `--probe-only` on this host (Phase 1 acceptance):
+  - `all`: mode hardware; renderer.chromium=`ANGLE (Microsoft Corporation, D3D12
+    (NVIDIA GeForce RTX 3080), OpenGL 4.6)`; renderer.firefox=`D3D12 (NVIDIA
+    GeForce RTX 3080)`. Both hardware, 3s wall-clock.
+  - `--engine=chromium` / `--engine=firefox`: each probes only its engine ✓.
+  - `--engine=bogus` → usage error, exit 2 ✓.
+  - forced-fallback probe-only (all) → mode software-fallback, chromium
+    software-fallback, firefox skipped ✓; (firefox-only) → skip-empty ✓.
+- Firefox sanitize-pref contrast (load-bearing evidence for the `unverifiable`
+  verdict): probe WITHOUT the pref ⇒ `"Generic Renderer"` (matches no software
+  marker — would false-pass without the explicit unverifiable class); WITH
+  `webgl.sanitize-unmasked-renderer:false` ⇒ `"D3D12 (NVIDIA GeForce RTX 3080)"`.
+- Signalling `porch done 52` (build-complete → 3-way consult).
