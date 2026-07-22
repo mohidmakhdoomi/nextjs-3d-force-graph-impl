@@ -1,7 +1,7 @@
 id: '41'
 title: parallelize-local-e2e-runs-sca
 protocol: spir
-phase: specify
+phase: plan
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -16,7 +16,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-07-22T21:24:31.366Z'
-updated_at: '2026-07-22T21:31:50.749Z'
+updated_at: '2026-07-22T21:31:55.186Z'
