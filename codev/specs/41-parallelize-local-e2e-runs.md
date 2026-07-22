@@ -10,7 +10,10 @@ gets its speed from a 4-shard matrix of isolated VMs (each shard still
 `workers: 1`). This issue makes local runs use multiple workers **scaled to the
 machine's cores** (Playwright-native `'50%'`-style scaling with an explicit
 `E2E_WORKERS` override), leveraging the `fullyParallel: true` that is already
-set.
+set. Whether this parallel worker count ships as the **local default** (versus an
+opt-in atop a retained serial default) is evidence-gated per **Decision 4, the
+canonical rule** for the local default; the headline capability is that local
+runs *can and, once qualified, do* run parallel and hardware-scaled.
 
 The **GitHub Actions workflow stays byte-for-byte the same**: same 4-shard
 matrix, same `workers: 1` inside each shard, same `E2E_ENGINES=chromium`, same
@@ -140,7 +143,12 @@ the FR8 methodology").
    FR8 methodology (`E2E_GPU_REQUIRE=1`, ≥3 consecutive green full-suite runs,
    per-test results and wall-clocks recorded).
 
-4. **Local default: parallel, evidence-gated; documented serial fallback.** The
+4. **Local default: parallel, evidence-gated; documented serial fallback.**
+   **This decision is the canonical rule for the no-`CI`/no-`E2E_WORKERS` local
+   default. Wherever the Summary, FR1, FR11, or Scenario 1 describe the local
+   default as parallel, they mean this qualification-gated target — not an
+   unconditional guarantee — and defer to this decision on any apparent
+   conflict.** The
    target is that the local default is parallel (the scaled value from Decision
    2) so `npm run validate` wall-clock improves (Success Criterion 4). This is
    contingent on qualification: the full two-engine **local** suite must pass
@@ -318,7 +326,13 @@ evidence-gated upgrade (Decision 4), not chosen as the sole path.
 A local e2e run (no `CI`, no `E2E_WORKERS`) runs the suite under multiple
 workers scaled to the machine via Playwright's hardware-relative percentage
 form, leveraging the existing `fullyParallel: true`. The scaling adapts to the
-host's core count with no hard-coded number.
+host's core count with no hard-coded number. Whether this parallel count is the
+**default** (vs. an opt-in behind a retained serial default) is governed by
+Decision 4, the canonical default rule: it ships as the default only if the
+parallel qualification (FR9) is green; if qualification fails, the default is
+serial (`workers: 1`) and this parallel path is reached opt-in via `E2E_WORKERS`
+(and the GPU lane's scaled default). Either way, whenever parallel workers are
+used the scaling is hardware-relative with no hard-coded number.
 
 ### FR2 — `E2E_WORKERS` override
 
@@ -369,7 +383,13 @@ semantics from #44/#52 intact.
 Automated coverage asserts the worker-resolution contract: `CI` set ⇒ `1`;
 `E2E_WORKERS` integer ⇒ that integer; `E2E_WORKERS` percentage ⇒ that
 percentage; invalid `E2E_WORKERS` ⇒ throws; `CI` precedence over `E2E_WORKERS`;
-default (no `CI`, no `E2E_WORKERS`) ⇒ the scaled value. The existing
+default (no `CI`, no `E2E_WORKERS`) ⇒ the scaled value — i.e. the resolved
+contract is the hardware-relative default, **not** `1` (Playwright floors the
+resolved worker count at ≥1, so a low-core host degrades gracefully rather than
+erroring). Whether the assertion inspects the configured token the helper
+produces (e.g. the string `'50%'`) or a computed worker integer is a
+plan/implementation decision; the spec-level requirement is only that the
+default resolves to the scaled parallel value, not to serial. The existing
 `tests/automation.test.mjs` source-text assertions (`/workers: 1/`, retries) are
 migrated to the new contract so the suite reflects reality.
 
@@ -445,9 +465,13 @@ touched config comment reflects the new reality.
 ## Acceptance Scenarios
 
 ### Scenario 1 — Scaled parallel local run
-On multi-core hardware, a local run (`npm run test:smoke` or the qualified
-parallel path) executes tests concurrently across workers scaled to the cores,
-and the full two-engine suite passes.
+On multi-core hardware, once the parallel local default is qualified green
+(Decision 4), a plain local run (`npm run test:smoke`) executes tests
+concurrently across workers scaled to the cores, and the full two-engine suite
+passes. If qualification fails and the serial-default fallback is taken, the same
+concurrent execution is instead reached through the opt-in path (`E2E_WORKERS` or
+the GPU lane's scaled default) — Scenario 5's alternative branch. Either way, when
+parallel workers run, the full two-engine suite passes.
 
 ### Scenario 2 — `E2E_WORKERS` override
 `E2E_WORKERS=4` runs with 4 workers; `E2E_WORKERS=50%` runs with a

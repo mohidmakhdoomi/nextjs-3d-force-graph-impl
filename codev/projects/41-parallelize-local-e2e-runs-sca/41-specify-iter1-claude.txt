@@ -1,0 +1,71 @@
+I'll review this spec by first reading the key project files it references to verify claims and assess feasibility.Now let me check a few more files referenced in the spec:Let me check the README's e2e/GPU sections and the `suiteEnvFor` function's comment about workers being untouched:Good. Let me check one more thing — the README section around line 284 that explicitly mentions issue #41 sequencing:I've now read every key file the spec references. Here is my review.
+
+---
+
+## Specification 41 Review: Parallelize Local E2E Runs
+
+### Completeness
+
+**Excellent.** The spec correctly identifies and references every file that must change:
+
+- `playwright.config.ts` — `workers: 1` at line 105, `fullyParallel: true` at line 104, the comment block at lines 96–113, `retries` at line 113. All verified against the actual file.
+- `tests/automation.test.mjs` — the source-text assertions at lines 90 (`/workers: 1/`) and 93 (`/retries: process\.env\.CI \? 2 : 0/`). Verified: these are literal regex matches against the config source text and will break when the `workers` line changes. FR8 mandates migrating them.
+- `.github/workflows/validation.yml` — the 4-shard matrix, `E2E_ENGINES: chromium`, blob merge. Verified: all present and the zero-diff constraint is sound.
+- `scripts/e2e-gpu-lane.mjs` — line 622 explicitly says `"workers/retries/timeouts untouched — those stay the config's own defaults"`, confirming the lane inherits whatever `playwright.config.ts` resolves. FR7's claim that the lane will "run the full suite under scaled parallel workers" is correct by construction — no lane code change needed, it inherits the config's new workers value automatically.
+- README lines 284–285 explicitly reference this issue as the sequenced next step: `"workers stays 1 in the lane, matching the qualified suite. Raising parallelism on top of this lane is issue #41's qualification, sequenced after this one."`
+
+All cross-references check out. The success criteria are testable. The scope boundary is clear.
+
+### Correctness
+
+**No contradictions found.** Key verifications:
+
+1. **Playwright `workers` accepts `'50%'`** — this is a documented Playwright-native feature. The config can use `workers: '50%'` directly and Playwright computes the count from `os.cpus().length`. The spec's claim about hardware-relative scaling is technically sound.
+
+2. **`webServer` with multiple workers** — the spec's FR6 claim is correct. Playwright starts the webServer once per `playwright test` invocation before spawning workers. All workers share the same server. No port parameterization needed. Verified: the config's `webServer` block (lines 134–142) uses `reuseExistingServer: false`, which is fine — it prevents reusing a stale server, but Playwright itself only starts it once.
+
+3. **CI guard correctness** — the config currently reads `process.env.CI` for `retries` (line 113) and `timeout` (line 95). Adding a `CI → workers: 1` guard is consistent with the existing pattern and is a one-line, testable invariant.
+
+4. **GPU lane inheritance** — the lane's `suiteEnvFor()` (line 635) composes the env for the Playwright invocation but does NOT set workers — it explicitly leaves "workers/retries/timeouts" to the config. When the config resolves to scaled workers locally, the GPU lane automatically gets parallel execution. This is the correct inheritance model.
+
+5. **`E2E_ENGINES` fail-closed pattern** — the spec correctly mirrors the existing guard (lines 78–85 of `playwright.config.ts`) where an invalid value throws rather than falling back silently. Consistent design.
+
+### Feasibility
+
+**High feasibility, medium risk (honestly acknowledged).** The core change is small: one expression in `playwright.config.ts` for workers, a small pure helper, and migrated assertions. The risk is in the *qualification* — whether `matrix.spec.ts`'s timing-sensitive assertions survive parallel contention — and the spec handles this with Decision 4's evidence-gated branching strategy.
+
+One observation on the `E2E_WORKERS` type conversion: env vars are always strings. The resolution helper must distinguish `'4'` (parse to integer `4`) from `'50%'` (pass as string `'50%'` to Playwright). The spec mentions this in FR2 ("positive integer or a percentage string") and FR8 (test both forms), which is sufficient — the plan will handle the parse implementation.
+
+### Edge Cases
+
+The spec covers the major edge cases well:
+- Invalid `E2E_WORKERS` → fail-closed (FR2)
+- `CI` + `E2E_WORKERS` set simultaneously → `CI` wins (FR3)
+- SwiftShader contention breaks tests → serial fallback with documented trade-off (Decision 4)
+- Open flakes amplified → surface, don't mask (FR5, Decision 5)
+
+**Minor edge case the plan should note** (not spec-blocking): `workers: '50%'` on a 1-core machine resolves to 1 worker (Playwright floors at 1). This is correct — it degrades gracefully — but the plan should verify the helper produces sensible values at the boundary.
+
+### Testing Strategy
+
+**Strong.** FR8 specifies the exact worker-resolution matrix to test (CI→1, integer, percentage, invalid→throws, CI precedence, default scaled). FR9 specifies repeat-run qualification evidence with specific methodology (≥3 consecutive, `retries: 0`, `E2E_GPU_REQUIRE=1`, per-test results). The recommendation to extract a pure helper mirrors the proven `gpu-lane.test.mjs` pattern — a good architectural decision.
+
+The migration of `automation.test.mjs` source-text assertions is correctly scoped: lines 90 and 93 must change. The spec wisely does not prescribe *how* to assert the new contract (source text vs. behavioral), leaving that to the plan.
+
+### Security Considerations
+
+N/A — this is test-harness/config work, no app code touched, no new dependencies, no secrets.
+
+### Ambiguities
+
+None material. The spec even handles the uncertain outcome (parallel default vs. serial fallback) as a first-class branching strategy rather than assuming success. This is unusually honest for a spec.
+
+---
+
+---
+VERDICT: APPROVE
+SUMMARY: Exceptionally thorough spec with every claim verified against the actual codebase; technically sound, well-scoped, and honestly risk-managed with an evidence-gated branching strategy for the uncertain parallel qualification outcome.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES: None

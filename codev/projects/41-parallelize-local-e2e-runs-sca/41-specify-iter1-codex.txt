@@ -1,0 +1,17 @@
+Using the repo files directly to verify the spec against current project context.I’m also checking the hot governance docs the spec cites, to verify whether the proposed contract matches project guidance.---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Strong, feasible spec with solid testing/evidence discipline, but it contains a material contradiction about whether local default behavior must become parallel or may remain serial if qualification fails.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- **Contradictory default-behavior contract.** Decision 4 and several success criteria allow a documented serial local default fallback if SwiftShader parallelism is not stable, but FR1, FR11, Scenario 1, and parts of the Summary require the no-`CI`/no-`E2E_WORKERS` local default to be parallel. The spec needs one canonical rule: either (a) default-local-parallel is mandatory, or (b) default-local-parallel is target behavior but serial default remains acceptable if qualification fails.
+- **Acceptance criteria inherit the same contradiction.** Scenario 1 says a plain local run executes concurrently; Scenario 5 says the outcome may instead be a separated opt-in parallel path with a serial gate. As written, a builder could satisfy one scenario set while violating another.
+- **The “default scaled” requirement is slightly underspecified for implementation/testing.** FR8 requires asserting the default scaled value, but the spec should explicitly say whether tests should assert the configured token (e.g. `'50%'`) or the resolved runtime worker count, and whether the default must floor to at least 1 by Playwright semantics or by helper logic.
+
+Everything else looks good:
+- Requirements are detailed and mostly testable.
+- The approach is technically feasible in the current repo shape (`playwright.config.ts`, `tests/automation.test.mjs`, README, GPU lane).
+- Error handling is appropriately fail-closed.
+- Security impact is minimal; no notable missing security requirement beyond preserving CI isolation/precedence, which the spec already covers.
+- Testing strategy is strong, especially the explicit CI guard, invalid-env coverage, and repeat-run evidence discipline.
