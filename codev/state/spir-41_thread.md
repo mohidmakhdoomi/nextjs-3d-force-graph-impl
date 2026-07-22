@@ -224,3 +224,10 @@ criterion 2b). Guardrails all honored:
      header+const, and README (all "no speedup" claims removed/reframed).
 - Re-verified: unit 24/24, suite 121/121, typecheck clean, helper lint clean, no
   lingering "no speedup" text anywhere.
+
+- Phase 3 iter1 consult: **Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES**
+  (all HIGH). Both Codex points ACCEPTED (consistency residue from the honesty
+  correction): (1) review acceptance bullet still said "no SwiftShader speedup" →
+  fixed to "faster but breaks the gate"; (2) helper inline comment still said
+  "Scaled default" → fixed to "Serial default". Broad speedup-audit now clean.
+  Wrote 41-phase_3-iter1-rebuttals.md. Signaling porch done → re-verification.

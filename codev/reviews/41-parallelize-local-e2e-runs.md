@@ -160,9 +160,10 @@ No test was skipped or weakened.
 - [x] `playwright.config.ts` comment reflects the new local-parallel rationale
       (replaces the stale "Do NOT raise workers" text).
 - [~] `npm run validate` wall-clock: the documented trade-off is taken instead of
-      a default speedup (Success Metric 4's permitted alternative) — parallel
-      gives no SwiftShader speedup and breaks the gate, so serial is retained;
-      the ~4× speedup is available opt-in on the GPU lane.
+      a default speedup (Success Metric 4's permitted alternative) — SwiftShader
+      parallel is faster (~3.3m vs 11.7m serial) but **breaks the gate** (4–5/22
+      timing failures every run), so serial is retained; the ~4× speedup is
+      available opt-in on the GPU lane, where the suite stays mostly green.
 
 ## Lessons Learned (to expand in the Review phase)
 

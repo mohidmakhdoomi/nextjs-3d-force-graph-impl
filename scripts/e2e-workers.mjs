@@ -90,6 +90,7 @@ export function resolveWorkers(env) {
         }
     }
 
-    // 3. Scaled default.
+    // 3. Serial default (see DEFAULT_LOCAL_WORKERS). Parallel is opt-in only,
+    //    via the E2E_WORKERS branch above.
     return DEFAULT_LOCAL_WORKERS;
 }
