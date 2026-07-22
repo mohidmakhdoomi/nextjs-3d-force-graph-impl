@@ -8,11 +8,11 @@ plan_phases:
     status: complete
   - id: phase_2
     title: Wire helper into config, migrate consumer, update comment
-    status: in_progress
+    status: complete
   - id: phase_3
     title: Qualify parallel execution, finalize default, document
-    status: pending
-current_plan_phase: phase_2
+    status: in_progress
+current_plan_phase: phase_3
 gates:
   spec-approval:
     status: approved
@@ -26,8 +26,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 2
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: phase_2
@@ -46,4 +46,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_2-iter1-claude.txt
 started_at: '2026-07-22T21:24:31.366Z'
-updated_at: '2026-07-22T22:06:12.847Z'
+updated_at: '2026-07-22T22:08:20.726Z'
