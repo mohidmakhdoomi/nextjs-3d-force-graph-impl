@@ -1,7 +1,7 @@
 id: '41'
 title: parallelize-local-e2e-runs-sca
 protocol: spir
-phase: review
+phase: verify
 plan_phases:
   - id: phase_1
     title: Pure worker-resolution helper + unit tests
@@ -29,58 +29,10 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
-history:
-  - iteration: 1
-    plan_phase: phase_2
-    build_output: ''
-    reviews:
-      - model: gemini
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_2-iter1-gemini.txt
-      - model: codex
-        verdict: REQUEST_CHANGES
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_2-iter1-codex.txt
-      - model: claude
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_2-iter1-claude.txt
-  - iteration: 1
-    plan_phase: phase_3
-    build_output: ''
-    reviews:
-      - model: gemini
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_3-iter1-gemini.txt
-      - model: codex
-        verdict: REQUEST_CHANGES
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_3-iter1-codex.txt
-      - model: claude
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_3-iter1-claude.txt
-  - iteration: 2
-    plan_phase: phase_3
-    build_output: ''
-    reviews:
-      - model: gemini
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_3-iter2-gemini.txt
-      - model: codex
-        verdict: REQUEST_CHANGES
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_3-iter2-codex.txt
-      - model: claude
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-41/codev/projects/41-parallelize-local-e2e-runs-sca/41-phase_3-iter2-claude.txt
+build_complete: false
+history: []
 started_at: '2026-07-22T21:24:31.366Z'
-updated_at: '2026-07-22T23:18:19.009Z'
+updated_at: '2026-07-22T23:18:25.520Z'
 pr_history:
   - phase: review
     pr_number: 54
