@@ -1,7 +1,7 @@
 id: '52'
 title: add-firefox-hardware-webgl-to-
 protocol: spir
-phase: verify
+phase: verified
 plan_phases:
   - id: engine_aware_core
     title: >-
@@ -36,5 +36,5 @@ iteration: 1
 build_complete: true
 history: []
 started_at: '2026-07-22T02:21:18.654Z'
-updated_at: '2026-07-22T05:09:38.637Z'
+updated_at: '2026-07-22T05:09:39.824Z'
 pr_ready_for_human: false
