@@ -26,6 +26,7 @@ gates:
     approved_at: '2026-07-22T02:42:26.015Z'
   pr:
     status: pending
+    requested_at: '2026-07-22T04:58:23.267Z'
   verify-approval:
     status: pending
 iteration: 1
@@ -48,4 +49,5 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-52/codev/projects/52-add-firefox-hardware-webgl-to-/52-two_engine_suite_and_inertness-iter1-claude.txt
 started_at: '2026-07-22T02:21:18.654Z'
-updated_at: '2026-07-22T04:41:47.147Z'
+updated_at: '2026-07-22T04:58:23.268Z'
+pr_ready_for_human: true
