@@ -268,3 +268,11 @@ criterion 2b). Guardrails all honored:
 - Committing review + governance + consult artifacts (convention: consult .txt
   tracked, cf. project 12). Builder-harness files (.builder-*, .claude/hooks/)
   left untracked (not deliverables; not suppressing in config). Opening PR next.
+
+- PR #54 3-way (type pr): **Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES**
+  (HIGH). Codex #2 (plan Status: draft) ACCEPTED → reconciled to "complete" with
+  the Decision-4 finalized-outcome note. Codex #1 (commit format) REBUTTED: `[Spec
+  41] Description` IS a documented AGENTS.md form (two forms listed; [Phase:] only
+  for impl commits); the `chore(porch):` commits are porch state commits, not
+  builder commits, and strict-mode forbids rewriting pushed porch history. Wrote
+  41-review-iter1-rebuttals.md. Committing plan fix + rebuttal, pushing to PR #54.

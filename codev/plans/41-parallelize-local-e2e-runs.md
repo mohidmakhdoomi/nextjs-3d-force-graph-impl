@@ -2,7 +2,10 @@
 
 ## Metadata
 - **ID**: plan-2026-07-22-parallelize-local-e2e-runs
-- **Status**: draft
+- **Status**: complete — all three phases implemented and 3-way approved. Final
+  outcome per Decision 4 / Scenario 5: **serial default + opt-in parallel** (the
+  planned parallel `'50%'` default was flipped to serial on adverse qualification
+  evidence; see `codev/reviews/41-parallelize-local-e2e-runs.md`).
 - **Specification**: [codev/specs/41-parallelize-local-e2e-runs.md](../specs/41-parallelize-local-e2e-runs.md)
 - **Created**: 2026-07-22
 
