@@ -37,4 +37,31 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
   4. FR9: named concrete doc target = README "Opt-in native-GPU e2e lane" section,
      updated in place; evidence in review 52 (Codex).
   Added Consultation Log section (SPIR requirement).
-- Committing as "[Spec 52] Specification with multi-agent review", then `porch next 52`.
+- Committed "[Spec 52] Specification with multi-agent review" (3923c2b).
+- Wrote rebuttal (52-specify-iter1-rebuttals.md): all feedback accepted, no disagreements.
+- `porch done 52` → **GATE: spec-approval reached**. Requested via `porch gate 52`,
+  notified architect via `afx send`. STOPPED, waiting for human `porch approve 52 spec-approval`.
+  (Strict mode: builder does NOT call porch approve.)
+
+### Plan phase (iteration 1)
+- Architect APPROVED spec-approval gate (verified empty-engine-set rule against
+  playwright.config.ts projects.length===0 guard; no architecture concerns). Advanced to plan.
+- Read #44 plan for the established decomposition style. Wrote 3-phase plan
+  (`codev/plans/52-firefox-hardware-webgl-gpu-lane.md`):
+  1. `engine_aware_core` — per-engine probe recipes (Chromium CANDIDATES + single
+     Firefox recipe), generalized probe w/ firefox.launch + probe-only sanitize pref,
+     expanded deny-list (softpipe/lavapipe/swrast + sanitized `Generic Renderer` →
+     unverifiable verdict), `--engine` selector, two-engine verification-gating pure fn,
+     per-engine report (renderer.chromium/renderer.firefox), unit tests. Files:
+     scripts/e2e-gpu-lane.mjs + tests/gpu-lane.test.mjs.
+  2. `two_engine_suite_and_inertness` — engine-set-aware suiteEnvFor (Mesa env into
+     suite process, Firefox inherits it; PW_CHROMIUM_ARGS Chromium-only; empty set →
+     skip, never pass empty E2E_ENGINES), honest fallback, REQUIRE abort, empty-set
+     skip, FR6 default-inert proof (config-load, firefox prefs unchanged).
+  3. `qualification_evidence_and_docs` — ≥3 two-engine hardware runs, flake disposition
+     (Decision 10), README section updated in place (FR9).
+- Key design: engine dimension as DATA + per-engine launcher dispatch (not scattered
+  if(firefox) branches). Firefox recipe = same Mesa env, no ANGLE flags. Probe-only
+  sanitize pref stays in wrapper; committed firefox project keeps webgl.force-enabled only.
+- porch checks pass (plan_exists, has_phases_json, min_two_phases=3).
+- Committing "[Spec 52] Initial implementation plan", then `porch done 52` for consult.
