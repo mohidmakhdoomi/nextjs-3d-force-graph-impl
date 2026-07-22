@@ -1,0 +1,110 @@
+// Unit coverage for the pure local-worker resolution contract (issue #41 FR8).
+//
+// Everything here drives the pure `resolveWorkers(env)` directly with literal
+// env objects — no Playwright, no `process.env` mutation, no I/O. The function's
+// return value IS the contract; these rows are the spec FR8 matrix made
+// executable, plus explicit negative rows locking the leading-zero / exponent /
+// decimal disposition called out as a risk in the plan.
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+    DEFAULT_LOCAL_WORKERS,
+    WorkerConfigError,
+    resolveWorkers,
+} from "../scripts/e2e-workers.mjs";
+
+test("DEFAULT_LOCAL_WORKERS is the scaled '50%' token", () => {
+    assert.equal(DEFAULT_LOCAL_WORKERS, "50%");
+});
+
+test("CI guard: CI set ⇒ serial 1 (the number, not a string)", () => {
+    assert.strictEqual(resolveWorkers({CI: "1"}), 1);
+    assert.strictEqual(resolveWorkers({CI: "true"}), 1);
+});
+
+test("CI precedence: CI wins over E2E_WORKERS", () => {
+    assert.strictEqual(resolveWorkers({CI: "1", E2E_WORKERS: "4"}), 1);
+    assert.strictEqual(resolveWorkers({CI: "true", E2E_WORKERS: "50%"}), 1);
+    // Even a value that would otherwise throw never surfaces under CI, because
+    // the CI guard returns before E2E_WORKERS is read.
+    assert.strictEqual(resolveWorkers({CI: "1", E2E_WORKERS: "abc"}), 1);
+});
+
+test("E2E_WORKERS positive integer ⇒ that number", () => {
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "4"}), 4);
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "1"}), 1);
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "16"}), 16);
+});
+
+test("E2E_WORKERS percentage ⇒ that percentage string (passed to Playwright)", () => {
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "50%"}), "50%");
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "100%"}), "100%");
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "25%"}), "25%");
+});
+
+test("default: no CI, no E2E_WORKERS ⇒ scaled '50%' (NOT serial 1)", () => {
+    assert.strictEqual(resolveWorkers({}), DEFAULT_LOCAL_WORKERS);
+    assert.strictEqual(resolveWorkers({}), "50%");
+});
+
+test("empty / whitespace E2E_WORKERS is treated as unset ⇒ default", () => {
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: ""}), "50%");
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "   "}), "50%");
+});
+
+test("surrounding whitespace is trimmed before matching", () => {
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: " 4 "}), 4);
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "\t50%\n"}), "50%");
+});
+
+test("empty CI value is falsy ⇒ falls through to E2E_WORKERS / default", () => {
+    // The truthy check mirrors the config's `process.env.CI ? … : …` idiom:
+    // an unset/empty CI must not force serial locally.
+    assert.strictEqual(resolveWorkers({CI: "", E2E_WORKERS: "4"}), 4);
+    assert.strictEqual(resolveWorkers({CI: ""}), "50%");
+    assert.strictEqual(resolveWorkers({CI: undefined}), "50%");
+});
+
+// --- Malformed values: loud WorkerConfigError, never a silent fallback ------
+
+const INVALID_VALUES = [
+    "0", // zero is not a positive worker count
+    "0%", // zero percent
+    "-1", // negative
+    "abc", // non-numeric
+    "12x", // trailing garbage
+    "1.5", // decimal
+    "%", // bare percent
+    "01", // leading zero (disposition: rejected)
+    "1e2", // exponent form (disposition: rejected)
+    "50 %", // internal whitespace in a percentage
+    "4.0", // decimal integer
+    "0x10", // hex
+    "  %  ", // whitespace around a bare percent
+];
+
+for (const value of INVALID_VALUES) {
+    test(`E2E_WORKERS=${JSON.stringify(value)} ⇒ throws WorkerConfigError`, () => {
+        assert.throws(
+            () => resolveWorkers({E2E_WORKERS: value}),
+            WorkerConfigError,
+        );
+    });
+}
+
+test("WorkerConfigError message names the offending value and accepted forms", () => {
+    try {
+        resolveWorkers({E2E_WORKERS: "12x"});
+        assert.fail("expected resolveWorkers to throw");
+    } catch (error) {
+        assert.ok(error instanceof WorkerConfigError);
+        assert.match(error.message, /12x/); // names the offending value
+        assert.match(error.message, /positive integer/);
+        assert.match(error.message, /percentage/);
+    }
+});
+
+test("WorkerConfigError is a subclass of Error", () => {
+    assert.ok(new WorkerConfigError("x") instanceof Error);
+});
