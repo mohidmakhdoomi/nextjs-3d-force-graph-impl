@@ -96,9 +96,9 @@ export default defineConfig({
     // click-to-focus test keeps its own explicit 240 s override either way.)
     timeout: process.env.CI ? 240_000 : 120_000,
     // `fullyParallel` marks every test as an independently schedulable unit,
-    // which serves two consumers at once: CI's `--shard` splits the suite at the
-    // TEST level (not the file level), and local runs fan those units out across
-    // multiple workers.
+    // which serves two consumers: CI's `--shard` splits the suite at the TEST
+    // level (not the file level), and a local opt-in parallel run (E2E_WORKERS)
+    // can fan those units out across workers.
     //
     // `workers` is resolved by resolveWorkers(process.env) (scripts/e2e-workers.mjs,
     // issue #41) — the single tested source of truth for the worker count:
@@ -107,17 +107,17 @@ export default defineConfig({
     //     test at a time, no SwiftShader CPU contention. The qualified CI timing
     //     environment is byte-for-byte unchanged, and a stray E2E_WORKERS can
     //     never parallelize a shard.
-    //   - Local: hardware-scaled parallel — the '50%' default (Playwright derives
-    //     the count from os.cpus().length, floored at >=1 so low-core hosts still
-    //     run), overridable via E2E_WORKERS (a positive integer or a percentage;
-    //     an invalid value is a loud WorkerConfigError, never a silent serial).
+    //   - Local default: SERIAL (1). Issue #41 qualified parallel workers and
+    //     found they DESTABILIZE these timing-sensitive matrix.spec.ts
+    //     camera-settle/drag assertions under SwiftShader CPU contention (4-5 of
+    //     22 Chromium tests fail on every parallel run — even though parallel is
+    //     faster) and amplify the known Firefox flake #33 even on hardware — so
+    //     the `retries: 0` local gate stays serial, matching the environment
+    //     these assertions were qualified against.
+    //   - Local opt-in parallel: E2E_WORKERS=<int|percent> (e.g. 50%) — for fast
+    //     local iteration, most useful on the native-GPU lane (~4x faster). An
+    //     invalid value is a loud WorkerConfigError, never a silent fallback.
     // Local `retries: 0` (below) is preserved so flakes still surface immediately.
-    // The timing-sensitive matrix.spec.ts assertions were originally qualified
-    // against a contention-free serial environment; this parallel local default
-    // is being qualified by repeated full two-engine runs on the native-GPU lane
-    // (issue #41) — that evidence, not this wiring, decides whether it remains the
-    // default or reverts to serial. CI keeps its serial contract automatically via
-    // the guard above regardless of that outcome.
     fullyParallel: true,
     workers: resolveWorkers(process.env),
     // CI-only retries absorb SwiftShader rendering nondeterminism. The

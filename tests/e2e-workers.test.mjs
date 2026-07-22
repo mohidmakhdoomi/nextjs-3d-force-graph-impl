@@ -14,8 +14,8 @@ import {
     resolveWorkers,
 } from "../scripts/e2e-workers.mjs";
 
-test("DEFAULT_LOCAL_WORKERS is the scaled '50%' token", () => {
-    assert.equal(DEFAULT_LOCAL_WORKERS, "50%");
+test("DEFAULT_LOCAL_WORKERS is serial 1 (Phase-3 qualification flipped it from parallel)", () => {
+    assert.strictEqual(DEFAULT_LOCAL_WORKERS, 1);
 });
 
 test("CI guard: CI set ⇒ serial 1 (the number, not a string)", () => {
@@ -43,14 +43,14 @@ test("E2E_WORKERS percentage ⇒ that percentage string (passed to Playwright)",
     assert.strictEqual(resolveWorkers({E2E_WORKERS: "25%"}), "25%");
 });
 
-test("default: no CI, no E2E_WORKERS ⇒ scaled '50%' (NOT serial 1)", () => {
+test("default: no CI, no E2E_WORKERS ⇒ serial 1 (parallel is opt-in via E2E_WORKERS)", () => {
     assert.strictEqual(resolveWorkers({}), DEFAULT_LOCAL_WORKERS);
-    assert.strictEqual(resolveWorkers({}), "50%");
+    assert.strictEqual(resolveWorkers({}), 1);
 });
 
-test("empty / whitespace E2E_WORKERS is treated as unset ⇒ default", () => {
-    assert.strictEqual(resolveWorkers({E2E_WORKERS: ""}), "50%");
-    assert.strictEqual(resolveWorkers({E2E_WORKERS: "   "}), "50%");
+test("empty / whitespace E2E_WORKERS is treated as unset ⇒ serial default", () => {
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: ""}), 1);
+    assert.strictEqual(resolveWorkers({E2E_WORKERS: "   "}), 1);
 });
 
 test("surrounding whitespace is trimmed before matching", () => {
@@ -58,12 +58,13 @@ test("surrounding whitespace is trimmed before matching", () => {
     assert.strictEqual(resolveWorkers({E2E_WORKERS: "\t50%\n"}), "50%");
 });
 
-test("empty CI value is falsy ⇒ falls through to E2E_WORKERS / default", () => {
-    // The truthy check mirrors the config's `process.env.CI ? … : …` idiom:
-    // an unset/empty CI must not force serial locally.
+test("empty CI value is falsy ⇒ CI guard doesn't fire; E2E_WORKERS opt-in still applies", () => {
+    // The truthy check mirrors the config's `process.env.CI ? … : …` idiom: an
+    // unset/empty CI must NOT trigger the CI guard, so a local E2E_WORKERS opt-in
+    // still takes effect (and absent one, the serial default applies).
     assert.strictEqual(resolveWorkers({CI: "", E2E_WORKERS: "4"}), 4);
-    assert.strictEqual(resolveWorkers({CI: ""}), "50%");
-    assert.strictEqual(resolveWorkers({CI: undefined}), "50%");
+    assert.strictEqual(resolveWorkers({CI: ""}), 1);
+    assert.strictEqual(resolveWorkers({CI: undefined}), 1);
 });
 
 // --- Malformed values: loud WorkerConfigError, never a silent fallback ------

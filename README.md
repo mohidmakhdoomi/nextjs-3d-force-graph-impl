@@ -81,6 +81,22 @@ both Chromium and Firefox; Playwright owns that server's startup and teardown.
 direct `npm run start` serving the root page with HTTP 200 is verified separately
 as a stage-qualification check.
 
+**Local test parallelism (issue #41).** Local e2e runs are **serial by default**
+(`workers: 1`) — the qualified `retries: 0` gate contract. Parallel execution is
+**opt-in** via the `E2E_WORKERS` environment variable: a positive integer
+(`E2E_WORKERS=4`) or a hardware-relative percentage (`E2E_WORKERS=50%`, scaled
+from `os.cpus().length`); an invalid value fails loudly at config load rather than
+silently running serial. Whenever `CI` is set the count is hard-pinned to `1`
+regardless of `E2E_WORKERS`, so the sharded CI contract is untouched, and local
+`retries: 0` is preserved so flakes stay visible. Parallel workers were qualified
+and found to **destabilize** the timing-sensitive Chromium `matrix.spec.ts`
+camera-settle/drag assertions under SwiftShader CPU contention (4–5 of 22 tests
+fail on **every** parallel run there — the problem is destabilization, not speed:
+parallel is actually faster), so parallelism is not the default. It is most useful
+on the [native-GPU lane](#opt-in-native-gpu-e2e-lane), where the full two-engine
+suite runs ~4× faster on real hardware and stays mostly green. Full qualification
+evidence and the trade-off: `codev/reviews/41-parallelize-local-e2e-runs.md`.
+
 ### Audit evidence
 
 Audits are evidence snapshots, not a zero-finding green gate. Either audit
@@ -109,8 +125,10 @@ check:
   audit captures.
 - **`e2e`** — the production build plus the full Playwright suite, split at the
   test level across four Chromium shards (`--shard=1/4 … 4/4`). Each shard runs
-  strictly serially (`workers: 1`); `playwright.config.ts` sets
-  `fullyParallel: true` so `--shard` splits per test rather than per file.
+  strictly serially — the config resolves `workers` to `1` whenever `CI` is set
+  (issue #41's `resolveWorkers` CI guard, which returns before reading
+  `E2E_WORKERS`); `playwright.config.ts` sets `fullyParallel: true` so `--shard`
+  splits per test rather than per file.
 - **`merge-reports`** — stitches the per-shard blob reports into one HTML report.
 - **`gate`** — a single required status that succeeds only when `quality` and
   `e2e` both pass.
@@ -175,7 +193,9 @@ What one invocation does (`scripts/e2e-gpu-lane.mjs`):
    `E2E_ENGINES=chromium,firefox`. Chromium's verified flags are injected through
    the config's `PW_CHROMIUM_ARGS` hook; **Firefox inherits the same Mesa env**
    from the suite process (no new config hook). Same production server, same
-   `workers: 1`, same `retries: 0`, same timeouts as the normal local suite.
+   **serial default** (`workers: 1`; set `E2E_WORKERS` to opt into parallel —
+   ~4× faster here, see below), same `retries: 0`, same timeouts as the normal
+   local suite.
 4. **Reports honestly, per engine.** The run ends with a machine-greppable block:
 
    ```
@@ -199,20 +219,33 @@ What one invocation does (`scripts/e2e-gpu-lane.mjs`):
    either engine is unverified. The suite's own pass/fail is the lane's exit code.
 
 Measured on the qualification host (WSL2, RTX 3080): the full **two-engine**
-hardware suite (22 tests) runs in ≈ 196 s (≈ 208 s total incl. build) at
-`retries: 0`, versus the Chromium-only SwiftShader path measured in
+hardware suite (22 tests) runs **serially** in ≈ 196 s (≈ 208 s total incl.
+build) at `retries: 0`, versus the Chromium-only SwiftShader path measured in
 `codev/reviews/52-firefox-hardware-webgl-gpu-lane.md` — the hardware lane runs
 **twice the tests (both engines)** in a fraction of the software time, with the
 SwiftShader-only hover/timing flake class absent. Full per-run / per-test
 evidence and the software baseline live in that review (as the #44 lane's
 evidence lives in `codev/reviews/44-add-an-opt-in-native-gpu-local.md`).
 
+Issue #41's **opt-in parallel** (`E2E_WORKERS=50%` → 10 workers on this 20-core
+host) cut that same two-engine hardware suite to ≈ 46 s (≈ 57 s incl. build) —
+about **4× faster** — across a three-run qualification set. The known Firefox
+flake #33 (below) recurred once in those three parallel runs (2/3 green), so
+parallel remains opt-in and `retries: 0` keeps the amplification honest; the
+SwiftShader gate stays serial (it fails 4–5/22 under parallel contention). Full
+evidence: `codev/reviews/41-parallelize-local-e2e-runs.md`.
+
 **Known Firefox flake**: `[firefox] tests/e2e/matrix.spec.ts:224` ("zooms in with
 the wheel and rotates with a background drag") is a pre-existing Firefox
 synthetic-input-delivery nondeterminism (not a software-WebGL timing problem — it
 survives on hardware). It is **not masked with retries** and the canonical
-assertion is **not weakened**; it did not recur across the three-run qualification
-set recorded in review 52. If it recurs, it is dispositioned there, never hidden.
+assertion is **not weakened**. It is an **open, pre-existing** flake that surfaces
+even serially at `retries: 0` (it recurred once in issue #41's serial SwiftShader
+baseline), which is why it is tracked and why CI runs `retries: 2`. Parallel CPU
+contention **amplifies** it (once in three hardware parallel runs), which is one
+concrete reason parallel is opt-in, not the default. Issue #41 neither introduces
+nor fixes it; it stays unmasked and the assertion unchanged, dispositioned here and
+in review 41, never hidden.
 
 ### Env controls and flags
 
@@ -222,6 +255,7 @@ set recorded in review 52. If it recurs, it is dispositioned there, never hidden
 | `E2E_GPU_FORCE_FALLBACK=1` | Skip all hardware probing; take the honest fallback path (Chromium SwiftShader, Firefox skipped) deterministically. With `--engine=firefox` alone it is a benign no-op skip (Firefox has no software path), exit 0. |
 | `E2E_GPU_REQUIRE=1` | Exit non-zero instead of falling back when **any requested engine** does not verify hardware — use for hardware-evidence runs so a silent fallback can't pollute results. With `--probe-only` the per-engine report is still printed (`mode: abort`) **before** the non-zero exit — the probe already did its work. |
 | `--probe-only` | Probe + verify + report the requested engine set without building or running the suite. Always prints the report, even on a `E2E_GPU_REQUIRE=1` abort. |
+| `E2E_WORKERS=<int\|percent>` | Config-level local worker count (issue #41), **inherited by this lane**. Opt into parallel with `E2E_WORKERS=50%` (hardware-relative) or `E2E_WORKERS=4`; **~4× faster** on this lane but can surface flake #33. Serial (`1`) by default; **pinned to `1` whenever `CI` is set**; an invalid value fails loudly at config load. |
 | `--mode=headed\|headless` | Override the run mode. Default is **headless** (proven equivalent; see below). Headed needs WSLg/X (`DISPLAY`). |
 | `--candidate=<id>` / `--channel=<name>` | Probe a specific Chromium recipe / a specific Playwright channel (`--channel` is probe-only). Chromium-only — rejected with `--engine=firefox`. Used by the FR5 matrix. |
 
@@ -281,6 +315,10 @@ stability results, lives in `codev/reviews/44-add-an-opt-in-native-gpu-local.md`
 - Renderer strings and timings above are **evidence dated 2026-07** on one
   host (Mesa 26.0.3, driver 581.29); driver updates can shift them. The lane
   probes rather than assumes, and falls back loudly.
-- `workers` stays `1` in the lane, matching the qualified suite. Raising
-  parallelism on top of this lane is issue #41's qualification, sequenced
-  after this one — do not raise it ad hoc.
+- `workers` **defaults to `1`** in the lane, matching the qualified serial suite.
+  Issue #41 qualified raising it and adopted a **serial-default + opt-in-parallel**
+  contract: set `E2E_WORKERS=50%` (or an integer) to run this lane's two-engine
+  suite in parallel (~4× faster on hardware). Parallel is not the default because
+  it destabilizes the SwiftShader gate (4–5/22) and amplifies flake #33 (`retries:
+  0` keeps that visible). See the "Local test parallelism" note above and
+  `codev/reviews/41-parallelize-local-e2e-runs.md`.
