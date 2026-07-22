@@ -298,3 +298,12 @@ criterion 2b). Guardrails all honored:
 - Per architect's "I verify the protocol-complete commit is on the remote before
   the merge lands": PAUSING before merge. Notified architect; awaiting go-ahead to
   merge PR #54 (regular merge commit, no squash).
+
+- Architect GO-AHEAD to merge (protocol-complete commit 3b9b877 verified on remote,
+  included in PR #54). Merge attempt via pr-merge.sh (`gh pr merge 54 --merge`)
+  BLOCKED by base-branch protection: required CI (Quality + 4 E2E shards) PENDING.
+  Repo auto-merge DISABLED (--auto rejected). Did NOT use --admin (won't bypass the
+  CI gate — respecting it is the point of #41). Watching required checks
+  (`gh pr checks 54 --watch --required`); will merge (regular merge, no squash) on
+  green. Expect green: CI=1 → serial shards (guard), retries:2 absorbs #34,
+  validation.yml unchanged.
