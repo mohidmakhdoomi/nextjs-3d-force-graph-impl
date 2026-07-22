@@ -206,14 +206,21 @@ inert (no existing behavior touched).
 #### Acceptance Criteria
 - [ ] `npm run typecheck` passes with the `.mjs` import.
 - [ ] `npm test` passes (migrated `automation.test.mjs` + Phase-1 unit suite).
-- [ ] **Config actually loads and resolves** (not just compiles): a real
-  Playwright invocation confirms parallel workers locally — e.g.
-  `E2E_ENGINES=chromium npx playwright test --list` runs without config error and
-  a real run prints "using N workers" (N>1 on this multi-core host); and
-  `CI=1 E2E_ENGINES=chromium npx playwright test --list` resolves to 1 worker.
-  (Lessons-critical: "it compiled" ≠ "it works" — exercise the real config path.)
-- [ ] `E2E_WORKERS=4` → 4 workers; `E2E_WORKERS=50%` → hardware-relative;
-  `E2E_WORKERS=abc` → loud config-resolution failure (no silent serial).
+- [ ] **Config import resolves** (the novel `.mjs`-from-`.ts` path works):
+  `E2E_ENGINES=chromium npx playwright test --list` completes without a config
+  load/import error. NOTE: `--list` proves the config *loads* but does **not**
+  print the worker count — the next item is the actual worker-count proof.
+- [ ] **Resolved worker count proven by the run banner** (the deterministic
+  observable; `--list` does not report workers): a minimal real run — a single
+  fast test via `--grep`, or the full suite — prints Playwright's
+  `Running N tests using M worker(s)` banner, and `M` is asserted per env:
+  default ⇒ `M > 1` on this multi-core host; `CI=1` ⇒ `M = 1`;
+  `E2E_WORKERS=4` ⇒ `M = 4`. This closes the gap between "config loaded" and
+  "config applied the resolved count".
+  (Lessons-critical: "it compiled" ≠ "it works" — exercise the real path.)
+- [ ] `E2E_WORKERS=50%` → hardware-relative worker count in the banner;
+  `E2E_WORKERS=abc` → loud `WorkerConfigError` at config resolution, **no run
+  starts** (no silent serial).
 - [ ] The `workers: 1` comment block is gone; the new contract comment is present.
 - [ ] `.github/workflows/validation.yml` unchanged (verified:
   `git diff --name-only` does not list it).
@@ -221,10 +228,12 @@ inert (no existing behavior touched).
 #### Test Plan
 - **Unit Tests**: migrated `tests/automation.test.mjs` (delegation + unchanged CI
   workflow contract); Phase-1 helper suite still green.
-- **Integration Tests**: real `npx playwright test --list` under three envs
-  (default, `CI=1`, `E2E_WORKERS=…`) confirming the config resolves workers
-  end-to-end and the invalid case fails loudly. (A full suite run is Phase 3's
-  qualification.)
+- **Integration Tests**: (a) `npx playwright test --list` once to confirm the
+  `.mjs` import loads the config; (b) a minimal real run whose worker banner
+  (`using M worker(s)`) is observed under default / `CI=1` / `E2E_WORKERS=4`
+  (the deterministic worker observable — `--list` does not print it); plus the
+  `E2E_WORKERS=abc` loud-failure case (no run starts). The full-suite ≥3× run is
+  Phase 3's qualification.
 - **Manual Testing**: eyeball Playwright's "Running X tests using N workers"
   banner for default vs `CI=1`.
 
