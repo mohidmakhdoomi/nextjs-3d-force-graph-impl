@@ -1,6 +1,8 @@
 import {defineConfig, devices} from "@playwright/test";
 import process from "node:process";
 
+import {resolveWorkers} from "./scripts/e2e-workers.mjs";
+
 const baseURL = "http://127.0.0.1:3000";
 
 // Env-gated Chromium WebGL launch args.
@@ -93,16 +95,29 @@ export default defineConfig({
     // headroom over the local budget; local timing is unchanged. (The
     // click-to-focus test keeps its own explicit 240 s override either way.)
     timeout: process.env.CI ? 240_000 : 120_000,
-    // `fullyParallel` marks every test as an independently schedulable unit so
-    // `--shard` splits the suite at the TEST level (not the file level). With
-    // `workers: 1` still pinned, execution within any single job stays strictly
-    // serial — one test at a time, no SwiftShader CPU contention — so the
-    // qualified timing environment is unchanged. CI fans the shards out across
-    // parallel jobs; local `npm run validate` still runs one worker start to
-    // finish. Do NOT raise `workers`: in-job parallelism reintroduces the
-    // contention these timing-sensitive assertions were qualified against.
+    // `fullyParallel` marks every test as an independently schedulable unit,
+    // which serves two consumers at once: CI's `--shard` splits the suite at the
+    // TEST level (not the file level), and local runs fan those units out across
+    // multiple workers.
+    //
+    // `workers` is resolved by resolveWorkers(process.env) (scripts/e2e-workers.mjs,
+    // issue #41) — the single tested source of truth for the worker count:
+    //   - CI (any truthy `CI`): hard-pinned to 1. The resolver returns BEFORE it
+    //     reads E2E_WORKERS, so every sharded job stays strictly serial — one
+    //     test at a time, no SwiftShader CPU contention. The qualified CI timing
+    //     environment is byte-for-byte unchanged, and a stray E2E_WORKERS can
+    //     never parallelize a shard.
+    //   - Local: hardware-scaled parallel — the '50%' default (Playwright derives
+    //     the count from os.cpus().length, floored at >=1 so low-core hosts still
+    //     run), overridable via E2E_WORKERS (a positive integer or a percentage;
+    //     an invalid value is a loud WorkerConfigError, never a silent serial).
+    // Local `retries: 0` (below) is preserved so flakes still surface immediately.
+    // The timing-sensitive matrix.spec.ts assertions were originally qualified
+    // against a contention-free serial environment; the parallel local default is
+    // qualified by repeated full two-engine runs on the native-GPU lane (issue
+    // #41), while CI keeps that serial contract automatically via the guard above.
     fullyParallel: true,
-    workers: 1,
+    workers: resolveWorkers(process.env),
     // CI-only retries absorb SwiftShader rendering nondeterminism. The
     // click-to-focus test (matrix.spec.ts) intermittently misses a camera-motion
     // or node-click timing predicate; this predates sharding — it also flaked the

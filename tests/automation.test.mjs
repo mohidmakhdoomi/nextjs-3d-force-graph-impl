@@ -84,10 +84,14 @@ test("enforces lint, typecheck, and unit contracts in the quality job", () => {
 });
 
 test("shards the full Chromium e2e suite at the test level", () => {
-    // fullyParallel makes --shard split at the TEST level; workers stays 1 so
-    // execution within a shard is strictly serial (no SwiftShader contention).
+    // fullyParallel makes --shard split at the TEST level. The worker count is
+    // delegated to the tested resolver (scripts/e2e-workers.mjs, issue #41): CI is
+    // hard-pinned to 1 so execution within a shard stays strictly serial (no
+    // SwiftShader contention), while local runs scale to hardware. The CI-serial
+    // matrix in that resolver is covered by tests/e2e-workers.test.mjs; here we
+    // assert only that the config delegates to it.
     assert.match(playwrightConfig, /fullyParallel: true/);
-    assert.match(playwrightConfig, /workers: 1/);
+    assert.match(playwrightConfig, /workers: resolveWorkers\(process\.env\)/);
     // CI-only retries (count 2) absorb pre-existing SwiftShader flake (issue #34)
     // so a single flaky attempt can't red the gate; local stays 0 so flakes show.
     assert.match(playwrightConfig, /retries: process\.env\.CI \? 2 : 0/);
