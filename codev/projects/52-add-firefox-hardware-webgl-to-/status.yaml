@@ -7,14 +7,14 @@ plan_phases:
     title: >-
       Engine-aware core: per-engine probe recipes, Firefox probe + sanitize pref, expanded deny-list, --engine selector,
       per-engine report, unit tests
-    status: in_progress
+    status: complete
   - id: two_engine_suite_and_inertness
     title: Two-engine suite wiring, honest fallback + empty-engine-set skip, FR6 default-inert proof
-    status: pending
+    status: in_progress
   - id: qualification_evidence_and_docs
     title: Firefox-inclusive repeat-run evidence (FR8), flake disposition (Decision 10), README docs (FR9)
     status: pending
-current_plan_phase: engine_aware_core
+current_plan_phase: two_engine_suite_and_inertness
 gates:
   spec-approval:
     status: approved
@@ -29,7 +29,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-07-22T02:21:18.654Z'
-updated_at: '2026-07-22T03:03:54.617Z'
+updated_at: '2026-07-22T03:07:48.135Z'
