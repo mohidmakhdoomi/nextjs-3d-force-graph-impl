@@ -10,11 +10,11 @@ plan_phases:
     status: complete
   - id: two_engine_suite_and_inertness
     title: Two-engine suite wiring, honest fallback + empty-engine-set skip, FR6 default-inert proof
-    status: in_progress
+    status: complete
   - id: qualification_evidence_and_docs
     title: Firefox-inclusive repeat-run evidence (FR8), flake disposition (Decision 10), README docs (FR9)
-    status: pending
-current_plan_phase: two_engine_suite_and_inertness
+    status: in_progress
+current_plan_phase: qualification_evidence_and_docs
 gates:
   spec-approval:
     status: approved
@@ -28,8 +28,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 2
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: two_engine_suite_and_inertness
@@ -48,4 +48,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-52/codev/projects/52-add-firefox-hardware-webgl-to-/52-two_engine_suite_and_inertness-iter1-claude.txt
 started_at: '2026-07-22T02:21:18.654Z'
-updated_at: '2026-07-22T03:38:00.946Z'
+updated_at: '2026-07-22T03:41:03.690Z'
