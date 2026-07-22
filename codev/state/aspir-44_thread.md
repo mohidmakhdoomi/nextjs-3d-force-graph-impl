@@ -127,5 +127,18 @@
   lessons-learned.md Validation Evidence gained renderer-probe+strict-switch,
   probe-before-assuming, and timeout-race-reap/DI lessons. Hot tier untouched.
 - **PR #50 opened** (branch builder/aspir-44 → main, Closes #44). Test-count
-  typo in PR body/review corrected (29 new tests, 68 total). Awaiting PR CMAP
-  + human pr gate.
+  typo in PR body/review corrected (29 new tests, 68 total). PR CMAP: Gemini/
+  Claude APPROVE, Codex COMMENT (plan status marked complete; porch chore
+  commits are protocol machinery). pr gate approved by architect.
+
+## Verify phase
+
+- **PR #50 MERGED** (merge commit 51ee918, 2026-07-21T23:59Z) with CI fully
+  green on the final head (4 SwiftShader shards + Quality + Validation gate),
+  porch protocol commits included in the merged history per architect
+  sequencing.
+- Integrated-tree verification in this worktree after merging origin/main:
+  unit suite 68/68; full `npm run test:e2e:gpu` — **11/11 pass, hardware mode,
+  renderer `ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080),
+  OpenGL 4.6)`, 105 s total (build 10 s, suite 94 s)**. The lane works on
+  integrated main exactly as qualified. Signaling porch done → verify-approval.
