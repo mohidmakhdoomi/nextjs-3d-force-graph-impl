@@ -276,3 +276,8 @@ criterion 2b). Guardrails all honored:
   for impl commits); the `chore(porch):` commits are porch state commits, not
   builder commits, and strict-mode forbids rewriting pushed porch history. Wrote
   41-review-iter1-rebuttals.md. Committing plan fix + rebuttal, pushing to PR #54.
+
+- porch done → **GATE REQUIRED: pr**. Ran `porch gate 41` → **pr gate active,
+  WAITING FOR HUMAN APPROVAL.** STOPPED — NOT calling porch approve (human-only).
+  Codex #1 (commit format) is rebutted-on-record; human decides at the gate.
+  Architect notified. Awaiting `porch approve 41 pr`.
