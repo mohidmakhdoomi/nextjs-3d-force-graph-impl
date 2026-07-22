@@ -68,7 +68,7 @@ npm run browser:install
 | `npm run build` | Create the production Next.js build. |
 | `npm run start` | Start a previously built production application. |
 | `npm run test:smoke` | Build, start the production server, and run the Chromium and Firefox WebGL smoke. |
-| `npm run test:e2e:gpu` | Opt-in: run the full Chromium e2e suite on verified hardware WebGL when a GPU adapter is usable, with loud software fallback otherwise. **Not part of the gate.** See [Opt-in native-GPU e2e lane](#opt-in-native-gpu-e2e-lane). |
+| `npm run test:e2e:gpu` | Opt-in: run the full two-engine (Chromium + Firefox) e2e suite on verified hardware WebGL when a GPU adapter is usable, with honest software fallback otherwise. **Not part of the gate.** See [Opt-in native-GPU e2e lane](#opt-in-native-gpu-e2e-lane). |
 | `npm run validate` | Fail fast through lint, typecheck, and the `test:smoke` browser suite (build plus the Chromium + Firefox WebGL smoke). |
 | `npm run audit:full` | Report findings in the complete dependency graph. |
 | `npm run audit:production` | Report findings with development dependencies omitted. |
@@ -141,58 +141,89 @@ per-shard `playwright-test-results-<n>` artifacts.
 npm run test:e2e:gpu
 ```
 
-An **opt-in, local-only** lane (issue #44) that runs the *full* Chromium e2e
-suite on **genuine hardware-accelerated WebGL** instead of SwiftShader. It is
-additional tooling and evidence, **never the green gate**: `npm run validate`,
-`test:smoke`, CI, and every committed test are unchanged and stay on the
-qualified SwiftShader serial path. Nothing in the repo behaves differently
-unless you invoke the lane.
+An **opt-in, local-only** lane (issue #44 Chromium, issue #52 Firefox) that runs
+the *full* **two-engine (Chromium + Firefox)** e2e suite on **genuine
+hardware-accelerated WebGL** instead of SwiftShader. It is additional tooling and
+evidence, **never the green gate**: `npm run validate`, `test:smoke`, CI, and
+every committed test are unchanged and stay on the qualified SwiftShader serial
+path (CI stays `E2E_ENGINES=chromium` SwiftShader-only — Firefox has no
+SwiftShader equivalent and the Firefox arm is a **local** qualification lane, not
+a CI gate). Nothing in the repo behaves differently unless you invoke the lane.
 
 What one invocation does (`scripts/e2e-gpu-lane.mjs`):
 
-1. **Probes the host** and picks a hardware recipe from an evidence-ordered
-   candidate list (WSL2 Mesa d3d12 for any vendor adapter; ANGLE-Vulkan/GL on
-   native Linux). Unusable candidates are skipped with a one-line cause +
-   remedy diagnostic.
-2. **Verifies the renderer before trusting anything**: launches the repo's own
-   Playwright Chromium under the candidate flags and reads
-   `UNMASKED_RENDERER_WEBGL`; the string must not match
-   SwiftShader/llvmpipe/software. Failed candidates fall through to the next
-   (per-candidate transcripts land in `gpu-lane-logs/`).
-3. **Runs the suite** — `npm run build`, then `npx playwright test` with
-   `E2E_ENGINES=chromium` and the verified flags injected through the
-   config's `PW_CHROMIUM_ARGS` hook. Same production server, same
+1. **Probes the host per engine** and picks a hardware recipe from an
+   evidence-ordered candidate list. **Chromium** uses ANGLE launch flags + the
+   WSL2 Mesa d3d12 env (or ANGLE-Vulkan/GL on native Linux). **Firefox** uses the
+   *same* Mesa d3d12 env with **no ANGLE flags** (Firefox reaches the adapter
+   through the Mesa env alone). Unusable candidates are skipped with a one-line
+   cause + remedy diagnostic.
+2. **Verifies the renderer per engine before trusting anything**: launches the
+   repo's own Playwright browser and reads `UNMASKED_RENDERER_WEBGL`; the string
+   must not match the software deny-list (SwiftShader, llvmpipe, softpipe,
+   lavapipe, swrast, software, Microsoft Basic). **Firefox renderer sanitization**:
+   Firefox privacy-sanitizes the unmasked renderer to `Generic Renderer`, so the
+   raw string is read through an **ephemeral, probe-only** preference
+   `webgl.sanitize-unmasked-renderer: false` (Chromium's deny-list alone is too
+   weak here — `Generic Renderer` matches no software marker, so it would
+   false-pass as hardware; the lane classifies it as **unverifiable**, never
+   hardware). This pref lives **only** in the probe browser — the application
+   suite's Firefox profile keeps its normal `webgl.force-enabled: true` only.
+   Failed candidates fall through (per-engine transcripts land in
+   `gpu-lane-logs/probe-<engine>-….log`).
+3. **Runs the suite** — `npm run build`, then one `npx playwright test` with
+   `E2E_ENGINES=chromium,firefox`. Chromium's verified flags are injected through
+   the config's `PW_CHROMIUM_ARGS` hook; **Firefox inherits the same Mesa env**
+   from the suite process (no new config hook). Same production server, same
    `workers: 1`, same `retries: 0`, same timeouts as the normal local suite.
-4. **Reports honestly.** The run ends with a machine-greppable block:
+4. **Reports honestly, per engine.** The run ends with a machine-greppable block:
 
    ```
    === E2E GPU LANE REPORT ===
-   mode: hardware | software-fallback
-   renderer: <verbatim UNMASKED_RENDERER_WEBGL>
-   engine: chromium
-   suite: pass | fail (exit n)
+   mode: hardware | software-fallback | skipped
+   engines: chromium,firefox
+   renderer.chromium: <verbatim string | (software-fallback — SwiftShader)>
+   renderer.firefox: <verbatim string | skipped (unverified — <reason>)>
+   suite: pass | fail (exit n) | skipped (no verified engine)
    wall-clock: <total>s (build <n>s, suite <n>s)
    ```
 
-   `mode: hardware` is only ever printed after the deny-list assertion
-   passed. When no adapter is usable the lane still runs the suite under the
-   default SwiftShader args with an unmissable `SOFTWARE FALLBACK` banner at
-   the start and before the report — a fallback run can never be mistaken for
-   hardware evidence. The suite's own pass/fail is the lane's exit code.
+   `mode: hardware` is only ever printed after **every requested engine's**
+   deny-list assertion passed. **Honest fallback** (no Firefox software
+   masquerade): when the two engines cannot both verify hardware, Chromium runs
+   under its deterministic SwiftShader fallback and **Firefox is skipped** with a
+   stated reason (Firefox has no portable software-WebGL equivalent, so an
+   unverified `llvmpipe` run is *never* presented as a qualified fallback), under
+   an unmissable `SOFTWARE FALLBACK` banner at the start and before the report.
+   Under `E2E_GPU_REQUIRE=1` the lane instead exits non-zero before build/suite if
+   either engine is unverified. The suite's own pass/fail is the lane's exit code.
 
-Measured on the qualification host (WSL2, RTX 3080): hardware suite ≈ 97 s vs
-≈ 594 s for the same suite under SwiftShader — about **6× faster**, with the
-SwiftShader-only hover/timing flake class absent.
+Measured on the qualification host (WSL2, RTX 3080): the full **two-engine**
+hardware suite (22 tests) runs in ≈ 196 s (≈ 208 s total incl. build) at
+`retries: 0`, versus the Chromium-only SwiftShader path measured in
+`codev/reviews/52-firefox-hardware-webgl-gpu-lane.md` — the hardware lane runs
+**twice the tests (both engines)** in a fraction of the software time, with the
+SwiftShader-only hover/timing flake class absent. Full per-run / per-test
+evidence and the software baseline live in that review (as the #44 lane's
+evidence lives in `codev/reviews/44-add-an-opt-in-native-gpu-local.md`).
+
+**Known Firefox flake**: `[firefox] tests/e2e/matrix.spec.ts:224` ("zooms in with
+the wheel and rotates with a background drag") is a pre-existing Firefox
+synthetic-input-delivery nondeterminism (not a software-WebGL timing problem — it
+survives on hardware). It is **not masked with retries** and the canonical
+assertion is **not weakened**; it did not recur across the three-run qualification
+set recorded in review 52. If it recurs, it is dispositioned there, never hidden.
 
 ### Env controls and flags
 
 | Control | Effect |
 | --- | --- |
-| `E2E_GPU_FORCE_FALLBACK=1` | Skip all hardware candidates; run the software-fallback path deterministically (how the fallback is exercised on a GPU-capable machine). |
-| `E2E_GPU_REQUIRE=1` | Exit non-zero instead of falling back when no candidate verifies — use for hardware-evidence runs so a silent fallback can't pollute results. |
-| `--probe-only` | Probe + verify + report without building or running the suite. |
+| `--engine=chromium\|firefox\|all` | Select the engine set to probe and run. `all` (default) is the two-engine lane; single-engine values preserve targeted diagnostics and obey the same honesty rules. |
+| `E2E_GPU_FORCE_FALLBACK=1` | Skip all hardware probing; take the honest fallback path (Chromium SwiftShader, Firefox skipped) deterministically. With `--engine=firefox` alone it is a benign no-op skip (Firefox has no software path), exit 0. |
+| `E2E_GPU_REQUIRE=1` | Exit non-zero instead of falling back when **any requested engine** does not verify hardware — use for hardware-evidence runs so a silent fallback can't pollute results. |
+| `--probe-only` | Probe + verify + report the requested engine set without building or running the suite. |
 | `--mode=headed\|headless` | Override the run mode. Default is **headless** (proven equivalent; see below). Headed needs WSLg/X (`DISPLAY`). |
-| `--candidate=<id>` / `--channel=<name>` | Probe a specific recipe / a specific Playwright channel (`--channel` is probe-only). Used by the FR5 matrix. |
+| `--candidate=<id>` / `--channel=<name>` | Probe a specific Chromium recipe / a specific Playwright channel (`--channel` is probe-only). Used by the FR5 matrix. |
 
 Pass flags through npm like `npm run test:e2e:gpu -- --probe-only`.
 
@@ -216,6 +247,27 @@ them: `MESA_D3D12_DEFAULT_ADAPTER_NAME=<vendor>` (pick the adapter) and
 `LIBGL_ALWAYS_SOFTWARE=false`. The sandbox/blocklist relaxations above exist
 **only** inside this explicitly invoked lane — never in default launch args or
 CI.
+
+**Firefox** uses the *same* `GALLIUM_DRIVER=d3d12` + `LD_LIBRARY_PATH` Mesa env
+and **no ANGLE flags** (no `--use-gl`/`--use-angle`; those are Chromium-only). In
+the combined suite Firefox inherits that Mesa env from the suite process, so it
+needs **no `playwright.config.ts` change**. The renderer probe launches Firefox
+with two probe-only preferences and nothing else:
+
+```js
+firefoxUserPrefs: {
+    "webgl.force-enabled": true,             // also the committed suite default
+    "webgl.sanitize-unmasked-renderer": false, // PROBE ONLY — reveals the raw renderer
+}
+```
+
+`webgl.sanitize-unmasked-renderer: false` is applied **only** to the ephemeral
+renderer-probe browser (it changes renderer-string *disclosure*, not renderer
+*selection*); the committed `firefox` Playwright project keeps
+`webgl.force-enabled: true` only. On hardware the raw Firefox renderer reads
+`D3D12 (NVIDIA GeForce RTX 3080)`; without the recipe it is `llvmpipe …`
+(software), and without the sanitize pref it is the privacy-sanitized
+`Generic Renderer` (treated as unverifiable, never hardware).
 
 **Headless works** (2026-07 investigation): default Playwright headless
 (headless shell), new headless (`--channel=chromium`), and headed WSLg all

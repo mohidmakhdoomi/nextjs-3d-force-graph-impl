@@ -170,3 +170,38 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
   firefox-only headed decision test. Rebuttal written (ACCEPTED+FIXED both points).
 - iter2: unanimous APPROVE, KEY_ISSUES None. Committing [Phase:
   two_engine_suite_and_inertness].
+
+### Implement — Phase 3 `qualification_evidence_and_docs` (iteration 1)
+- Phase 2 committed 8d79964. Phase 3: FR8 ≥3 consecutive two-engine hardware runs
+  (E2E_GPU_REQUIRE=1) + forced-fallback baseline + flake disposition (Decision 10)
+  + README (FR9) + complete review + clean-worktree validate proof.
+
+### Phase 3 — evidence + docs results
+- FR8: 3 consecutive fully-green two-engine hardware runs Q-1/Q-2/Q-3 (22/22 each,
+  196-198s suite, E2E_GPU_REQUIRE=1, retries:0) + HW-1 = 4-for-4 (88/88 test
+  execs). Firefox per-test spread ≤0.3s. Both renderers asserted identical every
+  run. Branch (a) satisfied — fully green, no known-flake exception needed.
+- Flake disposition (Decision 10): background-drag matrix:224 = 0/4 recurrence
+  this session (13.2-13.3s stable). Accepted+documented as pre-existing Firefox
+  synthetic-input flake; NOT fixed (out of scope), NOT masked (retries:0,
+  assertion unchanged).
+- FB-1 baseline (FORCE_FALLBACK): 11/11 chromium SwiftShader (firefox skipped),
+  582s suite / 591s total, exit 0. Two-engine hardware 22 tests/196s vs chromium
+  SwiftShader 11 tests/582s ⇒ ~6× per-test, matching #44.
+- README (FR9) updated in place: two-engine command, Firefox recipe + sanitize-
+  pref rationale, per-engine report block, --engine selector, honest fallback,
+  known flake. Review completed (spec-compliance checklist, lessons, consult log).
+- Committing Phase 3; launching clean-worktree `npm run validate` proof (worktree
+  lint polluted by untracked .claude/hooks).
+
+### Phase 3 — clean-checkout validate proof (lessons-critical)
+- Clean detached worktree at 54d836d + real `npm ci` (no .claude/hooks present):
+  - Run 1: lint ✓, typecheck ✓, build ✓; test:smoke runs both engines in SOFTWARE
+    (chromium SwiftShader + firefox llvmpipe) → e2e 21/22, VALIDATE EXIT 1. Sole
+    failure = known firefox matrix:224 background-drag flake (software input-race;
+    this is where it lives). Lint-pollution proof SATISFIED (lint 0 errors).
+  - Run 2 (no changes): e2e 22/22, VALIDATE EXIT 0 (firefox:224 passed 12.9s).
+    Intermittent flake passes on re-run — exact #44 pattern.
+- Branch touches only scripts/e2e-gpu-lane.mjs + tests/gpu-lane.test.mjs (+docs);
+  zero tests/e2e / app / playwright.config.ts changes ⇒ flake is pre-existing.
+- Review 52 status → complete. Folding clean-checkout proof into Phase 3 commit.
