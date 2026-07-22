@@ -1,7 +1,7 @@
 id: '44'
 title: add-an-opt-in-native-gpu-local
 protocol: aspir
-phase: verify
+phase: verified
 plan_phases:
   - id: lane_wrapper_core
     title: 'Lane wrapper core: probe engine, candidate data, deterministic policy, unit tests'
@@ -45,7 +45,7 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/aspir-44/codev/projects/44-add-an-opt-in-native-gpu-local/44-headless_investigation-iter1-claude.txt
 started_at: '2026-07-21T22:00:59.724Z'
-updated_at: '2026-07-22T00:02:26.302Z'
+updated_at: '2026-07-22T00:02:27.444Z'
 pr_history:
   - phase: review
     pr_number: 50
