@@ -1,0 +1,43 @@
+id: '41'
+title: parallelize-local-e2e-runs-sca
+protocol: spir
+phase: verified
+plan_phases:
+  - id: phase_1
+    title: Pure worker-resolution helper + unit tests
+    status: complete
+  - id: phase_2
+    title: Wire helper into config, migrate consumer, update comment
+    status: complete
+  - id: phase_3
+    title: Qualify parallel execution, finalize default, document
+    status: complete
+current_plan_phase: null
+gates:
+  spec-approval:
+    status: approved
+    requested_at: '2026-07-22T21:30:56.336Z'
+    approved_at: '2026-07-22T21:31:50.748Z'
+  plan-approval:
+    status: approved
+    requested_at: '2026-07-22T21:41:40.139Z'
+    approved_at: '2026-07-22T21:43:24.156Z'
+  pr:
+    status: approved
+    requested_at: '2026-07-22T23:17:11.519Z'
+    approved_at: '2026-07-22T23:18:19.008Z'
+  verify-approval:
+    status: approved
+    requested_at: '2026-07-22T23:19:43.235Z'
+    approved_at: '2026-07-22T23:20:20.100Z'
+iteration: 1
+build_complete: true
+history: []
+started_at: '2026-07-22T21:24:31.366Z'
+updated_at: '2026-07-22T23:20:21.254Z'
+pr_history:
+  - phase: review
+    pr_number: 54
+    branch: builder/spir-41
+    created_at: '2026-07-22T23:12:51.996Z'
+pr_ready_for_human: false

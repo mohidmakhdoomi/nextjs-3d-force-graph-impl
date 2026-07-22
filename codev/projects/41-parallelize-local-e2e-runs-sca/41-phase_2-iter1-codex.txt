@@ -1,0 +1,8 @@
+Using direct file reads to verify the phase-2 implementation against the actual repo contents.Reading the plan/spec and package metadata to verify phase scope and project conventions before judging the implementation.Checking the builder’s recorded phase notes for evidence of the phase-2 validation steps.Getting exact line numbers for the config comment before finalizing the review.---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 2 is mostly implemented correctly, but the new Playwright config comment incorrectly states the local parallel default is already qualified before phase 3 records that evidence.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- `playwright.config.ts:115-118` overstates the qualification status: “the parallel local default is qualified by repeated full two-engine runs…” is not true yet in phase 2. Per the spec/plan, qualification evidence and final default disposition belong to phase 3, so this comment should describe the rationale/evidence gate without asserting completion.
+- None otherwise: the helper is wired in correctly (`playwright.config.ts:120`), the stale `workers: 1` source-text assertion was migrated appropriately in `tests/automation.test.mjs`, and the phase-2 scope appears otherwise aligned with the plan.

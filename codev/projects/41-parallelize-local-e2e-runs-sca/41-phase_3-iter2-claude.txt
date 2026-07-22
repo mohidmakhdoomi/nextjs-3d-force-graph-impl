@@ -1,0 +1,67 @@
+I'll read the key Phase 3 deliverables in parallel to understand the implementation.Now let me read the remaining Phase 3-specific files to complete the review.Let me verify a few more things — the CI workflow untouched claim and the specs update.Let me verify the GPU lane script wasn't modified (FR7: no code change needed) and check the package.json for no dependency changes.I've now read all the key Phase 3 deliverables. Let me do a final consistency sweep across the critical surfaces.I've completed a thorough review of the Phase 3 deliverables. Here's my assessment:
+
+---
+
+## Phase 3 Review: Qualify parallel execution, finalize default, document
+
+### Spec Adherence
+
+**FR9 (Qualification evidence):** ✅ Exemplary. The review records ≥3 consecutive full two-engine parallel runs on **both** qualification paths:
+- **GPU hardware** (primary, `E2E_GPU_REQUIRE=1`): 3 runs at 10 workers — 2/3 green, 1/3 hit the known open flake #33. Wall-clocks verbatim (44-47s suite vs 196s serial ≈ 4.3× speedup).
+- **SwiftShader** (the actual `validate` gate path): 3 runs at 10 workers — **0/3 green** (4-5/22 timing failures every run at ~3.3m vs 11.7m serial). The destabilization is conclusive.
+
+Serial baselines included, `retries: 0` throughout, worker counts and per-test results verbatim. Evidence honesty is impeccable — the builder even caught and corrected a "no SwiftShader speedup" misframing mid-phase (parallel SwiftShader *is* ~3.5× faster; the disqualifier is destabilization, not slowness).
+
+**Decision 4 (default finalization):** ✅ `DEFAULT_LOCAL_WORKERS` correctly flipped from `'50%'` to `1`. The evidence clearly mandates the serial-default + opt-in-parallel branch (Scenario 5): a gate that fails 4-5/22 every run is not a gate, however fast.
+
+**FR7 (GPU lane inherits parallel):** ✅ Confirmed — zero changes to `scripts/e2e-gpu-lane.mjs` (verified via diff); banner showed `Running 22 tests using 10 workers` when the `'50%'` default was active, proving inheritance.
+
+**FR4 (CI untouched):** ✅ `.github/workflows/validation.yml` does not appear in the diff (verified).
+
+**FR11 (Documentation):** ✅ Comprehensive README update:
+- Lines 84-98: New "Local test parallelism" section — serial default, `E2E_WORKERS` tuning (integer + percentage), CI unchanged, `retries: 0` preserved, trade-off documented with qualification reference.
+- Lane section: `E2E_WORKERS` added to env controls table (line 258), timing paragraph updated (lines 230-236), status/sequencing note updated (lines 319-324), serial-default language throughout.
+- CI decomposition section (lines 128-130): accurately documents the `resolveWorkers` CI guard.
+
+**FR10 (Config comment):** ✅ `playwright.config.ts` lines 99-120 carry the finalized contract in past tense — CI hard-pinned, local serial default, opt-in parallel, qualification outcome — replacing the stale "Do NOT raise workers" text.
+
+**FR8 deviation (documented):** ✅ The review (lines 129-138) explicitly calls out that FR8 literally says "not `1`" for the default, but Decision 4 (the canonical rule) governs and the evidence drove the serial fallback. This is honest and correctly authorized.
+
+### Code Quality
+
+All shipped files are internally consistent after the iteration-1 fixes:
+- `scripts/e2e-workers.mjs`: `DEFAULT_LOCAL_WORKERS = 1`, header/JSDoc/inline comments all say "serial" — no residual "Scaled default" or "50%" language in the function body.
+- `playwright.config.ts`: Comment block matches the finalized contract.
+- `tests/e2e-workers.test.mjs`: Default test row asserts `1`, all 24 tests aligned.
+- No "no speedup" text remains in any shipped file (only in historical rebuttals/thread docs).
+
+### Test Coverage
+
+- `tests/e2e-workers.test.mjs` line 17: `DEFAULT_LOCAL_WORKERS === 1` ✅
+- Lines 46-49: `resolveWorkers({}) === 1` (no CI, no override → serial) ✅
+- Lines 51-54: empty/whitespace `E2E_WORKERS` → serial ✅
+- Full 24-test FR8 matrix intact, correctly reflecting the finalized default.
+
+### Invariants Preserved
+
+- ✅ No dependency/lockfile/toolchain movement (verified via diff)
+- ✅ `app/**` untouched (verified via diff)
+- ✅ Local `retries: 0` preserved (line 130 of config unchanged)
+- ✅ No flake masking — #33 disposition is "accept + document", assertion not weakened, retries not added
+- ✅ No new npm script (FR11 says `E2E_WORKERS` is an env var, not a command)
+
+### Previous Iteration Issues
+
+Both Codex iteration-1 points were correctly addressed:
+1. Review acceptance bullet: "no SwiftShader speedup" → "faster but breaks the gate" ✅
+2. Helper inline comment: "Scaled default" → "Serial default" ✅
+
+---
+
+VERDICT: APPROVE
+SUMMARY: Phase 3 qualification is thorough, honest, and evidence-driven — the serial-default + opt-in-parallel landing is correctly mandated by Decision 4 and the recorded destabilization evidence, with all deliverables (default flip, review, README, config comment, CI untouched proof) complete and internally consistent.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

@@ -13,13 +13,20 @@ run that one command; it runs a **contract-equivalent decomposition** of it,
 parallelized to cut wall clock (~15 min → ~5–6 min): a `quality` job (lint +
 typecheck + `npm test` + audit evidence) and an `e2e` matrix that builds and
 runs the FULL Playwright suite split at the test level across four Chromium
-shards (`playwright.config.ts` sets `fullyParallel: true` while keeping
-`workers: 1`, so each shard is strictly serial). The decomposition drops no
+shards (`playwright.config.ts` sets `fullyParallel: true`; `workers` is resolved
+by `resolveWorkers` in `scripts/e2e-workers.mjs`, which pins `1` whenever `CI` is
+set, so each shard is strictly serial). The decomposition drops no
 check: lint, typecheck, build, and every e2e test still run, the Chromium engine
 gate is pinned via `E2E_ENGINES=chromium`, and a `gate` job gives a single
-required status. Do not raise `workers` or trim the qualified per-test waits —
-the SwiftShader timing environment (one test at a time) is what the decomposition
-preserves. Full and production npm audits are separate evidence: CI validates
+required status. The SwiftShader timing environment (one test at a time) is what
+both CI and the local gate preserve: issue #41 qualified raising `workers` and
+found parallel execution destabilizes the timing-sensitive Chromium
+`matrix.spec.ts` camera-settle/drag assertions under SwiftShader CPU contention
+(4–5 of 22 tests fail on every parallel run — the problem is destabilization, not
+slowness), so the **local default is serial too**. Local parallelism is **opt-in**
+via `E2E_WORKERS` (integer or percentage; invalid ⇒ loud `WorkerConfigError`;
+`50%` is ~4× faster and mostly green only on the native-GPU lane). Do not trim the
+qualified per-test waits. Full and production npm audits are separate evidence: CI validates
 their JSON/original status and uploads them without turning existing advisory
 totals into a zero-findings gate. Contributor commands and artifact names live in
 `README.md`; implementation details live in `.github/workflows/validation.yml`,
@@ -48,8 +55,10 @@ fallback: no usable adapter ⇒ Chromium runs under SwiftShader with a loud bann
 while Firefox is **skipped** (no portable software equivalent — never an llvmpipe
 masquerade); `E2E_GPU_REQUIRE=1` hard-fails if any requested engine is
 unverified, `E2E_GPU_FORCE_FALLBACK=1` exercises the fallback deterministically.
-CI stays `E2E_ENGINES=chromium` SwiftShader-only; the lane keeps `workers: 1`
-(parallelizing on top is issue #41's qualification, sequenced after). Recipe and
+CI stays `E2E_ENGINES=chromium` SwiftShader-only; the lane inherits the serial
+default (`workers: 1`) and honors the `E2E_WORKERS` opt-in like any local run —
+issue #41 delivered that opt-in and measured the lane ~4× faster in parallel
+(mostly green; only the open flake #33 amplifies). Recipe and
 evidence: `README.md` ("Opt-in native-GPU e2e lane") and
 `codev/reviews/44-add-an-opt-in-native-gpu-local.md` +
 `codev/reviews/52-firefox-hardware-webgl-gpu-lane.md`.

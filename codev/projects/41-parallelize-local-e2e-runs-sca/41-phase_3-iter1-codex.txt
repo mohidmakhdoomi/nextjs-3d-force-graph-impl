@@ -1,0 +1,9 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 3 mostly lands the intended serial-default/opt-in-parallel outcome, but two evidence/documentation inaccuracies should be fixed before approval.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `codev/reviews/41-parallelize-local-e2e-runs.md:162-165` says parallel “gives no SwiftShader speedup,” but the same review records ~`3.3m` parallel vs `11.7m` serial at `codev/reviews/41-parallelize-local-e2e-runs.md:105-106`. Since evidence honesty is a phase requirement, this contradiction should be corrected.
+- `scripts/e2e-workers.mjs:93` still says “Scaled default” even though Phase 3 flipped the default to serial `1` (`scripts/e2e-workers.mjs:39`). The finalized default contract should be documented consistently in the shipped helper comments.

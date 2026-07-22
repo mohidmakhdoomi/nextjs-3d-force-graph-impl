@@ -1,0 +1,89 @@
+I'll review this plan by first verifying the key files it references to ensure the approach is grounded in reality.Now let me check the tsconfig and the existing test pattern being mirrored:I've read the key files. Let me verify one more thing about the import pattern by checking if there are any existing `.mjs` imports from `.ts` files:Good — confirmed there's no existing `.mjs`-from-`.ts` import precedent in this codebase. That's the one novel pattern this plan introduces, and I want to ensure the plan handles it well.
+
+Now I have a thorough picture. Here's my review:
+
+---
+
+## Plan Review: 41 — Parallelize Local E2E Runs
+
+### 1. Spec Coverage
+
+**All 11 FRs are covered by at least one phase:**
+
+| FR | Phase(s) | Verified |
+|---|---|---|
+| FR1 (hardware-scaled local workers) | 1 (helper), 2 (wire), 3 (qualify default) | ✓ |
+| FR2 (`E2E_WORKERS` override) | 1 (parse+validate), 2 (wire) | ✓ |
+| FR3 (absolute CI guard) | 1 (implement+test) | ✓ |
+| FR4 (CI workflow untouched) | All phases verify | ✓ |
+| FR5 (preserved `retries: 0`) | Not touched — stays as-is | ✓ |
+| FR6 (shared web server) | Not touched — stays as-is | ✓ |
+| FR7 (GPU lane inherits parallel) | 3 (verify by inspection + run) | ✓ |
+| FR8 (worker-resolution coverage) | 1 (unit tests), 2 (migrate `automation.test.mjs`) | ✓ |
+| FR9 (repeat-run qualification) | 3 | ✓ |
+| FR10 (updated config comment) | 2 | ✓ |
+| FR11 (documentation) | 3 | ✓ |
+
+No scope creep — nothing goes beyond the spec.
+
+### 2. Phase Breakdown
+
+Three phases, strictly linear. Sizing is appropriate:
+- **Phase 1** is small and self-contained (two new files, no existing code touched).
+- **Phase 2** is the core wiring (3 files touched: config, automation test, comment block).
+- **Phase 3** is the qualification + documentation pass.
+
+Each phase is independently committable: Phase 1 adds unreferenced files, Phase 2 wires them, Phase 3 finalizes. The linear dependency chain (helper → config → qualify) is logically correct.
+
+### 3. Technical Approach
+
+**Verified against the actual codebase:**
+
+- **Line references are accurate**: `workers: 1` at config line 105; comment block at lines 96–113; `automation.test.mjs` assertions at lines 89–93; README lines 178, 222–228, 284–286 all confirmed.
+
+- **The pure-helper-in-`.mjs` pattern** genuinely mirrors the established `scripts/e2e-gpu-lane.mjs` ⇐ `tests/gpu-lane.test.mjs` pattern. The `WorkerConfigError` class parallels `LaneUsageError`. The `test` script glob (`node --test tests/*.test.mjs` per `package.json` line 14) will pick up the new test file automatically. No `package.json` change needed.
+
+- **`resolveWorkers(env)` design** is clean: pure function, no `process.env` mutation, explicit env injection — exactly the pattern `parseControls(env)` / `buildHostView({...})` use in the GPU lane.
+
+- **The `E2E_ENGINES` fail-closed guard** (config lines 78–85) is the exact precedent the plan cites for `WorkerConfigError`. Consistent error philosophy.
+
+- **GPU lane `workers` inheritance**: Confirmed by reading `e2e-gpu-lane.mjs` — it never sets `workers` (it sets `E2E_ENGINES`, `PW_CHROMIUM_ARGS`, `GALLIUM_DRIVER`, `LD_LIBRARY_PATH`). The plan's claim that it "inherits the config's scaled default automatically" with "no code change" is correct.
+
+- **The `.mjs`-from-`.ts` import** is the one genuinely novel pattern. The tsconfig has `allowJs: true`, `checkJs` defaults to `false`, and `moduleResolution: "bundler"` — so TypeScript itself should handle it. The runtime question is Playwright's config loader (which typically uses esbuild or a similar transpiler). The plan correctly identifies this as a risk, gates it on a real `npx playwright test --list` acceptance run, and has a concrete fallback (`.ts` re-export or inline shim) — to be decided only if the real run fails.
+
+### 4. Testability
+
+- **Phase 1**: The FR8 test matrix is comprehensive — CI guard, CI precedence over `E2E_WORKERS`, integer/percentage parsing, invalid values (with good negative cases: `0`, `0%`, `-1`, `abc`, `12x`, `1.5`), empty-string handling, default resolution. The pure-function design makes all of this trivially testable with no mocking.
+
+- **Phase 2**: The `automation.test.mjs` migration from `/workers: 1/` to `/workers: resolveWorkers\(process\.env\)/` maintains the source-text assertion pattern. The real `--list` integration run under three envs (default, `CI=1`, `E2E_WORKERS=…`) is the right verification.
+
+- **Phase 3**: The ≥3 consecutive full-suite qualification IS the integration test. The `E2E_GPU_REQUIRE=1` gating prevents silent fallback pollution. Evidence-first, not assumption-first.
+
+### 5. Risk Assessment
+
+Risks are honestly identified and well-mitigated:
+
+- **SwiftShader contention** (the core risk): Decision 4's evidence-gated default with a documented serial fallback is the right approach. The plan never assumes the parallel default will work — it proves it or takes the fallback.
+- **GPU availability contingency**: Phase 3's three-branch contingency (GPU lane qualifies → SwiftShader qualifies → serial default + opt-in) is thorough.
+- **`.mjs` import from `.ts`**: Low probability, caught immediately by the `--list` acceptance run, concrete fallback available.
+- **Stray `E2E_WORKERS` in CI**: The `CI → 1` guard returns *before* reading `E2E_WORKERS`, making CI precedence structural, not conditional. Tested in Phase 1.
+
+### 6. Minor Observations (non-blocking)
+
+1. **Phase 1 regex for leading zeros**: The plan's regex `/^[1-9][0-9]*$/` would reject `01`, `001`, etc. The risk section mentions deciding "leading-zero disposition explicitly in a test" — good, this is covered.
+
+2. **Phase 2's `automation.test.mjs` assertion**: The new assertion `/workers: resolveWorkers\(process\.env\)/` is tightly coupled to exact source syntax. This is consistent with the existing pattern (line 90 already does exact source-text matching), but worth noting that any future refactoring of how the config calls the helper would need to update this test.
+
+3. **The plan's claim about `checkJs`**: Verified — `tsconfig.json` has `allowJs: true` but no explicit `checkJs`, which defaults to `false`. The plan is accurate.
+
+---
+
+```
+---
+VERDICT: APPROVE
+SUMMARY: Thorough, spec-complete plan with verified file references, sound technical approach mirroring proven codebase patterns, honest risk handling, and an evidence-gated default that never assumes success.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None
+```

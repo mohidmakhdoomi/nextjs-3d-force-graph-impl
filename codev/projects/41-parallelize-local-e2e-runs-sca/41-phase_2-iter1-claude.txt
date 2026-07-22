@@ -1,0 +1,56 @@
+I'll read the key files for this Phase 2 review. Let me start with the implementation files and their context.Now let me check the original config to understand the diff, and verify the CI workflow wasn't touched.Good. Let me verify the acceptance criteria by checking the actual test results and typecheck status.Both typecheck and all 121 unit tests pass. Let me also verify the config loads correctly in Playwright and check the `tsconfig.json` to confirm the `.mjs` import path is expected to work.Config loads correctly. Let me also verify lint passes and do a quick sanity check on the git diff to make sure `validation.yml` is clean.Lint has errors. Let me see the full output to understand which files are affected.All 21 lint errors are from the untracked builder-harness file `.claude/hooks/worktree-write-guard.cjs` — environment noise per lessons-critical. The committed project code is lint-clean.
+
+Now let me do a final verification — check that the `automation.test.mjs` assertion migration is sound against the actual config content:All assertions match. Here's my review:
+
+---
+
+## Phase 2 Review: Wire helper into config, migrate consumer, update comment
+
+### Spec Adherence
+
+**All Phase 2 deliverables are present and correct:**
+
+1. **FR1/FR3 — Config wiring** ✅: `playwright.config.ts` line 4 imports `resolveWorkers` from `./scripts/e2e-workers.mjs`; line 120 replaces `workers: 1` with `workers: resolveWorkers(process.env)`. The CI guard is structural (the resolver returns `1` before reading `E2E_WORKERS`), satisfying FR3's absolute serial guarantee.
+
+2. **FR10 — Comment block replaced** ✅: The old "Do NOT raise `workers`" block (lines ~96–103) is fully replaced with a 20-line contract comment (lines 98–118) documenting: CI hard-pinned serial via the resolver, local hardware-scaled parallel with `'50%'` default, `E2E_WORKERS` override with fail-closed semantics, preserved `retries: 0`, and the qualification rationale. The stale guidance is gone, not edited around.
+
+3. **FR8 — Consumer migration** ✅: `tests/automation.test.mjs` line 94 now asserts `/workers: resolveWorkers\(process\.env\)/` instead of `/workers: 1/`. The comment (lines 88–92) explains the delegation pattern clearly: CI-serial is covered by the resolver's unit tests, so this test asserts only that the config delegates to the tested resolver. `fullyParallel: true` (line 93) and retries (line 97) assertions are untouched, which is correct.
+
+4. **FR5 — Retries preserved** ✅: `retries: process.env.CI ? 2 : 0` (config line 128) is byte-identical to the original.
+
+5. **FR4 — CI workflow untouched** ✅: `.github/workflows/validation.yml` does not appear in the diff (verified via `git diff --name-only`).
+
+### Code Quality
+
+**Excellent.** The implementation is minimal and precise:
+- The config stays a thin consumer — one import, one function call. No scattered conditionals.
+- The comment block is thorough without being bloated; it documents the "why" (CI serial contract, local hardware scaling, qualification context) not just the "what."
+- The `automation.test.mjs` migration is well-reasoned: it asserts *delegation* to the tested resolver rather than re-testing the resolution matrix, which avoids duplication while keeping the CI-contract assertion meaningful.
+
+### Test Coverage
+
+**Adequate for this phase:**
+- `npm test` passes all 121 tests (includes both the Phase 1 `e2e-workers.test.mjs` suite and the migrated `automation.test.mjs`).
+- The regex assertions in `automation.test.mjs` match the actual config content (verified).
+- The plan explicitly defers the ≥3× full-suite repeat-run qualification to Phase 3.
+
+### Error Handling
+
+**Not directly applicable to this phase** — error handling lives in the Phase 1 helper (`WorkerConfigError` on invalid `E2E_WORKERS`). The config correctly propagates it by calling `resolveWorkers(process.env)` at config-evaluation time, so a `WorkerConfigError` surfaces immediately at Playwright startup.
+
+### Plan Alignment
+
+The implementation follows the Phase 2 plan exactly. Every deliverable is present, no items are skipped, and no out-of-scope work was added. The `tsconfig.json` uses `moduleResolution: "bundler"`, which handles `.mjs` imports from `.ts` files cleanly — the `--list` integration test confirms Playwright loads the config without error.
+
+### Minor Note (not actionable)
+
+The `npm run lint` failure is entirely from the untracked `.claude/hooks/worktree-write-guard.cjs` — a builder-harness file absent from clean checkouts. Per lessons-critical, this is environment noise, not a project failure. The committed project code is lint-clean.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 2 delivers all plan deliverables cleanly — config wired to the tested resolver, comment block replaced with the new contract, consumer assertion migrated, CI provably untouched, all 121 tests and typecheck green.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

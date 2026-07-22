@@ -1,0 +1,9 @@
+Using filesystem reads to verify the phase_3 implementation against the spec/plan.Reading the phase_3-specific files more closely for evidence, finalized default, and docs consistency.Checking exact line numbers for the phase_3 issues I may cite.---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 3 lands the serial-default/opt-in-parallel decision correctly, but the recorded qualification evidence is not yet detailed enough to satisfy the phase’s per-test evidence requirement.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `codev/reviews/41-parallelize-local-e2e-runs.md:48-125` records worker counts, wall clocks, aggregate pass/fail counts, and some failing-test detail, but it does **not** provide the full per-run / per-test results the spec and phase_3 plan call for. Phase 3’s core deliverable explicitly requires the ≥3 qualification runs to be recorded with per-test pass/fail detail, and the review currently summarizes those runs instead of preserving that evidence verbatim.
+- `tests/automation.test.mjs:87-92` has a now-stale explanatory comment: it says “local runs scale to hardware,” but Phase 3 finalized the shipped contract as **serial by default** with `E2E_WORKERS` opt-in parallelism. This is minor, but it should be corrected for consistency with the finalized Phase 3 outcome.
