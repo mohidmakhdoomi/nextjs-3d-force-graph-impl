@@ -284,6 +284,18 @@ Routed to the **cold** `codev/resources/lessons-learned.md` under the existing
   bug above). Fixed with a run-level `plan.effectiveMode` + exported
   `isHeadedRun(plan)` and a dedicated Firefox-only-headed test. Iteration 2 —
   unanimous APPROVE, KEY_ISSUES: None.
+- **Review phase (PR consult)**: iteration 1 — Gemini APPROVE, Claude APPROVE,
+  Codex REQUEST_CHANGES. Codex caught a per-engine reporting-honesty bug: when
+  Chromium fails verification but **Firefox verifies hardware**, the non-strict
+  fallback reported `renderer.firefox: skipped (unverified — unverified)` — Firefox
+  was verified, so labeling it "unverified" is wrong. Fixed with a distinct
+  `not-run` verdict state (`renderer.firefox: not run (Chromium unverified — a
+  two-engine hardware run needs both engines…)`), with a unit test; all other skip
+  outputs (genuinely-unverified, forced-fallback) are unchanged. Also: plan Status
+  `draft → completed`. Codex's third point (`tests/audit-report.test.mjs` failing)
+  is a Codex-sandbox environment artifact — that test shells out to `npm audit`
+  (with a `registry unavailable` case), is untouched by this branch, and passes
+  95/95 on the qualification host and on porch's own `tests` gate.
 
 ## Canonical gate proof on a clean checkout
 

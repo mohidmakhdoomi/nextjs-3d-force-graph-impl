@@ -183,7 +183,7 @@ What one invocation does (`scripts/e2e-gpu-lane.mjs`):
    mode: hardware | software-fallback | skipped
    engines: chromium,firefox
    renderer.chromium: <verbatim string | (software-fallback — SwiftShader)>
-   renderer.firefox: <verbatim string | skipped (unverified — <reason>)>
+   renderer.firefox: <verbatim string | skipped (unverified — <reason>) | not run (<reason>)>
    suite: pass | fail (exit n) | skipped (no verified engine)
    wall-clock: <total>s (build <n>s, suite <n>s)
    ```

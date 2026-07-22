@@ -403,6 +403,12 @@ export function engineReportLine(outcome) {
     if (outcome.state === "skipped") {
         return `skipped (unverified — ${outcome.reason})`;
     }
+    if (outcome.state === "not-run") {
+        // Verified hardware, but not run — e.g. a two-engine hardware run needs
+        // both engines and the sibling engine failed, so the run fell back to
+        // Chromium-only. This is NOT "unverified" (the engine passed its probe).
+        return `not run (${outcome.reason})`;
+    }
     return "(unknown)";
 }
 
@@ -543,10 +549,24 @@ export function computeRunPlan({requestedEngines, verdicts = {}, controls}) {
     if (hasChromium) {
         const engines = {chromium: {state: "software-fallback"}};
         if (requestsFirefox) {
-            engines.firefox = {
-                state: "skipped",
-                reason: verdicts.firefox?.reason ?? "unverified",
-            };
+            // Firefox is dropped from the run either way (Decision 6: the
+            // fallback is Chromium-only). Report WHY honestly: if Firefox itself
+            // failed verification, its own reason; if Firefox VERIFIED hardware
+            // but the combined run couldn't happen because Chromium failed, say
+            // so — never label a verified Firefox "unverified".
+            engines.firefox = verdicts.firefox?.verified
+                ? {
+                      state: "not-run",
+                      reason:
+                          "Chromium unverified — a two-engine hardware run needs " +
+                          "both engines, so the run fell back to Chromium " +
+                          "SwiftShader; Firefox verified hardware but is not run " +
+                          "(no software equivalent to pair with the fallback)",
+                  }
+                : {
+                      state: "skipped",
+                      reason: verdicts.firefox?.reason ?? "unverified",
+                  };
         }
         return {mode: "software-fallback", suiteEngines: ["chromium"], engines};
     }

@@ -2,7 +2,7 @@
 
 ## Metadata
 - **ID**: plan-2026-07-21-firefox-hardware-webgl-gpu-lane
-- **Status**: draft
+- **Status**: completed (all three implement phases built, reviewed, and committed; PR #53)
 - **Specification**: [codev/specs/52-firefox-hardware-webgl-gpu-lane.md](../specs/52-firefox-hardware-webgl-gpu-lane.md)
 - **Created**: 2026-07-21
 

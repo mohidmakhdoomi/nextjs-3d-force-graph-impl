@@ -220,3 +220,14 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
   - lessons-learned.md Validation Evidence → sanitized-capability-string lesson.
 - Added ## Architecture Updates + ## Lessons Learned Updates to review 52.
 - Opening PR (→ pr gate for architect integration review).
+
+### Review phase — PR consult (iter1) + fixes
+- Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES (3 pts):
+  1. REAL honesty bug: chromium-fail + firefox-VERIFIED ⇒ report said
+     `renderer.firefox: skipped (unverified — unverified)`. Fixed via distinct
+     `not-run` state ⇒ `not run (Chromium unverified — …)`. Other skip outputs
+     (unverified, forced-fallback) unchanged. Unit test added.
+  2. audit-report.test.mjs failing in Codex sandbox = env artifact (shells to
+     npm audit; untouched by branch; 95/95 green here + porch tests gate).
+  3. plan Status draft ⇒ completed.
+- npm test 95/95, lint/typecheck clean. Committing fixes + pushing to PR #53.

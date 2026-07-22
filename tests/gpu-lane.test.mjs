@@ -585,6 +585,36 @@ test("computeRunPlan: default 'all', Firefox unverified, non-strict ⇒ Chromium
     assert.match(plan.engines.firefox.reason, /llvmpipe/);
 });
 
+test("computeRunPlan: default 'all', Chromium fails but Firefox VERIFIES ⇒ Firefox reported 'not run', never 'unverified'", () => {
+    // Codex PR-review honesty catch: a verified Firefox dropped because Chromium
+    // failed must NOT read as "skipped (unverified — unverified)". It verified
+    // hardware; it is simply not run (the fallback is Chromium-only, Decision 6).
+    const plan = computeRunPlan({
+        requestedEngines: ["chromium", "firefox"],
+        verdicts: {
+            chromium: {
+                engine: "chromium",
+                verified: false,
+                reason: 'unverified — software renderer "llvmpipe"',
+            },
+            firefox: firefoxHardwareVerdict(),
+        },
+        controls: nonStrict,
+    });
+    assert.equal(plan.mode, "software-fallback");
+    assert.deepEqual(plan.suiteEngines, ["chromium"]);
+    assert.equal(plan.engines.chromium.state, "software-fallback");
+    // The verified-but-dropped Firefox is 'not-run', with an honest reason —
+    // never the nonsensical "unverified — unverified".
+    assert.equal(plan.engines.firefox.state, "not-run");
+    assert.match(plan.engines.firefox.reason, /Chromium unverified/);
+    assert.match(plan.engines.firefox.reason, /verified hardware but is not run/);
+    const line = engineReportLine(plan.engines.firefox);
+    assert.match(line, /^not run \(/);
+    assert.doesNotMatch(line, /unverified — unverified/);
+    assert.doesNotMatch(line, /skipped \(unverified/);
+});
+
 test("computeRunPlan: default 'all', either engine unverified, strict ⇒ abort", () => {
     const plan = computeRunPlan({
         requestedEngines: ["chromium", "firefox"],
