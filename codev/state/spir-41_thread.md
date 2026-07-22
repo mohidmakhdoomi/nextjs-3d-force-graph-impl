@@ -281,3 +281,13 @@ criterion 2b). Guardrails all honored:
   WAITING FOR HUMAN APPROVAL.** STOPPED — NOT calling porch approve (human-only).
   Codex #1 (commit format) is rebutted-on-record; human decides at the gate.
   Architect notified. Awaiting `porch approve 41 pr`.
+
+## Verify phase (architect-directed merge ordering)
+
+- pr gate APPROVED. Architect directive: advance porch to write the
+  'chore(porch): 41 protocol complete' commit, PUSH to origin/builder/spir-41,
+  and merge PR #54 ONLY AFTER that commit is on the remote (architect verifies).
+- Change already verified end-to-end via Phase-2/3 real-run evidence. `porch done 41`
+  (verify) → **GATE REQUIRED: verify-approval** → `porch gate 41` requested.
+  STOPPED — NOT approving (human-only), NOT merging yet. Awaiting verify-approval;
+  then porch writes protocol-complete commit → I push → architect verifies → I merge.
