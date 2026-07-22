@@ -1,7 +1,7 @@
 id: '52'
 title: add-firefox-hardware-webgl-to-
 protocol: spir
-phase: specify
+phase: plan
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -16,7 +16,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-07-22T02:21:18.654Z'
-updated_at: '2026-07-22T02:29:48.445Z'
+updated_at: '2026-07-22T02:29:53.119Z'
