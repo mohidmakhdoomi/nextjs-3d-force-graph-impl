@@ -1,0 +1,57 @@
+I'll read the key Phase 3 deliverable files to review against the spec and plan requirements.Now let me verify the CI workflow was untouched and check the spec for Phase 3 updates:I've now read all the key Phase 3 deliverable files. Let me do my systematic review.
+
+## Phase 3 Review: Qualify Parallel Execution, Finalize Default, Document
+
+### 1. Spec Adherence
+
+**FR9 — Qualification evidence**: Complete and exemplary. Eight qualification runs recorded with full verbatim per-test output (22 tests × 8 runs = 176 individual test verdicts in the appendix). Each run shows worker count, wall-clock, per-test pass/fail, and `retries: 0`. The GPU lane ran under `E2E_GPU_REQUIRE=1` with verified hardware renderers. SwiftShader parallel runs recorded separately. Serial baselines provided for both paths.
+
+**FR7 — GPU lane inherits parallel**: Verified — no changes to `scripts/e2e-gpu-lane.mjs` in the diff. The lane inherits the config's `resolveWorkers` output and the README documents `E2E_WORKERS` as the opt-in mechanism on this lane.
+
+**FR4 — CI untouched**: Confirmed — `validation.yml` absent from the diff (verified via `git diff --name-only`).
+
+**FR11 — Documentation**: README lines 84-98 add a complete "Local test parallelism" section covering: serial default, `E2E_WORKERS` opt-in (integer and %), CI hard-pinned to `1`, `retries: 0` preserved, qualification outcome with cross-reference to the review. The GPU lane section (lines 196, 230-236, 258, 318-324) is updated with `E2E_WORKERS` in the env table and serial-default + opt-in-parallel contract language. A developer who hasn't seen the spec can find everything Scenario 6 requires.
+
+**FR10 — Config comment**: `playwright.config.ts` lines 98-120 replace the stale "Do NOT raise workers" block with the actual contract: CI hard-pinned serial, local serial default, opt-in parallel via `E2E_WORKERS`, destabilization rationale, `retries: 0` preserved.
+
+**Decision 4 — Evidence-gated default**: The canonical rule was executed exactly as designed. SwiftShader parallel showed 4-5/22 timing failures on every run (0/3 green) — a clear disqualification. The default was correctly flipped to serial (`DEFAULT_LOCAL_WORKERS = 1`), and the deviation from FR8's literal "not `1`" assertion is documented with the architect's endorsement. This is the Scenario 5 / acceptance criterion 2 (second branch) landing.
+
+**FR5 — `retries: 0` preserved**: Confirmed at `playwright.config.ts:130` — `retries: process.env.CI ? 2 : 0` unchanged.
+
+### 2. Code Quality
+
+**`scripts/e2e-workers.mjs`**: The module-level comment (lines 22-30) and the constant's own comment (lines 32-38) are now internally consistent — both explain the Phase 3 qualification outcome (destabilization, not slowness), the serial default, and opt-in parallel. The inline comment at line 93-94 was fixed per iteration 1 feedback: "Serial default (see DEFAULT_LOCAL_WORKERS). Parallel is opt-in only." No stale language remains.
+
+**`playwright.config.ts`**: The new comment block is thorough and accurate. The `resolveWorkers(process.env)` delegation is clean.
+
+**`tests/automation.test.mjs`**: Lines 87-94 correctly explain the delegation pattern, noting CI hard-pinning, serial default, and `E2E_WORKERS` opt-in. The assertion at line 96 (`/workers: resolveWorkers\(process\.env\)/`) validates delegation rather than duplicating the resolver's matrix.
+
+### 3. Test Coverage
+
+**`tests/e2e-workers.test.mjs`**: The default test row at line 46-49 correctly asserts `resolveWorkers({}) === 1` (flipped from the original `'50%'`). The `DEFAULT_LOCAL_WORKERS` direct assertion at line 17-19 confirms `1`. All 24 tests cover the full FR8 matrix plus the serial default outcome.
+
+### 4. Evidence Quality & Honesty
+
+The review is a model of evidence honesty:
+- GPU parallel: 2/3 green, 1/3 hit flake #33 — honestly reported, not hidden
+- SwiftShader parallel: 0/3 green (4-5 timing failures per run) — correctly identified as destabilization, not slowness
+- The "parallel is actually faster" framing is consistent throughout (review lines 105-106, 162-165, helper comment lines 26-29)
+- Serial SwiftShader baseline honestly records its own flake #33 hit (pre-existing, not introduced)
+- Per-test appendix satisfies the Codex iteration 2 request for verbatim FR9 evidence
+
+### 5. Previous Iteration Fixes
+
+All four fixes from iterations 1 and 2 verified in the actual files:
+- **Iter 1 Codex #1** (review "no SwiftShader speedup"): Review line 162-165 now reads "SwiftShader parallel is faster (~3.3m vs 11.7m serial) but **breaks the gate**" ✅
+- **Iter 1 Codex #2** (helper "Scaled default" comment): Line 93 now reads "Serial default" ✅  
+- **Iter 2 Codex #1** (per-test appendix): Lines 181-413 contain all 8×22 verbatim per-test results ✅
+- **Iter 2 Codex #2** (`automation.test.mjs` stale comment): Lines 88-94 accurately describe the serial default + opt-in parallel contract ✅
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 3 delivers honest, thorough qualification evidence, correctly finalizes the serial default per Decision 4, comprehensively documents the contract (README, config, helper, tests), and proves CI untouched — all deliverables complete, all previous iteration feedback addressed.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

@@ -1,0 +1,89 @@
+Now let me verify the tests actually pass and check lint:Lint is failing. Let me check what files the lint errors are in:Good — all 21 lint errors are in `.claude/hooks/worktree-write-guard.cjs`, a builder-harness file. Per lessons-critical, this is environment noise ("A local gate failure caused only by an untracked builder-harness file… is environment noise, not a project failure"). The new `scripts/e2e-workers.mjs` and `tests/e2e-workers.test.mjs` produce **zero lint errors**.
+
+Let me also verify the git diff doesn't touch `validation.yml`:Good. `validation.yml` is not in the diff, confirming FR4. The test file mirrors the `gpu-lane.test.mjs` pattern (same `node:assert/strict` + `node:test` imports, pure function testing).
+
+Let me now do a final quality check — verify `package.json` to confirm the glob that picks up tests:The `tests/*.test.mjs` glob naturally includes the new `tests/e2e-workers.test.mjs`. Good.
+
+Now let me do a thorough review of the implementation against the plan's Phase 1 acceptance criteria:
+
+---
+
+## Review: Phase 1 — Pure worker-resolution helper + unit tests
+
+### 1. Spec Adherence
+
+**FR8 resolution matrix — fully covered.** The test file exercises every row the plan calls out:
+
+| Row | Covered? |
+|-----|----------|
+| `{CI:'1'}` ⇒ `1` | ✅ test line 22 |
+| `{CI:'1', E2E_WORKERS:'4'}` ⇒ `1` (CI precedence) | ✅ test line 28 |
+| `{CI:'1', E2E_WORKERS:'abc'}` ⇒ `1` (CI short-circuits before invalid read) | ✅ test line 31 |
+| `{E2E_WORKERS:'4'}` ⇒ `4` | ✅ test line 35 |
+| `{E2E_WORKERS:'50%'}` ⇒ `'50%'` | ✅ test line 41 |
+| Invalid values (0, 0%, -1, abc, 12x, 1.5, %, 01, 1e2, 50 %, 4.0, 0x10, `%`) ⇒ throws | ✅ tests lines 71–94 |
+| `{}` ⇒ `'50%'` (default) | ✅ test line 47 |
+| `{E2E_WORKERS:''}` ⇒ `'50%'` (empty=unset) | ✅ test line 52 |
+
+**FR2 fail-closed loud failure**: `WorkerConfigError` thrown with a descriptive message naming the offending value and accepted forms — explicitly tested (lines 96–105).
+
+**FR3 CI guard (absolute, first)**: structurally enforced — the `if (env.CI)` returns before `env.E2E_WORKERS` is read (line 59). CI precedence over `E2E_WORKERS` tested explicitly, including the case where `E2E_WORKERS` would otherwise throw.
+
+**Decision 2 default `'50%'`**: ✅ Named constant `DEFAULT_LOCAL_WORKERS` exported and asserted.
+
+### 2. Code Quality
+
+- **Purity**: The function takes an explicit `env` parameter, performs no I/O, and does not access `process.env` — exactly as specified. This makes it trivially testable.
+- **Pattern mirrors `e2e-gpu-lane.mjs`**: `WorkerConfigError` extends `Error` (matches `LaneUsageError`); same module structure (constants + pure functions, `.mjs` for `node --test` compatibility).
+- **Regexes are anchored**: `^[1-9][0-9]*$` and `^[1-9][0-9]*%$` — prevents partial matches. Leading zeros, exponent notation, decimals all correctly rejected.
+- **Whitespace handling**: `raw.trim()` before matching; empty-after-trim falls through to default (not a hard fail). This is the right call for env vars that shells might export as empty.
+- **JSDoc present**: Return type `number | string` is documented, which Phase 2 needs for the `.ts` config's type inference.
+
+### 3. Test Coverage
+
+**24 tests, all passing.** Coverage is thorough:
+- All happy-path resolution branches (CI, integer, percentage, default)
+- CI precedence over valid and invalid `E2E_WORKERS`
+- 13 distinct invalid values including edge cases the plan's risk section flagged (leading zeros, exponent, hex)
+- Whitespace trimming around valid values
+- Empty/undefined CI semantics (falsy check matches the config's existing idiom)
+- Error class identity and message content
+- The `DEFAULT_LOCAL_WORKERS` constant value
+
+**Negative test thoroughness is excellent** — the plan flagged `1e2`, `01`, `1.5` as risks and all three are explicitly tested.
+
+### 4. Error Handling
+
+- Invalid `E2E_WORKERS`: throws `WorkerConfigError` with a descriptive message — never silently falls back. ✅
+- Empty `E2E_WORKERS`: treated as unset, falls to default. ✅ (correct — a shell exporting `E2E_WORKERS=""` shouldn't fail)
+- `CI=""`: falsy, falls through to the local path. ✅ (mirrors the config's existing `process.env.CI ? … : …` idiom)
+
+### 5. Plan Alignment
+
+All Phase 1 deliverables are present:
+
+| Deliverable | Status |
+|------------|--------|
+| `scripts/e2e-workers.mjs` with `resolveWorkers(env)`, `DEFAULT_LOCAL_WORKERS`, `WorkerConfigError` | ✅ |
+| `tests/e2e-workers.test.mjs` with full FR8 matrix | ✅ |
+| JSDoc on `resolveWorkers` | ✅ |
+| `node --test` passes | ✅ (24/24) |
+| `npm test` stays green | ✅ (121/121) |
+| `npm run lint` passes on the new files | ✅ (lint errors are pre-existing harness noise, not from these files) |
+| `.github/workflows/validation.yml` unchanged | ✅ |
+
+### Minor observations (not blocking)
+
+1. The `CI: undefined` case in the "empty CI" test (line 66) is a nice touch — it proves `undefined` doesn't match the truthy check. This isn't in the plan's explicit matrix but it's a reasonable defensive test.
+
+2. The whitespace-trimming test (line 56–59) with `\t50%\n` covers a real-world scenario (trailing newline from a heredoc-style env assignment). Good defensive coverage.
+
+---
+
+VERDICT: APPROVE
+SUMMARY: Phase 1 delivers a clean, pure, thoroughly-tested worker-resolution helper that covers the full FR8 matrix with 24 passing tests and zero lint errors on the new files.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

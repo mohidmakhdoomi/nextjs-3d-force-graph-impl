@@ -70,6 +70,15 @@ gotcha, or constraint.
   otherwise orphans the browser and can hold the process open. Make the
   launcher/timeouts dependency-injectable so the timed-out-cleanup path has
   deterministic unit coverage instead of being untestable.
+- When qualifying a parallelism/performance change to the test harness, qualify on
+  the path that actually **gates**, not just the fastest available substrate. In
+  #41, hardware-parallel looked green (2/3 runs) while the SwiftShader gate path —
+  what `npm run validate` runs — failed 4–5/22 timing-sensitive tests on *every*
+  parallel run (parallel is faster there but destabilizes the camera-settle/drag
+  assertions); qualifying only on the fast hardware path would have shipped a
+  broken gate. Where the outcome is uncertain, write the safe fallback into the
+  spec up front as an evidence-gated default (spec 41 Decision 4) so an optimistic
+  "parallel by default" degrades to a one-line constant flip, not a redesign.
 
 ## Toolchain and Worktree Hygiene
 

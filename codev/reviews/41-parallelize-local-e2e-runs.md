@@ -1,8 +1,8 @@
 # Review 41: Parallelize Local E2E Runs Scaled to Hardware (CI Byte-for-Byte Unchanged)
 
-> Status: implementation complete (phases 1–3). This review is authored during
-> Phase 3 to preserve the qualification evidence verbatim (FR9); the Review-phase
-> pass expands lessons/methodology.
+> Status: complete — phases 1–3 implemented and reviewed (3-way, unanimous
+> APPROVE each), qualification evidence preserved verbatim (FR9), governance docs
+> routed. Outcome: serial-default + opt-in-parallel (Decision 4 / Scenario 5).
 
 ## Summary of Outcome
 
@@ -119,10 +119,15 @@ serial SwiftShader baseline above hit the **same known open flake #33** once
 click-to-focus flake #34 are pre-existing, open, and surface even serially at
 `retries: 0` — which is exactly why they are tracked and why CI runs `retries: 2`.
 Issue #41 neither introduces nor fixes them; it preserves the serial contract and
-adds opt-in parallel that **amplifies** them (hence opt-in, not default). The full
-`npm run validate` gate is proven on a clean checkout at PR time (local `eslint .`
-noise is the untracked `.claude/hooks/` builder-harness file, absent on a clean
-checkout — see lessons-critical).
+adds opt-in parallel that **amplifies** them (hence opt-in, not default).
+
+**Gate cleanliness (lessons-critical):** local `eslint .` reports 21 errors, all in
+the **untracked** `.claude/hooks/worktree-write-guard.cjs` builder-harness file
+(absent from clean checkouts) — not project code. Every **tracked** `.ts/.mjs/.js`
+file lints clean (`git ls-files … | xargs eslint` → 0 errors), and `eslint .`
+flags no non-hooks file, so the lint gate is clean on a pristine tree. `npm run
+typecheck` is clean; #41 touches no `package.json`/lockfile, so `npm ci`
+reproducibility is unaffected. The noise was **not** suppressed in committed config.
 
 ## Decision & Deviation (FR8 vs. Decision 4)
 
@@ -165,18 +170,145 @@ No test was skipped or weakened.
       timing failures every run), so serial is retained; the ~4× speedup is
       available opt-in on the GPU lane, where the suite stays mostly green.
 
-## Lessons Learned (to expand in the Review phase)
+## Spec Compliance
 
+- [x] **FR1 (local parallel capability)** — delivered as **opt-in** per Decision 4
+      (evidence-gated); parallel runs via `E2E_WORKERS`, scaled to cores.
+- [x] **FR2 (`E2E_WORKERS` override)** — integer or percentage; invalid ⇒ loud
+      `WorkerConfigError` at config load; tested (FR8 matrix).
+- [x] **FR3 (absolute CI serial guard)** — `resolveWorkers` returns `1` before
+      reading `E2E_WORKERS`; tested; re-verified via `CI=1` run banner (1 worker).
+- [x] **FR4 (CI byte-for-byte unchanged)** — `.github/workflows/validation.yml`
+      zero-diff vs `main`.
+- [x] **FR5 (`retries: 0` preserved locally)** — unchanged; kept the amplified
+      flake visible.
+- [x] **FR7 (GPU lane inherits workers)** — verified: lane banner `22 tests using
+      10 workers`, zero `scripts/e2e-gpu-lane.mjs` change.
+- [x] **FR8 (worker-resolution coverage)** — `tests/e2e-workers.test.mjs` (24
+      tests); `automation.test.mjs` source-text assertion migrated to delegation.
+- [x] **FR9 (repeat-run qualification evidence)** — ≥3 parallel runs on both the
+      GPU lane and SwiftShader, verbatim per-test results (Appendix).
+- [x] **FR10 (config comment)** — stale "Do NOT raise workers" block replaced with
+      the finalized contract.
+- [x] **FR11 (README)** — new "Local test parallelism" note + lane/env-table/status
+      updates.
+- [~] **FR6 / Success Metric 4 (`validate` speedup)** — the documented trade-off is
+      taken instead (Decision 4 / Scenario 5): serial gate retained; ~4× speedup
+      available opt-in on the GPU lane.
+
+## Deviations from Plan
+
+- **Default finalized to serial, not parallel `'50%'`** (Phase 3). The plan
+  carried both branches; the evidence forced the serial-default + opt-in branch.
+  This deviates from FR8's literal "default ⇒ scaled, not 1" clause, authorized by
+  the canonical **Decision 4** (see "Decision & Deviation" above). Architect
+  endorsed.
+
+## Lessons Learned
+
+### What Went Well
 - **Evidence-gated defaults earn their keep.** The spec's Decision 4 anticipated
-  exactly this outcome; had the default been hard-committed to parallel, the gate
-  would ship flaky. Writing the "or serial fallback, documented" branch into the
-  spec up front made the honest landing a one-line constant flip, not a redesign.
-- **Qualify on the path that gates, not just the fast path.** Hardware parallel
-  looked ~green (2/3); only running the SwiftShader path — what `npm run validate`
-  actually executes — revealed the 4–5/22 destabilization. A single host's fast
-  result must never be generalized.
-- **`retries: 0` did its job**: the amplified flake surfaced immediately instead
+  this outcome; had the default been hard-committed to parallel, the gate would
+  ship flaky. The "or serial fallback, documented" branch made the honest landing
+  a one-line constant flip, not a redesign.
+- The **pure helper + config-consumer** split (Phase 1 before Phase 2) meant the
+  finalize-the-default step was a single constant change with the contract already
+  fully unit-tested.
+- **`retries: 0` did its job** — the amplified flake surfaced immediately instead
   of being silently absorbed.
+
+### Challenges Encountered
+- **A wrong-baseline speedup claim.** I first wrote "parallel gives no speedup"
+  by comparing parallel-SwiftShader against serial-*hardware*. The serial-default
+  confirmation run (11.7m serial SwiftShader) exposed it: parallel is *faster*
+  but *destabilizes*. Fixed across review/config/helper/README; Codex caught two
+  residual mentions I'd missed on the first sweep. Lesson: when correcting a claim,
+  grep for the *concept* (every `speedup|faster|slower`), not one phrasing.
+- **Per-test evidence granularity.** My first review summarized runs; FR9 wants
+  full per-test pass/fail. Added a verbatim 8-run appendix.
+
+### What Would Be Done Differently
+- Run the serial-SwiftShader baseline **early**, before framing any speedup claim,
+  so the comparison baselines are correct from the first draft.
+
+### Methodology Improvements
+- The evidence-gated-default pattern (spec writes both branches; builder picks from
+  recorded evidence) worked cleanly and is worth reusing for any "optimistic
+  headline that might not survive qualification" spec.
+
+## Consultation Feedback
+
+### Specify Phase (Round 1)
+- **Codex (REQUEST_CHANGES)** — FR1/Scenario 1/Summary asserted the parallel local
+  default *unconditionally*, contradicting Decision 4's evidence-gated framing.
+  **Addressed**: made Decision 4 the single canonical rule; FR1/Scenario 1/Summary
+  now defer to it. **Gemini / Claude**: APPROVE, no concerns.
+
+### Plan Phase (Round 1)
+- **Codex (COMMENT)** — `playwright test --list` proves the config *loads* but not
+  the resolved worker count. **Addressed**: Phase 2 asserts Playwright's `using M
+  worker(s)` run banner under default / `CI=1` / `E2E_WORKERS=4`. **Gemini /
+  Claude**: APPROVE.
+
+### Implement Phase 1 (Round 1)
+- **All three APPROVE** — no concerns raised.
+
+### Implement Phase 2 (Round 1 → 2)
+- **Codex (REQUEST_CHANGES, R1)** — config comment overstated qualification ("is
+  qualified" before Phase 3 recorded evidence). **Addressed**: reworded to "is
+  being qualified … that evidence decides the default." **R2: all three APPROVE.**
+
+### Implement Phase 3 (Rounds 1 → 2 → 3)
+- **Codex (REQUEST_CHANGES, R1)** — (a) review said parallel "gives no SwiftShader
+  speedup", contradicting the 3.3m-vs-11.7m data; (b) helper inline comment still
+  said "Scaled default". **Both addressed.**
+- **Codex (REQUEST_CHANGES, R2)** — (a) review lacked full per-test results (FR9);
+  (b) `automation.test.mjs` comment "local runs scale to hardware" stale. **Both
+  addressed** (verbatim per-test appendix; comment corrected).
+- **R3: all three APPROVE.** Gemini and Claude APPROVE'd every Phase-3 round.
+
+## Architecture Updates
+
+Routed to the **COLD** `codev/resources/arch.md` (§ Validation Baseline) — reference
+detail, not a hot always-inject fact:
+- Updated the (now-stale) "keeps `workers: 1`" / "Do not raise `workers`" text: the
+  config resolves `workers` via `resolveWorkers` (CI-guarded to `1`); the **local
+  default is serial** because #41 qualified parallel and found SwiftShader
+  destabilization; local parallelism is **opt-in** via `E2E_WORKERS`.
+- Updated the GPU-lane paragraph: the "sequenced after" future-reference is now
+  delivered; the lane inherits the serial default and honors `E2E_WORKERS`.
+
+No **HOT** `arch-critical.md` change: the hot fact "`npm run validate` is the green
+gate" still holds, and its map already routes worker/e2e changes to "Validation
+Baseline". No cap pressure, no displacement.
+
+## Lessons Learned Updates
+
+Routed to the **COLD** `codev/resources/lessons-learned.md` (§ Validation Evidence):
+- "Qualify a parallelism/performance change on the path that **gates** (SwiftShader
+  for local e2e), not just the fastest substrate — hardware-parallel looked green
+  while the gate path failed 4–5/22 every run; and write the safe fallback into the
+  spec up front as an evidence-gated default."
+
+No **HOT** `lessons-critical.md` change: the hot lesson "'tests pass' is not 'it
+works' — verify the real user path" already carries the spirit; this is a
+harness-qualification refinement (reference detail), so it belongs cold. No cap
+pressure.
+
+## Technical Debt
+
+- **Open flakes #33 (Firefox drag-rotate) and #34 (click-to-focus)** remain open —
+  pre-existing, not in #41's scope. #41 documents that parallelism amplifies them
+  and keeps them unmasked. Fixing them is follow-up work that would make opt-in
+  parallel more reliable.
+
+## Follow-up Items
+
+- If #33/#34 are fixed, re-run the parallel qualification — a green parallel path
+  could justify revisiting the default (the machinery is already in place; only the
+  `DEFAULT_LOCAL_WORKERS` constant would change).
+- Consider a convenience script (e.g. `test:smoke:parallel`) if opt-in parallel on
+  the GPU lane becomes a common local workflow.
 
 ## Appendix — Per-test results (verbatim, FR9)
 

@@ -1,0 +1,63 @@
+I'll read the key Phase 2 files to review the implementation.Now let me verify the iteration-1 fix (the Codex concern about the comment) and check any remaining context files.I've read all the relevant files. Let me now systematically evaluate the Phase 2 deliverables.
+
+## Phase 2 Review: Wire helper into config, migrate consumer, update comment
+
+### Deliverable 1: Import and wire `resolveWorkers`
+
+**`playwright.config.ts`:**
+- Line 4: `import {resolveWorkers} from "./scripts/e2e-workers.mjs";` — correct import path, named import. ✅
+- Line 122: `workers: resolveWorkers(process.env),` — replaces the old `workers: 1`, passes `process.env` as the pure function expects. ✅
+
+### Deliverable 2: Comment block rewrite (FR10)
+
+Lines 98–120 replace the old `workers: 1` / "Do NOT raise workers" block with the new contract:
+- Explains `fullyParallel` serves two consumers (CI `--shard` and local parallel). ✅
+- Documents CI guard: hard-pinned to 1, returns BEFORE reading `E2E_WORKERS`. ✅
+- Documents local scaling: `'50%'` default, `E2E_WORKERS` override, invalid → loud `WorkerConfigError`. ✅
+- Documents `retries: 0` preserved locally. ✅
+- **Iteration-1 fix verified**: line 117 says "is **being** qualified by" (not "is qualified by"), and lines 118–119 add "that evidence, not this wiring, decides whether it remains the default or reverts to serial." This correctly frames qualification as Phase 3 work. ✅
+- Old "Do NOT raise `workers`" guidance is fully removed, not edited around. ✅
+
+### Deliverable 3: `tests/automation.test.mjs` migration (FR8)
+
+- Line 94: `/workers: resolveWorkers\(process\.env\)/` replaces the old `/workers: 1/` — asserts delegation, not a literal value. ✅
+- Lines 87–92: Comment updated to explain the delegation model ("CI is hard-pinned to 1 so execution within a shard stays strictly serial… while local runs scale to hardware. The CI-serial matrix in that resolver is covered by `tests/e2e-workers.test.mjs`; here we assert only that the config delegates to it."). Correctly avoids duplicating Phase 1 coverage. ✅
+- `fullyParallel: true` assertion unchanged (line 93). ✅
+- `retries: process.env.CI ? 2 : 0` assertion unchanged (line 97). ✅
+- No other test assertions touched — the CI workflow contract tests, README assertions, and package.json script assertions are all untouched. ✅
+
+### Plan Acceptance Criteria
+
+| Criterion | Status |
+|-----------|--------|
+| `npm run typecheck` passes with `.mjs` import | ✅ (builder verified) |
+| `npm test` passes (migrated `automation.test.mjs` + Phase 1 suite) | ✅ (121/121) |
+| Comment block replaced with new contract | ✅ |
+| `.github/workflows/validation.yml` unchanged | ✅ (not in changed files) |
+| No `package.json` change | ✅ |
+| `retries` line untouched | ✅ (line 130) |
+| No lockfile / dependency / `app/**` changes | ✅ |
+
+### Spec Adherence
+
+- **FR1 (hardware-scaled local workers)**: Config now resolves `workers` through the tested helper, delivering `'50%'` scaled-to-cores locally. ✅
+- **FR3 (CI serial guard)**: The guard is structural in the helper (returns `1` before reading `E2E_WORKERS`) and the config consumes it via `resolveWorkers(process.env)`. ✅
+- **FR5 (retries: 0 preserved)**: Line 130 is byte-for-byte unchanged. ✅
+- **FR10 (updated config rationale)**: Fully replaced, not edited around. ✅
+- **FR8 (consumer migration)**: `automation.test.mjs` asserts delegation. ✅
+
+### Code Quality
+
+The implementation is clean and minimal. The config is now a thin consumer of the tested resolver — exactly as the plan prescribed. The comment block is well-structured, accurately describes the contract, and properly frames the qualification as in-progress (Phase 3). The `automation.test.mjs` migration correctly asserts *delegation* rather than re-testing the resolution matrix, which keeps test responsibilities clear (Phase 1 tests own the matrix; this test owns "config uses the resolver").
+
+### Iteration-1 Concerns
+
+The single concern from iteration 1 (Codex: comment overstated qualification status) is confirmed fixed in the actual file. No concerns to re-raise.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 2 deliverables are fully complete — config wired to the tested resolver, stale comment block replaced with the accurate new contract (with the iteration-1 tense fix applied), consumer assertion migrated to delegation, CI provably untouched.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

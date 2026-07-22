@@ -239,3 +239,32 @@ criterion 2b). Guardrails all honored:
   SwiftShader serial default); (2) automation.test.mjs comment "local runs scale to
   hardware" stale → fixed to serial-default + E2E_WORKERS opt-in. suite 121/121,
   lint clean. Wrote 41-phase_3-iter2-rebuttals.md. Signaling porch done.
+
+- Phase 3 iter3 consult: **UNANIMOUS APPROVE** (Gemini/Codex/Claude, HIGH, zero
+  issues). Per-test appendix + automation comment fixes verified. Phase 3 DONE.
+  Advancing porch → should commit phase_3 and enter the Review (R) phase.
+
+## Review (R) phase
+
+- All 3 implement phases committed + 3-way approved (phase_1 unanimous; phase_2
+  iter2 unanimous; phase_3 iter3 unanimous). Entered R phase.
+- Completed review: Spec Compliance (FR1-11), Deviations, expanded Lessons,
+  Consultation Feedback (every phase/round/model), mandatory Architecture Updates
+  + Lessons Learned Updates, Technical Debt, Follow-up. Per-test FR9 appendix kept.
+- Governance docs (COLD tier, via update-arch-docs skill):
+  - arch.md § Validation Baseline: replaced stale "keeps workers:1 / Do not raise"
+    text with the resolveWorkers CI-guard + serial-local-default + E2E_WORKERS
+    opt-in contract; updated GPU-lane para ("#41 sequenced after" now delivered).
+  - lessons-learned.md § Validation Evidence: "qualify on the gating path, not the
+    fast substrate; write the evidence-gated fallback into the spec up front."
+  - No HOT change (reference detail; hot maps already route to those sections; no
+    cap pressure/displacement).
+- Clean-checkout gate proof (lessons-critical): tracked tree lints clean
+  (`git ls-files … | xargs eslint` = 0); `eslint .` flags ONLY untracked
+  .claude/hooks/; typecheck clean; no package.json/lockfile delta. Noise NOT
+  suppressed in committed config.
+- e2e_tests porch check = `npm run test:e2e || echo skipped` → no such script →
+  skips (per sibling threads air-30/spir-12). review_has_arch/lessons_updates ✓.
+- Committing review + governance + consult artifacts (convention: consult .txt
+  tracked, cf. project 12). Builder-harness files (.builder-*, .claude/hooks/)
+  left untracked (not deliverables; not suppressing in config). Opening PR next.

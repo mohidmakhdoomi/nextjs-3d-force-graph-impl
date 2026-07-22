@@ -1,0 +1,73 @@
+I'll read the key files for Phase 3 review. Let me start with the main deliverables.Now let me verify the CI workflow file wasn't touched and check the state thread for Phase 3 context:Let me verify the GPU lane script was NOT modified and check what changed in the spec:Now I have a complete picture. Let me assess Phase 3 against its plan and the spec.
+
+---
+
+## Phase 3 Review: Qualify parallel execution, finalize default, document
+
+### 1. Spec Adherence
+
+**FR9 — Qualification evidence**: ✅ Met. The review records ≥3 consecutive full two-engine parallel runs on both paths:
+- **GPU lane** (primary, `E2E_GPU_REQUIRE=1`): 3 runs at 10 workers — 2/3 green, 1/3 hit the known open flake #33. Per-test results, wall-clocks (46s/45s/48s), worker counts (10), `retries: 0` — all verbatim.
+- **SwiftShader** (the actual `validate` gate path): 3 runs — 0/3 green (4–5/22 fail every run), wall-clocks (~3.3m each). Correct serial baseline included (11.7m SwiftShader, 196s hardware).
+
+**FR7 — GPU lane inherits parallel**: ✅ Confirmed. `scripts/e2e-gpu-lane.mjs` has zero diff. Thread records the banner `Running 22 tests using 10 workers` — the lane inherits workers from the config's `resolveWorkers` with no code change.
+
+**FR4 — CI untouched**: ✅ `git diff` shows `.github/workflows/validation.yml` absent from the diff.
+
+**FR10 — Config comment**: ✅ The `playwright.config.ts` comment block (lines 98–120) accurately states the finalized contract: CI hard-pinned `1` via guard-returns-first; local serial default; `E2E_WORKERS` opt-in; `retries: 0` preserved; destabilization rationale.
+
+**FR11 — Documentation**: ✅ README lines 84–98 ("Local test parallelism") cover all six Scenario-6 requirements: serial by default, `E2E_WORKERS` tuning (integer + percentage), CI unchanged, `retries: 0` preserved, qualification outcome (destabilization, not slowness), ~4× speedup on GPU lane opt-in. The lane env-var table (line 258) adds `E2E_WORKERS`. The status/sequencing section (lines 318–324) updates the "#41 sequenced after" note to delivered status.
+
+**Decision 4 (canonical default rule)**: ✅ Correctly applied. Evidence showed parallel destabilizes both paths (SwiftShader: 4–5/22 every run; hardware: flake #33 amplified to 1/3). Default finalized to serial (`DEFAULT_LOCAL_WORKERS = 1`), parallelism opt-in via `E2E_WORKERS`. The FR8 deviation (FR8 said "not 1") is explicitly documented with the Decision-4 authorization in the review. Architect endorsement recorded.
+
+**FR5 — `retries: 0` preserved**: ✅ All qualification runs at `retries: 0`. No masking.
+
+### 2. Code Quality
+
+**`scripts/e2e-workers.mjs`**: The constant flip from `'50%'` to `1` is clean — one-line change with thorough rationale in the header comment and JSDoc. The return-type contract (`number | string`) is unchanged; Playwright handles `1` identically to the prior hard-coded `workers: 1`.
+
+**`tests/e2e-workers.test.mjs`**: Default assertion correctly updated (lines 17–19: `strictEqual(DEFAULT_LOCAL_WORKERS, 1)`; lines 46–49: `resolveWorkers({}) === 1`). All 24 tests aligned with the finalized contract.
+
+**`tests/automation.test.mjs`**: The Phase-2 delegation assertion (`/workers: resolveWorkers\(process\.env\)/`) is correctly agnostic to the resolved value — works for both `'50%'` and `1`. No Phase-3 migration needed; the comment update (lines 87–91) accurately describes the tested resolver delegation.
+
+**`playwright.config.ts`**: Comment is accurate, detailed, and honest about the destabilization finding. No stale text remains.
+
+**README.md**: Well-written, discoverable documentation. The "Local test parallelism" note is placed correctly after the validation-commands table (where a developer looks for how to run things). The known-Firefox-flake note (lines 239–248) gives context for #33 without burying the reader. Cross-references to the review for full evidence.
+
+### 3. Test Coverage
+
+- Unit tests: 24/24 in `e2e-workers.test.mjs`, default row updated to `1`.
+- Integration: The qualification runs themselves ARE the integration test — real full suite under real resolved config, ≥3× on both paths.
+- `automation.test.mjs`: 121/121 per thread. README assertions still pass.
+
+### 4. Error Handling
+
+No new error paths in Phase 3 (the `WorkerConfigError` was Phase 1). The default flip is purely a constant change — no new failure modes.
+
+### 5. Plan Alignment
+
+All Phase-3 deliverables completed:
+- [x] Qualification evidence gathered and recorded in review
+- [x] SwiftShader-parallel stability evidence (the gate-path qualifier)
+- [x] Default finalized from evidence (serial, Decision 4 fallback branch)
+- [x] FR7 verified (GPU lane inherits, no lane code change)
+- [x] README updated (FR11, all touch points)
+- [x] CI-untouched proof (`validation.yml` zero-diff)
+- [x] Review authored with verbatim evidence + deviation documentation
+
+The Phase-3 contingency plan was also correctly navigated: GPU hardware WAS available (best case), but the qualification still didn't produce ≥3 consecutive green parallel runs (flake #33 amplified), so the serial-default fallback was correctly taken rather than shipping a flaky gate.
+
+### 6. Honesty & Evidence Integrity
+
+Particularly commendable: the thread records a self-correction where the builder initially compared parallel-SwiftShader wall-clock (3.3m) to serial-*hardware* (196s) and claimed "no speedup." The builder caught this, corrected it (parallel-SwiftShader is ~3.5× faster than serial-SwiftShader), and reframed the disqualifier as "destabilization, not slowness" — exactly the kind of evidence honesty the spec and lessons-critical demand.
+
+---
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 3 delivers honest qualification evidence, correctly finalizes the serial default per Decision 4, and documents the contract comprehensively — all deliverables complete with no issues.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None
