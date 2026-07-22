@@ -231,3 +231,14 @@ two-engine Chromium+Firefox lane. Strict mode (porch-driven). Follow-up to #44 /
      npm audit; untouched by branch; 95/95 green here + porch tests gate).
   3. plan Status draft ⇒ completed.
 - npm test 95/95, lint/typecheck clean. Committing fixes + pushing to PR #53.
+
+### Review phase — architect integration review (PR #53) fixes
+- Blocking: runProbeOnly() returned 1 on E2E_GPU_REQUIRE abort WITHOUT printing
+  formatReport (violates "probe-only always reports" contract). Fixed: extracted
+  pure probeOnlyOutcome() → {report, exitCode}; always emits per-engine report
+  (mode: abort) before non-zero exit. Unit test added.
+- Minor: parseArgs now rejects --candidate/--channel (Chromium-only) with
+  --engine=firefox (usage error, exit 2). Unit test added.
+- E2E verified: E2E_GPU_REQUIRE=1 --probe-only forced-miss prints report + exit 1;
+  --engine=firefox --candidate exit 2. 58 gpu-lane tests + 97 total green, lint/
+  typecheck clean. Pushing to PR #53; re-running porch consult (iter2).

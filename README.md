@@ -180,7 +180,7 @@ What one invocation does (`scripts/e2e-gpu-lane.mjs`):
 
    ```
    === E2E GPU LANE REPORT ===
-   mode: hardware | software-fallback | skipped
+   mode: hardware | software-fallback | skipped | abort
    engines: chromium,firefox
    renderer.chromium: <verbatim string | (software-fallback — SwiftShader)>
    renderer.firefox: <verbatim string | skipped (unverified — <reason>) | not run (<reason>)>
@@ -220,10 +220,10 @@ set recorded in review 52. If it recurs, it is dispositioned there, never hidden
 | --- | --- |
 | `--engine=chromium\|firefox\|all` | Select the engine set to probe and run. `all` (default) is the two-engine lane; single-engine values preserve targeted diagnostics and obey the same honesty rules. |
 | `E2E_GPU_FORCE_FALLBACK=1` | Skip all hardware probing; take the honest fallback path (Chromium SwiftShader, Firefox skipped) deterministically. With `--engine=firefox` alone it is a benign no-op skip (Firefox has no software path), exit 0. |
-| `E2E_GPU_REQUIRE=1` | Exit non-zero instead of falling back when **any requested engine** does not verify hardware — use for hardware-evidence runs so a silent fallback can't pollute results. |
-| `--probe-only` | Probe + verify + report the requested engine set without building or running the suite. |
+| `E2E_GPU_REQUIRE=1` | Exit non-zero instead of falling back when **any requested engine** does not verify hardware — use for hardware-evidence runs so a silent fallback can't pollute results. With `--probe-only` the per-engine report is still printed (`mode: abort`) **before** the non-zero exit — the probe already did its work. |
+| `--probe-only` | Probe + verify + report the requested engine set without building or running the suite. Always prints the report, even on a `E2E_GPU_REQUIRE=1` abort. |
 | `--mode=headed\|headless` | Override the run mode. Default is **headless** (proven equivalent; see below). Headed needs WSLg/X (`DISPLAY`). |
-| `--candidate=<id>` / `--channel=<name>` | Probe a specific Chromium recipe / a specific Playwright channel (`--channel` is probe-only). Used by the FR5 matrix. |
+| `--candidate=<id>` / `--channel=<name>` | Probe a specific Chromium recipe / a specific Playwright channel (`--channel` is probe-only). Chromium-only — rejected with `--engine=firefox`. Used by the FR5 matrix. |
 
 Pass flags through npm like `npm run test:e2e:gpu -- --probe-only`.
 

@@ -27,6 +27,7 @@ import {
     parseControls,
     partitionCandidates,
     playwrightTestArgs,
+    probeOnlyOutcome,
     probeRenderer,
     reportEntriesFromPlan,
     reportModeLabel,
@@ -781,6 +782,55 @@ test("reportEntriesFromPlan renders the requested engines in order", () => {
     assert.match(entries[1].renderer, /^skipped \(unverified — /);
 });
 
+test("probeOnlyOutcome: probe-only ALWAYS reports, even when E2E_GPU_REQUIRE aborts", () => {
+    // Architect integration-review fix: a probe-only run already produced its
+    // verdicts, so the per-engine report must be emitted BEFORE the non-zero exit
+    // (the report is most useful exactly when an engine failed). Unlike the full
+    // lane, which aborts before doing any build/suite work.
+    const requestedEngines = ["chromium", "firefox"];
+    const verdicts = {
+        chromium: chromiumHardwareVerdict(),
+        firefox: firefoxSoftwareVerdict(),
+    };
+    const plan = computeRunPlan({requestedEngines, verdicts, controls: strict});
+    assert.equal(plan.mode, "abort");
+    const {report, exitCode} = probeOnlyOutcome({
+        requestedEngines,
+        verdicts,
+        plan,
+        controls: strict,
+        wallClock: "3s",
+    });
+    // Non-zero exit AND a full per-engine report were both produced.
+    assert.equal(exitCode, 1);
+    const lines = report.split("\n");
+    assert.equal(lines[0], "=== E2E GPU LANE REPORT ===");
+    assert.equal(lines[1], "mode: abort");
+    assert.equal(lines[2], "engines: chromium,firefox");
+    assert.match(report, /^renderer\.chromium: ANGLE \(Microsoft Corporation/m);
+    assert.match(report, /^renderer\.firefox: skipped \(unverified — .*llvmpipe/m);
+    assert.match(report, /^suite: skipped \(--probe-only\)$/m);
+});
+
+test("probeOnlyOutcome: a fully-verified probe reports and exits 0", () => {
+    const requestedEngines = ["chromium", "firefox"];
+    const verdicts = {
+        chromium: chromiumHardwareVerdict(),
+        firefox: firefoxHardwareVerdict(),
+    };
+    const plan = computeRunPlan({requestedEngines, verdicts, controls: nonStrict});
+    const {report, exitCode} = probeOnlyOutcome({
+        requestedEngines,
+        verdicts,
+        plan,
+        controls: nonStrict,
+        wallClock: "3s",
+    });
+    assert.equal(exitCode, 0);
+    assert.match(report, /^mode: hardware$/m);
+    assert.match(report, /^renderer\.firefox: D3D12 \(NVIDIA GeForce RTX 3080\)$/m);
+});
+
 test("probeRenderer: a watchdog timeout still reaps a late-resolving browser", async () => {
     // The launch resolves AFTER the watchdog has already failed the probe;
     // the lane must close that late browser instead of orphaning a Chromium
@@ -966,6 +1016,25 @@ test("parseArgs: engine selector + matrix flags parse and validate; channel is p
     assert.deepEqual(parseArgs(["--engine=chromium"]).engines, ["chromium"]);
     assert.deepEqual(parseArgs(["--engine=firefox"]).engines, ["firefox"]);
     assert.throws(() => parseArgs(["--engine=webkit"]), LaneUsageError);
+    // --candidate / --channel are Chromium-only: rejected with --engine=firefox,
+    // but fine with the default (all) set (Chromium still probed).
+    assert.throws(
+        () => parseArgs(["--engine=firefox", "--candidate=wsl2-d3d12-angle-gl"]),
+        LaneUsageError,
+    );
+    assert.throws(
+        () =>
+            parseArgs([
+                "--engine=firefox",
+                "--probe-only",
+                "--channel=chromium",
+            ]),
+        LaneUsageError,
+    );
+    assert.equal(
+        parseArgs(["--candidate=wsl2-d3d12-angle-gl"]).candidate,
+        "wsl2-d3d12-angle-gl",
+    );
 
     assert.throws(() => parseArgs(["--mode=windowed"]), LaneUsageError);
     assert.throws(() => parseArgs(["--candidate=no-such-id"]), LaneUsageError);

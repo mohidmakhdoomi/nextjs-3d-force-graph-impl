@@ -296,6 +296,14 @@ Routed to the **cold** `codev/resources/lessons-learned.md` under the existing
   is a Codex-sandbox environment artifact — that test shells out to `npm audit`
   (with a `registry unavailable` case), is untouched by this branch, and passes
   95/95 on the qualification host and on porch's own `tests` gate.
+- **Architect integration review (PR #53)**: one blocking item — `runProbeOnly()`
+  returned non-zero on a `E2E_GPU_REQUIRE=1` abort **without** printing the report,
+  violating the "probe-only always reports" contract (the probe already did its
+  work; the report is the deliverable, most useful when an engine failed). Fixed
+  by extracting a pure `probeOnlyOutcome(...)` that always emits the per-engine
+  report (`mode: abort`) before the non-zero exit, unit-tested. Minor: `--candidate`
+  / `--channel` (Chromium-only) are now rejected with `--engine=firefox` instead of
+  being silently ignored.
 
 ## Canonical gate proof on a clean checkout
 

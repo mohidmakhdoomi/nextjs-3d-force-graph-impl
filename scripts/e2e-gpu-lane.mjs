@@ -453,6 +453,41 @@ export function reportEntriesFromPlan(plan, requestedEngines) {
         }));
 }
 
+// Pure: the --probe-only report + exit code. A probe-only run already did all its
+// work, so it ALWAYS reports (the report is the deliverable, most useful exactly
+// when an engine failed) — INCLUDING when E2E_GPU_REQUIRE=1 forces a non-zero
+// exit (`mode: abort`). Per-engine lines show each engine's ACTUAL probe result
+// (a probe is a diagnostic, not a run): verified ⇒ verbatim renderer; otherwise
+// its own skip reason. forceFallback ran no probe, so those lines come from the
+// plan's engines map instead.
+export function probeOnlyOutcome({
+    requestedEngines,
+    verdicts = {},
+    plan,
+    controls,
+    wallClock,
+}) {
+    const engines = requestedEngines.map((engine) => {
+        if (controls.forceFallback) {
+            return {engine, renderer: engineReportLine(plan.engines[engine])};
+        }
+        const verdict = verdicts[engine];
+        return {
+            engine,
+            renderer: verdict.verified
+                ? verdict.renderer
+                : `skipped (unverified — ${verdict.reason})`,
+        };
+    });
+    const report = formatReport({
+        mode: plan.mode === "abort" ? "abort" : reportModeLabel(plan.mode),
+        engines,
+        suite: "skipped (--probe-only)",
+        wallClock,
+    });
+    return {report, exitCode: plan.mode === "abort" ? 1 : 0};
+}
+
 // Two-engine verification gating (spec 52 FR4, Decisions 4–6) — a PURE decision
 // function. Given the requested engine set, each engine's probe verdict, and
 // the controls, decide the run shape. Only "hardware" runs the combined suite;
@@ -968,6 +1003,21 @@ export function parseArgs(argv) {
                 "a Playwright channel through PW_CHROMIUM_ARGS",
         );
     }
+    if (
+        args.engines.length === 1 &&
+        args.engines[0] === "firefox" &&
+        (args.candidate !== null || args.channel !== null)
+    ) {
+        // --candidate selects a Chromium ANGLE recipe and --channel a Chromium
+        // Playwright channel; both are Chromium-only and meaningless for a
+        // Firefox-only run (Firefox has a single probe recipe). Reject rather
+        // than silently ignore.
+        throw new LaneUsageError(
+            "--candidate and --channel are Chromium-only and have no effect " +
+                "with --engine=firefox (Firefox has a single probe recipe) — " +
+                "drop them, or use --engine=all",
+        );
+    }
     return args;
 }
 
@@ -1073,34 +1123,22 @@ async function runProbeOnly(args, controls, elapsedSeconds) {
     const plan = computeRunPlan({requestedEngines, verdicts, controls});
 
     if (plan.mode === "abort") {
-        log(
-            "E2E_GPU_REQUIRE=1 — not every requested engine verified hardware; " +
-                "exiting non-zero",
-        );
-        return 1;
+        // E2E_GPU_REQUIRE=1 and some engine did not verify. Unlike the full lane
+        // (which aborts BEFORE doing any build/suite work), a probe-only run has
+        // already produced its verdicts — so it ALWAYS emits the per-engine
+        // report before the non-zero exit (the report is the deliverable, most
+        // useful exactly when an engine failed).
+        log("E2E_GPU_REQUIRE=1 — not every requested engine verified hardware");
     }
-
-    const engines = requestedEngines.map((engine) => {
-        if (controls.forceFallback) {
-            return {engine, renderer: engineReportLine(plan.engines[engine])};
-        }
-        const verdict = verdicts[engine];
-        return {
-            engine,
-            renderer: verdict.verified
-                ? verdict.renderer
-                : `skipped (unverified — ${verdict.reason})`,
-        };
+    const {report, exitCode} = probeOnlyOutcome({
+        requestedEngines,
+        verdicts,
+        plan,
+        controls,
+        wallClock: `${elapsedSeconds()}s`,
     });
-    console.log(
-        formatReport({
-            mode: reportModeLabel(plan.mode),
-            engines,
-            suite: "skipped (--probe-only)",
-            wallClock: `${elapsedSeconds()}s`,
-        }),
-    );
-    return 0;
+    console.log(report);
+    return exitCode;
 }
 
 // Full lane: build + suite, mirroring `test:smoke`. Probes the full requested
