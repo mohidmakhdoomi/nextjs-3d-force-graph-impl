@@ -714,3 +714,31 @@ REMAINING (needs resume, ideally after /compact): (1) final clean-checkout
 (checks: pr_exists, review_has_arch_updates, review_has_lessons_updates, e2e_tests);
 (4) STOP at the SPIR `pr` gate for human approval. Paused BEFORE these (each is
 substantial; the e2e runs are ~11m) per the monitor instruction. Notified architect.
+
+## RESUMED — Review-phase completion (architect-directed) — 2026-07-24
+Fresh context window (5%). Architect issued two instructions:
+1. Arm context monitor (~/code/scripts/context_used_threshold.sh) — DONE (bg,
+   fires at >30%; alert = pause before next phase + notify architect).
+2. "Continue and finish the Review phase: final clean-checkout validate, open the
+   single PR, run the porch review checks (pr_exists/arch/lessons/e2e_tests), then
+   STOP at the SPIR pr gate and notify me." `env -u npm_config_user_agent` prefix
+   for porch checks approved.
+
+Porch-mechanics recon (skeleton spir/protocol.json review-phase `checks`):
+- pr_exists  = gh pr list --head <branch> ... (needs PR open first).
+- review_has_arch_updates / review_has_lessons_updates = grep '## Architecture
+  Updates' / '## Lessons Learned Updates' in review doc — both present (lines 177/187).
+- e2e_tests  = `npm run test:e2e || echo skipped` and marked optional:true — but
+  package.json has NO `test:e2e` script → falls through to echo → trivial pass.
+  So porch's e2e check is a NO-OP (no 2nd full e2e run); the clean-checkout
+  `validate` (test:smoke = build + full playwright) is the real e2e evidence.
+- Path to gate: `porch done` (full) would mark review build_complete then demand a
+  3-way PR verify (normal mode; no `.codev/config.json`) which the architect did
+  NOT ask for. `porch gate 55` requests the pr gate directly (no build_complete /
+  no verify precondition) → clean STOP. So: check → gate, not full `done`.
+
+Sequence: (1) clean-validate bg [running, bmemf8cl3]; (2) gh pr create → N;
+(3) porch done 55 --pr N --branch builder/spir-55 (record-only mode, safe);
+(4) env -u npm_config_user_agent porch check 55 (4 checks green);
+(5) porch gate 55 (request pr gate → STOP); (6) afx send architect. NO porch approve.
+Branch: 70 ahead / 0 behind origin/main; no existing PR.

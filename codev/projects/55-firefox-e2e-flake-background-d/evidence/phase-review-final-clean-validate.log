@@ -1,0 +1,113 @@
+### FINAL CLEAN-CHECKOUT VALIDATE (Review phase)
+worktree HEAD: 5a60c784165f7b53f269626b42c5fb4eabf3ef6e
+short: 5a60c78
+Preparing worktree (detached HEAD 5a60c78)
+HEAD is now at 5a60c78 [Spec 55][Phase: review] docs: Thread — paused at context-monitor 30% threshold (mid-Review)
+### verify no untracked builder-harness in clean tree:
+ls: cannot access '/tmp/claude-1000/-home-user-code-graph-site-root-nextjs-3d-force-graph-impl--builders-spir-55/9977408f-75ed-49bb-b509-7f2886ef891b/scratchpad/clean-55-final/.claude/hooks': No such file or directory
+(no .claude/hooks in clean tree — expected)
+### npm ci
+
+> postinstall
+> patch-package
+
+patch-package 8.0.1
+Applying patches...
+3d-force-graph@1.80.0 ✔
+@vercel/speed-insights@1.1.0 ✔
+three-forcegraph@1.43.4 ✔
+
+added 447 packages, and audited 448 packages in 8s
+
+162 packages are looking for funding
+  run `npm fund` for details
+
+9 vulnerabilities (1 moderate, 8 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues, run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+### npm run validate (lint + typecheck + test:smoke)
+
+> validate
+> npm run lint && npm run typecheck && npm run test:smoke
+
+
+> lint
+> eslint .
+
+
+> typecheck
+> tsc --noEmit
+
+
+> test:smoke
+> npm run build && playwright test
+
+
+> build
+> next build
+
+▲ Next.js 16.2.10 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.5s
+  Running TypeScript ...
+  Finished TypeScript in 5.8s ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/4) ...
+  Generating static pages using 5 workers (1/4) 
+  Generating static pages using 5 workers (2/4) 
+  Generating static pages using 5 workers (3/4) 
+✓ Generating static pages using 5 workers (4/4) in 307ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+└ ○ /_not-found
+
+
+○  (Static)  prerendered as static content
+
+[WebServer] 
+[WebServer] > start
+[WebServer] > next start --hostname 127.0.0.1 --port 3000
+[WebServer] 
+[WebServer] ▲ Next.js 16.2.10
+[WebServer] - Local:         http://127.0.0.1:3000
+[WebServer] - Network:       http://127.0.0.1:3000
+[WebServer] ✓ Ready in 104ms
+
+Running 22 tests using 1 worker
+
+  ✓   1 [chromium] › tests/e2e/matrix.spec.ts:76:5 › settles an initial force layout with positioned nodes (6.7s)
+  ✓   2 [chromium] › tests/e2e/matrix.spec.ts:105:5 › rotates the camera automatically until paused, then resumes (36.2s)
+  ✓   3 [chromium] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses (39.6s)
+  ✓   4 [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel (49.0s)
+  ✓   5 [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (1.4m)
+  ✓   6 [chromium] › tests/e2e/matrix.spec.ts:314:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (1.2m)
+  ✓   7 [chromium] › tests/e2e/matrix.spec.ts:478:5 › toggles AxesHelper visibility through the axes control (49.1s)
+  ✓   8 [chromium] › tests/e2e/matrix.spec.ts:511:5 › keeps the canvas consistent and interactive across a resize (35.8s)
+  ✓   9 [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation (58.4s)
+  ✓  10 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (1.5m)
+  ✓  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (42.2s)
+  ✓  12 [firefox] › tests/e2e/matrix.spec.ts:76:5 › settles an initial force layout with positioned nodes (3.1s)
+  ✓  13 [firefox] › tests/e2e/matrix.spec.ts:105:5 › rotates the camera automatically until paused, then resumes (7.9s)
+  ✓  14 [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses (7.3s)
+  ✓  15 [firefox] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel (9.0s)
+  ✓  16 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (14.6s)
+  ✓  17 [firefox] › tests/e2e/matrix.spec.ts:314:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (18.0s)
+  ✓  18 [firefox] › tests/e2e/matrix.spec.ts:478:5 › toggles AxesHelper visibility through the axes control (4.6s)
+  ✓  19 [firefox] › tests/e2e/matrix.spec.ts:511:5 › keeps the canvas consistent and interactive across a resize (4.4s)
+  ✓  20 [firefox] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation (2.9s)
+  ✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (20.7s)
+  ✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (8.7s)
+
+  Slow test file: [chromium] › tests/e2e/matrix.spec.ts (7.1m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  22 passed (11.5m)
+### CLEAN VALIDATE EXIT: 0
