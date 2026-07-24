@@ -8,10 +8,10 @@ plan_phases:
     status: complete
   - id: phase_2
     title: Amplified reproduction & root-cause determination
-    status: in_progress
+    status: complete
   - id: phase_3
     title: Minimal behavior-preserving fix
-    status: pending
+    status: in_progress
   - id: phase_4
     title: Fix qualification (both engines, both rendering paths)
     status: pending
@@ -21,7 +21,7 @@ plan_phases:
   - id: phase_6
     title: Record corrections (FR7 + FR8)
     status: pending
-current_plan_phase: phase_2
+current_plan_phase: phase_3
 gates:
   spec-approval:
     status: approved
@@ -35,8 +35,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 2
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: phase_1
@@ -71,4 +71,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_2-iter1-claude.txt
 started_at: '2026-07-24T03:23:21.257Z'
-updated_at: '2026-07-24T08:00:11.833Z'
+updated_at: '2026-07-24T08:08:15.205Z'
