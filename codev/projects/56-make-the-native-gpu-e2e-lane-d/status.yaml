@@ -24,47 +24,17 @@ gates:
     approved_at: '2026-07-24T19:14:59.366Z'
   pr:
     status: pending
+    requested_at: '2026-07-24T20:06:45.326Z'
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
-history:
-  - iteration: 1
-    plan_phase: phase_3
-    build_output: ''
-    reviews:
-      - model: gemini
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-56/codev/projects/56-make-the-native-gpu-e2e-lane-d/56-phase_3-iter1-gemini.txt
-      - model: codex
-        verdict: REQUEST_CHANGES
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-56/codev/projects/56-make-the-native-gpu-e2e-lane-d/56-phase_3-iter1-codex.txt
-      - model: claude
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-56/codev/projects/56-make-the-native-gpu-e2e-lane-d/56-phase_3-iter1-claude.txt
-  - iteration: 2
-    plan_phase: phase_3
-    build_output: ''
-    reviews:
-      - model: gemini
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-56/codev/projects/56-make-the-native-gpu-e2e-lane-d/56-phase_3-iter2-gemini.txt
-      - model: codex
-        verdict: REQUEST_CHANGES
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-56/codev/projects/56-make-the-native-gpu-e2e-lane-d/56-phase_3-iter2-codex.txt
-      - model: claude
-        verdict: APPROVE
-        file: >-
-          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-56/codev/projects/56-make-the-native-gpu-e2e-lane-d/56-phase_3-iter2-claude.txt
+build_complete: false
+history: []
 started_at: '2026-07-24T19:05:59.482Z'
-updated_at: '2026-07-24T20:04:12.103Z'
+updated_at: '2026-07-24T20:06:45.327Z'
 pr_history:
   - phase: review
     pr_number: 59
     branch: builder/spir-56
     created_at: '2026-07-24T20:03:37.862Z'
+pr_ready_for_human: true
