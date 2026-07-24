@@ -52,11 +52,21 @@ async function waitForPointerEnablement(page: Page): Promise<void> {
 
 // Reads the live UNMASKED WebGL renderer so GPU-lane reproduction runs carry
 // renderer evidence in the dump (Phase 2 honesty), mirroring the gpu-lane probe.
+// three.js creates a WebGL2 context by default, and getContext returns an
+// existing context only for the matching type — so try "webgl2" first (else a
+// "webgl" request on a webgl2 canvas returns null and the renderer reads
+// "(unavailable)").
 async function readRenderer(page: Page): Promise<string | null> {
     return page.evaluate(() => {
-        const gl = document
-            .querySelector("canvas")
-            ?.getContext("webgl") as WebGLRenderingContext | null;
+        const canvas = document.querySelector("canvas");
+        if (!canvas) {
+            return null;
+        }
+        const gl = (canvas.getContext("webgl2") ??
+            canvas.getContext("webgl")) as
+            | WebGL2RenderingContext
+            | WebGLRenderingContext
+            | null;
         if (!gl) {
             return null;
         }
@@ -103,6 +113,11 @@ type DragDiagnostics = {
     before: {controlsEnabled: boolean; fixedNodeCount: number} | null;
     after: {controlsEnabled: boolean; fixedNodeCount: number} | null;
     pointerLog: PointerLog;
+    // The H2 discriminator: pointermoves delivered STRICTLY between the drag's
+    // pointerdown and pointerup, derived from the event sequence (NOT the raw
+    // pointerLog.move aggregate, which would also count the pre-drag positioning
+    // move to the start point and mask a true "0 moves between down and up").
+    movesBetweenDownUp: number;
     stepSamples: StepSample[];
     consoleErrors: number;
     pageErrors: number;
@@ -115,6 +130,30 @@ function summarize(snapshot: GraphSnapshot | null): DragDiagnostics["before"] {
               controlsEnabled: snapshot.controlsEnabled,
               fixedNodeCount: snapshot.fixedNodeCount,
           };
+}
+
+// Counts pointermove events STRICTLY between the drag's pointerdown and the
+// following pointerup, read from the recorded event sequence. This is the
+// correct H2 measure regardless of when the log was reset: the pre-drag
+// positioning move (before down) and any stray post-up move are excluded, so a
+// true delivery-loss case reports 0 here even though the setup move was
+// delivered.
+function movesBetweenDownAndUp(log: PointerLog): number {
+    const downIndex = log.events.findIndex((event) => event.type === "down");
+    if (downIndex === -1) {
+        return 0;
+    }
+    const upIndex = log.events.findIndex(
+        (event, index) => index > downIndex && event.type === "up",
+    );
+    const end = upIndex === -1 ? log.events.length : upIndex;
+    let moves = 0;
+    for (let index = downIndex + 1; index < end; index += 1) {
+        if (log.events[index].type === "move") {
+            moves += 1;
+        }
+    }
+    return moves;
 }
 
 // Always attaches the full JSON; on a reproduced (below-floor) drag also prints
@@ -130,7 +169,7 @@ async function dumpDiagnostics(
     });
 
     const {pointerLog} = diagnostics;
-    const movesBetweenDownUp = pointerLog.move;
+    const movesBetweenDownUp = diagnostics.movesBetweenDownUp;
     const header = diagnostics.reproduced
         ? `#55 REPRODUCED (${diagnostics.variant} / ${diagnostics.engine}): ` +
           `drag delta ${diagnostics.maxDelta} <= floor ${diagnostics.motionFloor}`
@@ -185,8 +224,11 @@ test.describe("issue #55 background-drag diagnostic", () => {
         );
         const before = summarize(await readGraphSnapshot(page));
 
-        await resetPointerLog(page);
+        // Position at the start point FIRST, THEN reset — the pre-drag
+        // positioning move must not be counted as a drag delivery (Codex
+        // phase_1 review), so a true H2 loss can read 0 moves between down/up.
         await page.mouse.move(DRAG_START.x, DRAG_START.y);
+        await resetPointerLog(page);
         await page.mouse.down();
         await page.mouse.move(DRAG_END.x, DRAG_END.y, {steps: DRAG_STEPS});
         await page.mouse.up();
@@ -206,6 +248,7 @@ test.describe("issue #55 background-drag diagnostic", () => {
             before,
             after,
             pointerLog,
+            movesBetweenDownUp: movesBetweenDownAndUp(pointerLog),
             stepSamples: [],
             consoleErrors: errors.collected.consoleErrors.length,
             pageErrors: errors.collected.pageErrors.length,
@@ -237,8 +280,11 @@ test.describe("issue #55 background-drag diagnostic", () => {
         const before = summarize(await readGraphSnapshot(page));
         const stepSamples: StepSample[] = [];
 
-        await resetPointerLog(page);
+        // Position at the start point FIRST, THEN reset (Codex phase_1 review):
+        // the pre-drag positioning move is excluded so movesBetweenDownUp is a
+        // true drag-delivery count.
         await page.mouse.move(DRAG_START.x, DRAG_START.y);
+        await resetPointerLog(page);
         await page.mouse.down();
         stepSamples.push({phase: "afterDown", controls: await sampleControls(page)});
         for (let step = 1; step <= DRAG_STEPS; step += 1) {
@@ -272,6 +318,7 @@ test.describe("issue #55 background-drag diagnostic", () => {
             before,
             after,
             pointerLog,
+            movesBetweenDownUp: movesBetweenDownAndUp(pointerLog),
             stepSamples,
             consoleErrors: errors.collected.consoleErrors.length,
             pageErrors: errors.collected.pageErrors.length,

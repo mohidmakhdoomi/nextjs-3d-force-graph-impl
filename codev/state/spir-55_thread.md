@@ -208,3 +208,26 @@ file, does NOT weaken the test): invoke porch with the spurious var removed —
 `env -u npm_config_user_agent porch done 55`. Escalated to architect for a
 go-ahead vs. a session-level env fix before proceeding (strict mode: not
 working around a porch check unilaterally).
+
+### Phase_1 — iter 1 consultation (3-way: Gemini, Codex, Claude)
+- **Gemini APPROVE (HIGH)**, **Claude APPROVE (HIGH)** — Claude verified the
+  raycast math (parametric ray-sphere, behind-camera exclusion), the FR2
+  committed-vs-evidence separation, and the 22/22 no-regression. Non-blocking:
+  readRenderer used getContext("webgl") (null on three's WebGL2 canvas);
+  waitForPointerEnablement duplicated (acceptable).
+- **Codex REQUEST_CHANGES (HIGH)** — one legit blocking bug: the diagnostic
+  reset the pointer log BEFORE the pre-drag `mouse.move(DRAG_START)`
+  positioning move, so that move was counted in `pointerLog.move` and
+  mislabeled "pointermoves between down and up"; a true H2 (0 delivered drag
+  moves) would still read >=1, masking the discriminator.
+- **Applied (both accepted):**
+  - Codex: reset pointer log AFTER the positioning move; ALSO added
+    `movesBetweenDownAndUp(log)` deriving the count strictly between the down
+    and up events from the recorded sequence (belt+suspenders), reported +
+    attached. Verified both engines: pointer move=12, movesBetweenDownUp=12
+    (was 13). A true 0-move H2 case now reads 0.
+  - Claude (non-blocking, but Phase-2 renderer evidence depends on it): fixed
+    readRenderer to `getContext("webgl2") ?? getContext("webgl")`.
+- Fix is confined to the out-of-tree `drag-diagnostic.spec.ts` (canonical suite
+  + graph-handle.ts untouched), so the 22/22 canonical green still stands.
+  typecheck + lint clean. Committing, then re-consult (iter 2).
