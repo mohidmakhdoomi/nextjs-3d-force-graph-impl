@@ -1,0 +1,22 @@
+---
+VERDICT: APPROVE
+SUMMARY: The PR cleanly and comprehensively root-causes and fixes the background-drag flake by replacing a static coordinate with a probe-verified, genuinely empty background start point.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None
+
+PR_SUMMARY: |
+  ## Summary
+  Root-causes and **fixes** the long-standing `matrix.spec.ts:224` background-drag flake. The failure is proven to be **stray node capture (H1)** — a deterministic three.js geometry raycast picking up an enlarged node at the hard-coded start point — rather than synthetic-input delivery loss.
+
+  ## Key Changes
+  - Introduces `pickBackgroundDragPoint` (via a new `__graphNodeOccupancyAtPoint` probe) to raycast a spread of candidate pixels against the live node meshes and return the one with the most clearance to the nearest node edge, floored at a 10px margin.
+  - Updates `matrix.spec.ts` to start the background drag from this verified-empty point instead of a hard-coded pixel, moving by the same vector to preserve rotation magnitude.
+  - Leaves the canonical `MOTION_FLOOR` and `retries: 0` unchanged, keeping the assertion strictly behavior-preserving.
+  - Relocates diagnostic/instrumentation code out of the canonical suite into `tests/diagnostics/55-drag/`.
+  - Corrects historical misattributions ("#33") in docs and config files to correctly cite #55, and removes the #41 parallel caveat now that hardware parallel runs are green.
+
+  ## Test Plan
+  - `npm run validate` (SwiftShader, serial)
+  - `npm run test:e2e:gpu` with and without `E2E_WORKERS=50%` to verify the flake is eliminated on native-GPU hardware.

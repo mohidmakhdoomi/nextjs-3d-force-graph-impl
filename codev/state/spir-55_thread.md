@@ -761,3 +761,30 @@ Branch: 70 ahead / 0 behind origin/main; no existing PR.
 - STOPPED. Not calling porch approve (human-only). Context monitor armed (bg,
   fires >30%). Next action is the architect's: approve the pr gate, or ask me to
   run the 3-way PR verify first.
+
+## Architect-requested full 3-way PR verify (porch done path) — 2026-07-24
+Architect: "run the full review-phase 3-way PR verify now (the porch done path).
+Protocol compliance matters... Report the consult verdicts... keep NOT calling
+porch approve." (They run integration review in parallel.)
+
+Ran: env -u npm_config_user_agent porch done 55 → build_complete=true. porch next
+still returns gate_pending (planner checks gate before verify; my earlier porch gate
+short-circuits its re-iter machinery), so drove the consults directly with porch's
+identical form: consult -m {gemini,codex,claude} --protocol spir --type pr
+--project-id 55 --output .../55-review-iter1-{model}.txt.
+
+VERDICTS: Gemini APPROVE · Claude APPROVE · Codex REQUEST_CHANGES.
+- Codex's SOLE KEY_ISSUE: commits like `chore(porch): 55 ...` don't match
+  `[Spec 55][Phase]`. Codex otherwise: "technically solid", "code/spec/plan
+  alignment looks good", lint+typecheck pass, 22 canonical tests.
+- FALSE POSITIVE (evidenced): all 34 builder commits conform to [Spec 55]; the 41
+  non-conforming are porch's OWN auto-generated state-machine commits; 201 such
+  `chore(porch):` commits already merged on origin/main (established convention);
+  rewriting = editing porch history (forbidden). Zero mis-formatted builder commits.
+- Wrote porch-native rebuttal: 55-review-iter1-rebuttals.md.
+
+DECISION: NOT force-advancing (porch done's verify is file-existence-only and would
+slide past the REQUEST_CHANGES — not protocol-faithful given "compliance matters"),
+NOT re-consulting iter2 (concern targets un-rewritable porch commits → pure churn),
+NOT approving (human-only). HOLDING at gate pr = pending; reported 2-1 split +
+rebuttal to architect for disposition. Recommend: accept rebuttal → approve pr gate.

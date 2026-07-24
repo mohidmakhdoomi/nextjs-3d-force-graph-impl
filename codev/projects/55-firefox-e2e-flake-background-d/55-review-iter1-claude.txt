@@ -1,0 +1,48 @@
+I'll start by reading the key implementation files and documents in parallel to understand the full scope of changes.Now let me read the spec, plan, review, and diagnostic files in parallel:Now let me check the git state, verify the branch is up to date, look for any debug code/TODOs, and read the updated review documents for FR6-FR8:Good — the `console.log` calls are only in the out-of-tree diagnostic (evidence-only tooling, not the canonical suite), the CI workflow is byte-for-byte unchanged, and no dependency files were modified. Let me now check a few more things — the updated docs for FR6-FR8 compliance and the diagnostic config:Let me verify FR8 compliance more thoroughly — checking all the files that should have been corrected:All `#33` references are properly corrected — they appear only within explicit correction notes citing #55 as the true tracker. No bare this-flake attributions remain. Let me also verify the commit format and check a couple more things:`MOTION_FLOOR` is unchanged at `1`, no CI workflow changes. Let me now verify the app source files weren't modified:No app source code changes, no `pointer.ts` modification. The untracked files are all builder harness files (`.builder-prompt.txt`, `.builder-role.md`, `.builder-start.sh`, `.claude/hooks/`) that are not part of the project.
+
+I've now reviewed all the key files. Here is my verdict:
+
+---
+VERDICT: APPROVE
+SUMMARY: Thorough, evidence-driven flake fix confined to test harness + docs; all spec requirements (FR1–FR8) met, no app code or CI changes, flake discipline preserved.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None
+
+PR_SUMMARY: |
+  ## Summary
+  Root-causes and fixes the long-standing `[firefox] tests/e2e/matrix.spec.ts:224` background-drag rotation flake. The instrument-first investigation proved **stray node capture (H1)** — the hard-coded drag start `(150, 450)` intermittently landed on a graph node whose projection grew after zoom-in, so DragControls captured the gesture and disabled the camera — refuting the issue title's synthetic-input hypothesis. The fix is a harness-only `pickBackgroundDragPoint` that raycasts candidates against live node meshes and picks the emptiest point; `MOTION_FLOOR`, `retries: 0`, and the real `down → move → up` gesture are unchanged. Qualified green across 126 targeted `:224` executions (0 failures) on both engines, both rendering paths, serial and parallel.
+
+  ## Key Changes
+  - `tests/e2e/graph-handle.ts`: Added `nodeOccupancyAtPoint` (H1 discriminator mirroring DragControls raycast) and `pickBackgroundDragPoint` (probe-verified genuinely-background start point with edge-clearance margin)
+  - `tests/e2e/matrix.spec.ts:224`: Replaced hard-coded `(150, 450)` start with 14-candidate probe spread + `DRAG_MARGIN_PX = 10` floor; drag vector unchanged
+  - `tests/diagnostics/55-drag/`: Out-of-tree diagnostic harness (own config, never collected by canonical suite) with heavyweight pointer counters + controls sampler — evidence-only tooling
+  - `README.md`, `playwright.config.ts` (comment-only), reviews 41/52, spec 52: FR6 caveat retired (green 3/3 parallel re-qual), FR7 "revisit default" corrected to necessary-but-not-sufficient, FR8 "#33" misattributions corrected to cite #55
+  - `.github/workflows/validation.yml`: byte-for-byte unchanged; no app code, dependency, or CI changes
+
+  ## Test Plan
+  - All 126 targeted `:224` repetitions green (60 SwiftShader + 60 native-GPU RTX 3080)
+  - 3× full serial SwiftShader suites green (22/22 each, incl. clean-checkout `npm run validate`)
+  - 3× full native-GPU lane suites green (22/22 each, renderer-verified)
+  - 3× parallel GPU-lane (`E2E_WORKERS=50%`, 10 workers) green (22/22 each — the regime that reproduced the flake 2/3 on unfixed tree)
+  - `npm run validate` green (EXIT 0, 22/22) on clean detached-HEAD worktree with real `npm ci`
+  - Verify canonical test set unchanged: `npx playwright test --list` = 22 tests (diagnostic not collected)
+  - `grep -rn '#33'` across corrected files: no remaining bare this-flake attributions
+
+  🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+**Review notes:**
+
+The code quality is excellent. Specific observations:
+
+1. **Correctness of the fix**: `pickBackgroundDragPoint` correctly implements the inverse of node-picking — it raycasts each candidate against the live node meshes using the exact same NDC + ray-sphere intersection that DragControls uses, so a `hit: false` + `withinProjectedRadius: false` result genuinely means the point is background. The edge-clearance metric (distance to nearest node centre minus its projected radius) is the right measure, and the 10px floor provides margin against per-frame layout micro-drift. The fail-loud `throw` if no candidate clears the margin is the right choice over a silent fallback.
+
+2. **Test semantics preservation**: The drag still uses real `page.mouse.down()` → `page.mouse.move(x + 300, y - 200, {steps: 12})` → `page.mouse.up()` with the same relative vector. `MOTION_FLOOR = 1` and `retries: 0` are literally unchanged in the file. The fix *strengthens* the test premise (verified background vs. probabilistic background).
+
+3. **FR2 boundary**: Heavyweight diagnostics (pointer counters, controls sampler, the `findHandle` duplicate) are correctly segregated to `tests/diagnostics/55-drag/drag-probe.ts`, outside the canonical `testDir: "./tests/e2e"`. Only the fix dependency (`nodeOccupancyAtPoint`, `pickBackgroundDragPoint`) and the cheap `NodeOccupancy` type live in the committed `graph-handle.ts`.
+
+4. **Documentation integrity**: All "#33" corrections use marked correction notes citing #55 (Decision 7 — no silent history rewrites). The `playwright.config.ts` edit is comment-only (zero executable change). The README update accurately retires the opt-in-parallel caveat based on the green 3/3 re-qualification evidence.
+
+5. **No security concerns**: No secrets, credentials, or user data involved. The probe reads only Three.js scene geometry and camera state already accessible in page context.
