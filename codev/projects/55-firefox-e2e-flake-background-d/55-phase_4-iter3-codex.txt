@@ -1,0 +1,9 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 4 evidence is strong, but the checked-in qualification driver/docs still do not faithfully reproduce or enforce the final FR5 matrix.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `codev/projects/55-firefox-e2e-flake-background-d/evidence/phase4-qualify.sh:40-60` does not fail on steps 2–5. It only gates step 1, then logs later exit codes and continues, so the script can exit 0 even if `validate`, a smoke run, the GPU lane, or the hardware-targeted repeat fails. That is not a reliable phase-4 qualification driver.
+- `codev/projects/55-firefox-e2e-flake-background-d/evidence/phase4-summary.md:7-10,20,53-67` says `phase4-qualify.sh` reproduces the “entire final matrix end to end,” but the actual green `npm run validate` evidence is `phase4-5-clean-validate.log` from a separate clean-worktree run, while the driver’s own step 2 is the failing in-worktree run shown in `phase4-2-validate.log`. Either the driver needs to run the clean-checkout validate path, or the summary needs to stop claiming end-to-end reproduction.

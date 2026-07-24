@@ -1,0 +1,45 @@
+I'll read the key Phase 4 evidence files to verify the builder's iteration 2 fixes were actually applied. Let me start with the files that were specifically called out by Codex in iteration 2.Good. Now let me read the actual evidence logs to verify the claims — the targeted GPU repeat log, the probe logs, and a sample of the other qualification logs.Now let me verify a few more evidence logs and the actual code changes being qualified:Let me verify the GPU lane renderer evidence from the runs:Now let me verify the test code that's being qualified — the actual fix from Phase 3 in `matrix.spec.ts`:Let me check the `pickBackgroundDragPoint` implementation in `graph-handle.ts`:Let me verify smoke run results and check any remaining evidence:All results confirmed. Let me do a final check — verify the iteration 2 Codex concerns were actually addressed in the files (the driver now has Step 5, and the summary now references `phase4b-*.log`):Both iteration 2 Codex concerns have been verifiably addressed. Here's my review:
+
+---
+
+## Phase 4 Review: Fix Qualification (Both Engines, Both Rendering Paths)
+
+### FR5 Deliverable Checklist — Verified Against Evidence
+
+| Deliverable | Status | Evidence |
+|---|---|---|
+| Targeted Firefox `:224` ×60 SwiftShader | ✅ 60/60 passed | `phase4-1-ff224-swift-x60.log` — all 60 green, 16.4m |
+| Targeted Firefox `:224` ×60 native-GPU | ✅ 60/60 passed | `phase4b-2-ff224-gpu-x60.log` — all 60 green, probe-bracketed D3D12 RTX 3080 |
+| ≥3 serial SwiftShader full runs | ✅ 3/3 × 22/22 | `phase4-5-clean-validate.log` (22 passed, 11.5m), `phase4-3-smoke-run2.log` (22 passed, 11.5m), `phase4-3-smoke-run3.log` (22 passed, 11.7m) |
+| ≥3 native-GPU lane full runs | ✅ 3/3 × 22/22 | `phase4-4-gpu-run{1,2,3}.log` — all 22 passed (3.3m each), hardware renderer verified |
+| `npm run validate` green | ✅ EXIT 0 | `phase4-5-clean-validate.log` — clean detached worktree, `npm ci`, lint+typecheck+smoke all green |
+| Chromium green throughout | ✅ | Present in all full-suite runs (11 chromium tests in each), no failures |
+| Renderer evidence for GPU runs | ✅ | Chromium: `ANGLE (…D3D12 (NVIDIA GeForce RTX 3080)…)`, Firefox: `D3D12 (NVIDIA GeForce RTX 3080)` |
+| Hardware bracketing probes | ✅ | `phase4b-1-probe-before.log` + `phase4b-3-probe-after.log` both show `VERIFIED hardware renderer: "D3D12 (NVIDIA GeForce RTX 3080)"` |
+
+**Combined `:224` executions**: 60 (SW targeted) + 60 (GPU targeted) + 3 (serial suite) + 3 (GPU suite) = **126 green, 0 failures**.
+
+### Iteration 2 Codex Fixes — Verified
+
+1. **Driver now describes and executes the full matrix**: `phase4-qualify.sh` header lists Step 5 (`phase4b-gpu-targeted.sh`), the rationale explains FR5 coverage of both paths, Step 5 is implemented at line 58-60 calling `$D/phase4b-gpu-targeted.sh`, and the summary glob at line 63 scans both `phase4-*.log` and `phase4b-*.log`. ✅
+
+2. **Summary references both log families**: `phase4-summary.md` intro (line 7) now cites `phase4b-*.log` alongside `phase4-*.log` and explains the single-driver reproduction path. ✅
+
+### Invariants Preserved
+
+- `MOTION_FLOOR` (1) and `retries: 0` unchanged — verified in `matrix.spec.ts:309`.
+- The drag is still a real synthetic `down → move → up` (`matrix.spec.ts:294-297`).
+- The clean-checkout validate proves the in-worktree eslint failure is environment noise (`.claude/hooks/worktree-write-guard.cjs` absent from clean checkouts) — correctly handled per `lessons-critical` Toolchain-and-Worktree-Hygiene.
+- No `.github/workflows/validation.yml` change.
+
+### Minor Observations (Non-Blocking)
+
+- The spec references `:224` but the test is now at line 225 due to the Phase 3 fix adding lines. This is cosmetic — the test name and `-g "background drag"` grep match correctly, and the shift is an expected artifact of the fix. No action needed.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 4 delivers comprehensive qualification — 126/126 green `:224` executions across both engines × both rendering paths at retries:0, with all iteration 1+2 gaps fully closed in both code and documentation.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

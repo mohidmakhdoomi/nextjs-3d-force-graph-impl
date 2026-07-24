@@ -5,11 +5,13 @@ rendering paths** at `retries: 0`. The historical flake reproduced on the
 SwiftShader serial baseline **and** the native-GPU parallel lane, so both paths
 are qualified. All runs verbatim in `evidence/phase4-*.log` and
 `evidence/phase4b-*.log`. The driver `evidence/phase4-qualify.sh` reproduces the
-entire final matrix end to end: steps 1–4 (targeted SwiftShader, validate, serial
-smoke ×2, GPU-suite ×3) then step 5 invokes the companion
-`evidence/phase4b-gpu-targeted.sh` (targeted `:224` ×60 on the native-GPU
-hardware recipe). Step 1 gates the rest — a single below-floor drag means the fix
-is incomplete, so we stop rather than mask.
+entire final matrix end to end and **enforces** it: step 1 (targeted SwiftShader
+×60), step 2 (**clean-checkout** `validate` — worktree + `npm ci` + `validate`),
+step 3 (serial smoke ×2), step 4 (GPU-suite ×3), step 5 (companion
+`evidence/phase4b-gpu-targeted.sh` — targeted `:224` ×60 on the native-GPU
+hardware recipe). Step 1 gates the rest (a below-floor drag means the fix is
+incomplete → stop, do not mask); steps 2–5 accumulate into the exit code, so the
+driver **exits non-zero if any step fails** rather than only logging.
 
 ## Results — green throughout, zero failed/flaky
 
@@ -54,17 +56,20 @@ This is the same hardware control arm on which the flake originally survived
 
 `npm run validate` (`lint && typecheck && test:smoke`) is **green** —
 `phase4-5-clean-validate.log`, **EXIT 0**, 22/22 — proven on a **clean detached
-worktree** (`git worktree add --detach HEAD` at `c2f5a69` + real `npm ci`), per
-the lessons-critical Toolchain-and-Worktree-Hygiene rule.
+worktree** (`git worktree add --detach HEAD` + real `npm ci`), per the
+lessons-critical Toolchain-and-Worktree-Hygiene rule. This is the driver's
+**Step 2**: the driver creates the clean worktree, runs `npm ci`, runs
+`npm run validate`, and records its exit into the pass/fail gate.
 
-The in-worktree `npm run validate` (`phase4-2-validate.log`) fails `eslint .` with
-21 errors **solely** on the **untracked** builder-harness file
-`.claude/hooks/worktree-write-guard.cjs` (`require`/`process`/unused-var). That
-file is absent from clean checkouts (`ls .claude/hooks` → "No such file" in the
-clean worktree) and from the committed tree (`git ls-files` → untracked), so it is
-environment noise, not a project failure. It is **not suppressed in committed
-config**; the gate is proven green on the clean checkout instead. `eslint .
---ignore-pattern ".claude/**"` on the working tree is likewise exit 0.
+The clean checkout is required because an **in-worktree** `eslint .` fails
+**solely** on the **untracked** builder-harness file
+`.claude/hooks/worktree-write-guard.cjs` (`require`/`process`/unused-var) — a file
+absent from clean checkouts (`ls .claude/hooks` → "No such file" in the clean
+worktree, recorded in `phase4-5-clean-validate.log`) and from the committed tree
+(`git ls-files` → untracked), so it is environment noise, not a project failure.
+It is **not suppressed in committed config**; the gate is proven green on the
+clean checkout instead (`eslint . --ignore-pattern ".claude/**"` on the working
+tree is likewise exit 0).
 
 ## Disposition
 
