@@ -738,6 +738,81 @@ export async function nodeOccupancyAtPoint(
 }
 
 /**
+ * Result of {@link pickBackgroundDragPoint}: the emptiest screen point found for
+ * a "background" drag start, with its clearance to the nearest node's projected
+ * EDGE (`nearestDistancePx − nearestProjectedRadiusPx`, in screen pixels;
+ * `Infinity` when no node is in front of the camera). Edge clearance — not
+ * distance to the node centre — is the drag-capture margin: a point 34px from a
+ * node whose disk projects to a 25px radius sits only ~9px outside it.
+ */
+export type BackgroundDragPoint = {
+    x: number;
+    y: number;
+    edgeClearancePx: number;
+};
+
+/**
+ * Issue #55: choose a genuinely-background screen point to start a "background
+ * drag" — the inverse intent of {@link pickNodeScreenPoint}, rooted in the H1
+ * root cause. The failing `matrix.spec.ts:224` drag hard-coded its start at
+ * `(150, 450)`; this scene is a dense scatter of ~2600 small nodes (projected
+ * radius ~1.5–5.5px), so on ~10% of post-zoom layouts a node's disk covered
+ * that pixel (an `occHit`, reproduced on SwiftShader and on RTX-3080 hardware).
+ * The DragControls raycast then captured the node on pointerdown, disabled the
+ * Trackball, and moved the node instead of rotating the camera — the observed
+ * ~0.002 camera delta against `MOTION_FLOOR` (1).
+ *
+ * Every candidate is raycast against the live node meshes with the same test
+ * DragControls fires on pointerdown ({@link nodeOccupancyAtPoint}). Points that
+ * are a 3-D hit or fall inside the nearest node's projected disk are rejected
+ * outright (they would capture a node); of the rest, the one with the GREATEST
+ * clearance to the nearest node edge is returned — the emptiest available spot,
+ * so the small per-frame force-layout drift between this probe and the gesture
+ * (Phase-2 evidence recorded one `occHit` a few frames before pointerdown as
+ * the layout micro-drifted) cannot bring a node onto the start point. The
+ * caller applies a pixel-margin floor to the returned clearance and fails
+ * loudly if even the emptiest point is too close, rather than dragging from an
+ * unverified start. Returns `null` only when the probe is unavailable for every
+ * candidate, or no candidate is background at all.
+ */
+export async function pickBackgroundDragPoint(
+    page: Page,
+    candidates: ReadonlyArray<{x: number; y: number}>,
+): Promise<BackgroundDragPoint | null> {
+    let best: BackgroundDragPoint | null = null;
+    for (const candidate of candidates) {
+        const occupancy = await nodeOccupancyAtPoint(
+            page,
+            candidate.x,
+            candidate.y,
+        );
+        if (occupancy === null) {
+            continue;
+        }
+        // On a node — the ray pierces its sphere or the point sits inside the
+        // node's projected disk. Starting here would capture the node and
+        // defeat the background-drag premise, so it is never eligible.
+        if (occupancy.hit || occupancy.withinProjectedRadius) {
+            continue;
+        }
+        const edgeClearancePx =
+            occupancy.nearestDistancePx === null
+                ? Number.POSITIVE_INFINITY
+                : occupancy.nearestDistancePx -
+                  (occupancy.nearestProjectedRadiusPx ?? 0);
+        // Guard the numeric corner where the point is outside the disk by the
+        // 2-D check yet not strictly beyond the edge — never a safe start.
+        if (edgeClearancePx <= 0) {
+            continue;
+        }
+        if (best === null || edgeClearancePx > best.edgeClearancePx) {
+            best = {x: candidate.x, y: candidate.y, edgeClearancePx};
+        }
+    }
+    return best;
+}
+
+/**
  * Issue #55: cheap TrackballControls state sample for mid-drag observation.
  * See {@link ControlsSample}.
  */

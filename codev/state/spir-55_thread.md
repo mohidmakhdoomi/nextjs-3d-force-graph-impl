@@ -409,3 +409,33 @@ MARGIN — the margin required because the occHit probe showed layout micro-drif
 between measurement and gesture) applied at matrix.spec.ts:224; NOT a
 settleBackgroundDrag delivery helper (H2/H3 ruled out — delivery was perfect).
 Resume point: phase_3 implement (needs architect go).
+
+## Phase 3 — Minimal H1 fix (in progress, 2026-07-24)
+Resumed per architect go ("phase_3: probe-verified background start point with
+pixel margin at matrix.spec.ts:224, per H1 evidence; continue autonomously 3-6").
+
+Fix shape (H1, evidence-selected):
+- graph-handle.ts: new `pickBackgroundDragPoint(page, candidates)` +
+  `BackgroundDragPoint` type. Inverse of pickNodeScreenPoint — reuses the
+  Phase-1 `nodeOccupancyAtPoint` raycast (same test DragControls fires on
+  pointerdown). Rejects 3-D hits and points inside a node's projected disk;
+  of the rest returns the point with MAX clearance to the nearest node EDGE.
+- matrix.spec.ts:224: replaced hard-coded (150,450) start with a spread of 14
+  lower-left background candidates (each keeps start+(300,-200) on the 800x600
+  canvas); pick emptiest; assert edgeClearance >= DRAG_MARGIN_PX (10px) else
+  throw loud; drag by the SAME vector. Real down→move→up; MOTION_FLOOR &
+  retries:0 untouched.
+- evidence/aggregate-55data.mjs: added `/* global process, console */` — the
+  tracked Phase-2 aggregator tripped `eslint .` no-undef because codev/projects/**
+  is outside the eslint file-group globals scopes. Local directive, no toolchain
+  change, respects the contract-locked global-ignore block.
+
+FIRST verification attempt FAILED — informative: my initial design compared
+`nearestDistancePx` (distance to node CENTRE) to a 40px margin. This scene is a
+dense scatter of ~2600 tiny nodes (projected radius ~1.5-5.5px, per #55DATA), so
+no point is 40px from a node centre; best was 33.66px → guard threw on 4/6 runs.
+TWO bugs: wrong metric (must use EDGE clearance = nearestPx - projRadiusPx) and
+absurd margin. Corrected: edge-clearance metric + max-selection + 10px floor
+(close calls were ~3px; emptiest point typically ~25px). Re-verifying now
+(repeat-each=8 both engines) with a temporary #55TUNE clearance log to confirm
+margin headroom before committing.

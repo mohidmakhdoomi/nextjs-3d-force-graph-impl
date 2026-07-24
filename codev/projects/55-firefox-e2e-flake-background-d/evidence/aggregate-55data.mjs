@@ -4,6 +4,12 @@
 // discriminator distributions. Usage:
 //   node aggregate-55data.mjs <log1> [<log2> ...]
 // Each arg is a segment log; the segment label is the file basename.
+//
+// This evidence aggregator runs under Node ESM. `codev/projects/**` is outside
+// the eslint config's file-group globals scopes (which model app/tests/scripts
+// runtimes), so declare the Node globals it uses locally — keeps `eslint .`
+// green without touching the toolchain config or its contract-locked ignores.
+/* global process, console */
 import {readFileSync} from "node:fs";
 import {basename} from "node:path";
 

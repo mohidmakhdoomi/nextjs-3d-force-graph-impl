@@ -5,6 +5,7 @@ import {
     expectCleanErrorBudget,
     openGraphPage,
     ensureRotationPaused,
+    pickBackgroundDragPoint,
     pickNodeScreenPoint,
     readGraphSnapshot,
     sampleCameraMotion,
@@ -244,11 +245,55 @@ test("zooms in with the wheel and rotates with a background drag", async ({page}
         )
         .toBeLessThan(start.cameraDistance - ZOOM_EPSILON);
 
-    // Trackball rotation via a real background drag away from the controls.
+    // Trackball rotation via a real background drag. The start point must be
+    // GENUINE background: issue #55's flake was a stray node capture — the
+    // hard-coded (150, 450) start intermittently sat on a node (an occHit,
+    // reproduced on SwiftShader and on RTX-3080 hardware), so DragControls
+    // grabbed the node on pointerdown, disabled the Trackball, and the camera
+    // did not rotate (~0.002 vs MOTION_FLOOR). This scene is a dense scatter of
+    // ~2600 small nodes, so rather than trust one fixed pixel, probe a spread of
+    // lower-left background candidates and pick the one with the most clearance
+    // to the nearest node edge (each candidate keeps start+(300,-200) on the
+    // 800x600 canvas). DRAG_MARGIN_PX floors that clearance so the small
+    // per-frame layout drift between probe and gesture cannot bring a node onto
+    // the start (observed close calls were ~3px; the emptiest point is typically
+    // ~25px clear). The drag then moves by the SAME vector, so gesture geometry
+    // and rotation magnitude are unchanged. Still a real synthetic
+    // down → move → up: nothing is retried and MOTION_FLOOR is untouched.
     const beforeDrag = await waitForStableCameraDistance(page);
-    await page.mouse.move(150, 450);
+    const DRAG_MARGIN_PX = 10;
+    const dragStart = await pickBackgroundDragPoint(page, [
+        {x: 150, y: 450},
+        {x: 120, y: 470},
+        {x: 100, y: 500},
+        {x: 80, y: 520},
+        {x: 60, y: 540},
+        {x: 60, y: 480},
+        {x: 60, y: 420},
+        {x: 200, y: 500},
+        {x: 250, y: 470},
+        {x: 180, y: 540},
+        {x: 220, y: 540},
+        {x: 280, y: 500},
+        {x: 140, y: 560},
+        {x: 100, y: 560},
+    ]);
+    // Fail loudly (and narrow the type) rather than drag from an unverified
+    // start: with ~85% of the frame background, the emptiest of these spread
+    // candidates reliably clears DRAG_MARGIN_PX after this single wheel-in.
+    if (dragStart === null || dragStart.edgeClearancePx < DRAG_MARGIN_PX) {
+        throw new Error(
+            `no background drag start with >= ${DRAG_MARGIN_PX}px edge clearance found after zoom-in; ` +
+                `emptiest candidate cleared ${
+                    dragStart === null
+                        ? "none (no background candidate)"
+                        : `${dragStart.edgeClearancePx.toFixed(1)}px`
+                }`,
+        );
+    }
+    await page.mouse.move(dragStart.x, dragStart.y);
     await page.mouse.down();
-    await page.mouse.move(450, 250, {steps: 12});
+    await page.mouse.move(dragStart.x + 300, dragStart.y - 200, {steps: 12});
     await page.mouse.up();
     await expect
         .poll(
