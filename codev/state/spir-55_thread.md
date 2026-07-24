@@ -439,3 +439,37 @@ absurd margin. Corrected: edge-clearance metric + max-selection + 10px floor
 (close calls were ~3px; emptiest point typically ~25px). Re-verifying now
 (repeat-each=8 both engines) with a temporary #55TUNE clearance log to confirm
 margin headroom before committing.
+
+## Phase 3 — iter1 consult: Claude APPROVE, Gemini+Codex REQUEST_CHANGES (FR2 trim)
+16/16 green both engines (edge clearance 22.8-41.7px, >=2.3x the 10px margin).
+Committed a6b0b12. porch check/done → build-complete. Ran the 3-way impl consult.
+
+Verdicts: Claude APPROVE (HIGH, no issues). Gemini + Codex REQUEST_CHANGES (HIGH),
+same theme — FR2 violation: heavyweight phase-1/2 diagnostics still committed in
+the canonical tests/e2e/graph-handle.ts. Spec FR2 (lines 379-393, authoritative)
+explicitly names as heavyweight-evidence-only: "verbose per-event pointer logs,
+controls.enabled sampling traces, dumped-on-failure counters, and any
+diagnostic-only spec variant." Committed suite keeps ONLY (a) fix deps + (b) the
+node-occupancy/background-point helper. Codex's fuller scope matches the spec;
+Gemini's narrower ask (drop just the events ring) is a subset → full trim
+satisfies both.
+
+FR2 trim applied (iter2):
+- NEW tests/diagnostics/55-drag/drag-probe.ts: moved the heavyweight helpers
+  here (colocated with the out-of-tree diagnostic, OUT of tests/e2e/) — PointerLog/
+  PointerEventRecord/ControlsSample types, installDragProbe() (pointer counters +
+  controls sampler via its own addInitScript, minimal duplicated findHandle),
+  sampleControls/readPointerLog/resetPointerLog wrappers.
+- tests/e2e/graph-handle.ts TRIMMED to just the H1 fix dependency: kept
+  NodeOccupancy + __graphNodeOccupancyAtPoint + nodeOccupancyAtPoint +
+  pickBackgroundDragPoint/BackgroundDragPoint; removed the 3 heavyweight types,
+  4 window decls, the pointer-counter install block, __graphControlsSample, and
+  the 3 wrappers.
+- drag-diagnostic.spec.ts: split imports (keepable from graph-handle, heavyweight
+  from ./drag-probe) + call installDragProbe(page) before openGraphPage.
+Rationale for RELOCATE (not delete): plan FR2 state permits the diagnostic to
+stay under tests/diagnostics/ as committed evidence; spec wants heavyweight to
+"live in evidence artifacts" (re-runnable), not just git history. tsconfig
+**/*.ts typechecks the diagnostic, so dangling imports aren't an option.
+typecheck+lint clean; canonical --list unchanged (0 diagnostic tests, 18 matrix);
+diag still collects 4 tests. Verifying diagnostic runs + canonical :224 intact.

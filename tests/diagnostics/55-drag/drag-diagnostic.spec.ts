@@ -7,17 +7,23 @@ import {
     nodeOccupancyAtPoint,
     openGraphPage,
     readGraphSnapshot,
-    readPointerLog,
-    resetPointerLog,
-    sampleControls,
     waitForGraphHandle,
     waitForSizedCanvas,
     waitForStableCameraDistance,
-    type ControlsSample,
     type GraphSnapshot,
     type NodeOccupancy,
-    type PointerLog,
 } from "../../e2e/graph-handle";
+// Heavyweight phase-2 diagnostics (pointer counters + controls sampler) live
+// out-of-tree with this diagnostic per spec FR2; the canonical suite keeps only
+// the node-occupancy / background-point helper (imported above).
+import {
+    installDragProbe,
+    readPointerLog,
+    resetPointerLog,
+    sampleControls,
+    type ControlsSample,
+    type PointerLog,
+} from "./drag-probe";
 
 // Out-of-tree diagnostic harness for issue #55 — the Firefox background-drag
 // rotation flake at tests/e2e/matrix.spec.ts:224 ("zooms in with the wheel and
@@ -384,8 +390,11 @@ async function openGraphPageDiagnostics(page: Page): Promise<{
     renderer: string | null;
     beforeDrag: GraphSnapshot;
 }> {
-    // openGraphPage installs the probe (with the #55 pointer instrumentation)
-    // and navigates with strict error collection attached.
+    // Install the heavyweight drag-path probe (capture-phase pointer counters +
+    // controls sampler) BEFORE openGraphPage, so its addInitScript runs before
+    // navigation. openGraphPage then installs the canonical graph probe and
+    // navigates with strict error collection attached.
+    await installDragProbe(page);
     const collected = await openGraphPage(page);
     await waitForSizedCanvas(page);
     await waitForGraphHandle(page);

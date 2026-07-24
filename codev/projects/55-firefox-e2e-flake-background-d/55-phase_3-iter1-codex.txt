@@ -1,0 +1,9 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: The H1 fix in `matrix.spec.ts` is well-targeted, but Phase 3 is not complete because heavyweight Phase-1/2 diagnostics are still committed in the canonical `tests/e2e` harness.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `tests/e2e/graph-handle.ts:71-119, 163-240, 815-838` still retains the verbose pointer-log ring, pointer event counters, and `controls.enabled` sampling APIs (`PointerLog`, `ControlsSample`, `__readPointerLog`, `__resetPointerLog`, `sampleControls`, etc.). Spec/plan Phase 3 explicitly says these are evidence-only and that “heavyweight diagnostics [are] no longer in the canonical suite” (`codev/specs/55-firefox-background-drag-flake.md:379-389`, `codev/plans/55-firefox-background-drag-flake.md:284-289`). The keepable H1 dependency is the occupancy/background-point helper; the rest should be trimmed from `tests/e2e/`.
+- No other phase_3 blockers in the fix itself: `tests/e2e/matrix.spec.ts:248-297` preserves the real drag, unchanged `MOTION_FLOOR`, and applies the evidence-selected verified-background start-point approach.
