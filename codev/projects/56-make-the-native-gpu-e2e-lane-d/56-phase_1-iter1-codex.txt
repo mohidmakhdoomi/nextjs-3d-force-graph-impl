@@ -1,0 +1,8 @@
+---
+VERDICT: APPROVE
+SUMMARY: Phase 1 is implemented correctly: the lane now defaults hardware runs to `E2E_WORKERS="50%"`, preserves operator overrides and fallback behavior, and adds solid unit coverage for the scoped semantics.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

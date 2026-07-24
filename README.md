@@ -92,12 +92,12 @@ regardless of `E2E_WORKERS`, so the sharded CI contract is untouched, and local
 and found to **destabilize** the timing-sensitive Chromium `matrix.spec.ts`
 camera-settle/drag assertions under SwiftShader CPU contention (4–5 of 22 tests
 fail on **every** parallel run there — the problem is destabilization, not speed:
-parallel is actually faster), so parallelism is not the default. It is most useful
-on the [native-GPU lane](#opt-in-native-gpu-e2e-lane), where the full two-engine
-suite runs ~4× faster on real hardware and is **green** — the former Firefox
-background-drag flake there is fixed and re-qualified **green 3/3** on this
-parallel regime (issue #55); parallel stays opt-in only for the separate
-deterministic Chromium SwiftShader contention noted above. Full qualification
+parallel is actually faster), so parallelism is not the SwiftShader default. The
+one exception is the [native-GPU lane](#opt-in-native-gpu-e2e-lane) (issue #56):
+on **verified hardware** the lane now defaults to `E2E_WORKERS=50%` (the full
+two-engine suite runs ~4× faster there and is qualified green — the former
+Firefox background-drag flake is fixed, issue #55); its software-fallback path
+and every non-lane run keep the serial default above. Full qualification
 evidence and the trade-off: `codev/reviews/41-parallelize-local-e2e-runs.md`.
 
 ### Audit evidence
@@ -196,9 +196,11 @@ What one invocation does (`scripts/e2e-gpu-lane.mjs`):
    `E2E_ENGINES=chromium,firefox`. Chromium's verified flags are injected through
    the config's `PW_CHROMIUM_ARGS` hook; **Firefox inherits the same Mesa env**
    from the suite process (no new config hook). Same production server, same
-   **serial default** (`workers: 1`; set `E2E_WORKERS` to opt into parallel —
-   ~4× faster here, see below), same `retries: 0`, same timeouts as the normal
-   local suite.
+   `retries: 0`, same timeouts as the normal local suite — but on verified
+   hardware the lane is **parallel by default** (issue #56: it injects
+   `E2E_WORKERS=50%`, ~4× faster here; set `E2E_WORKERS` yourself to tune it or
+   force serial with `E2E_WORKERS=1`). The software-fallback path stays on the
+   config's serial default.
 4. **Reports honestly, per engine.** The run ends with a machine-greppable block:
 
    ```
@@ -209,6 +211,7 @@ What one invocation does (`scripts/e2e-gpu-lane.mjs`):
    renderer.firefox: <verbatim string | skipped (unverified — <reason>) | not run (<reason>)>
    suite: pass | fail (exit n) | skipped (no verified engine)
    wall-clock: <total>s (build <n>s, suite <n>s)
+   workers: <value> (lane default | operator override | config serial default) | n/a (no suite run)
    ```
 
    `mode: hardware` is only ever printed after **every requested engine's**
@@ -235,10 +238,11 @@ host) cut that same two-engine hardware suite to ≈ 46 s (≈ 57 s incl. build)
 about **4× faster** — across a three-run qualification set. The Firefox
 background-drag flake that recurred once in those three parallel runs (then 2/3
 green) is now **fixed** (issue #55) and re-qualified **green 3/3** on this same
-`E2E_WORKERS=50%` hardware regime. Parallel nonetheless **remains opt-in**: the
-SwiftShader gate still fails 4–5/22 under parallel CPU contention — a distinct,
-deterministic Chromium issue that #55 does **not** touch — and `retries: 0` keeps
-any recurrence honest. Full evidence:
+`E2E_WORKERS=50%` hardware regime. That evidence is why issue #56 made `50%`
+this lane's **default** on verified hardware. Everywhere else parallel remains
+opt-in: the SwiftShader gate still fails 4–5/22 under parallel CPU contention —
+a distinct, deterministic Chromium issue that #55 does **not** touch — and
+`retries: 0` keeps any recurrence honest. Full evidence:
 `codev/reviews/41-parallelize-local-e2e-runs.md` (see the #55 re-qualification
 addendum).
 
@@ -273,7 +277,7 @@ engines, both rendering paths, serial and parallel — see
 | `E2E_GPU_FORCE_FALLBACK=1` | Skip all hardware probing; take the honest fallback path (Chromium SwiftShader, Firefox skipped) deterministically. With `--engine=firefox` alone it is a benign no-op skip (Firefox has no software path), exit 0. |
 | `E2E_GPU_REQUIRE=1` | Exit non-zero instead of falling back when **any requested engine** does not verify hardware — use for hardware-evidence runs so a silent fallback can't pollute results. With `--probe-only` the per-engine report is still printed (`mode: abort`) **before** the non-zero exit — the probe already did its work. |
 | `--probe-only` | Probe + verify + report the requested engine set without building or running the suite. Always prints the report, even on a `E2E_GPU_REQUIRE=1` abort. |
-| `E2E_WORKERS=<int\|percent>` | Config-level local worker count (issue #41), **inherited by this lane**. Opt into parallel with `E2E_WORKERS=50%` (hardware-relative) or `E2E_WORKERS=4`; **~4× faster** on this lane (the former Firefox background-drag flake here is fixed — issue #55, re-qualified green 3/3 parallel). Serial (`1`) by default; **pinned to `1` whenever `CI` is set**; an invalid value fails loudly at config load. |
+| `E2E_WORKERS=<int\|percent>` | Config-level local worker count (issue #41). On this lane's **verified-hardware** runs the default is **`50%`** (issue #56 — hardware-scaled parallel, **~4× faster**; the former Firefox background-drag flake here is fixed — issue #55, re-qualified green 3/3 parallel). Set it yourself to override: any integer/percent, including `E2E_WORKERS=1` to force serial diagnostics. Software fallback and the plain suite keep the serial (`1`) default; **pinned to `1` whenever `CI` is set**; an invalid value fails loudly at config load. |
 | `--mode=headed\|headless` | Override the run mode. Default is **headless** (proven equivalent; see below). Headed needs WSLg/X (`DISPLAY`). |
 | `--candidate=<id>` / `--channel=<name>` | Probe a specific Chromium recipe / a specific Playwright channel (`--channel` is probe-only). Chromium-only — rejected with `--engine=firefox`. Used by the FR5 matrix. |
 
@@ -333,11 +337,12 @@ stability results, lives in `codev/reviews/44-add-an-opt-in-native-gpu-local.md`
 - Renderer strings and timings above are **evidence dated 2026-07** on one
   host (Mesa 26.0.3, driver 581.29); driver updates can shift them. The lane
   probes rather than assumes, and falls back loudly.
-- `workers` **defaults to `1`** in the lane, matching the qualified serial suite.
-  Issue #41 qualified raising it and adopted a **serial-default + opt-in-parallel**
-  contract: set `E2E_WORKERS=50%` (or an integer) to run this lane's two-engine
-  suite in parallel (~4× faster on hardware). Parallel is not the default because
-  it destabilizes the SwiftShader gate (4–5/22 Chromium — deterministic CPU
-  contention, distinct from the now-fixed issue-#55 Firefox flake); `retries: 0`
-  keeps any regression visible. See the "Local test parallelism" note above and
-  `codev/reviews/41-parallelize-local-e2e-runs.md`.
+- `workers` on this lane **defaults to `50%`** (hardware-scaled parallel) on
+  verified-hardware runs — issue #56, building on #41's opt-in machinery and
+  #55's flake fix. Set `E2E_WORKERS` to tune it (including `E2E_WORKERS=1` for
+  serial diagnostics). The **global** default stays serial: the SwiftShader
+  gate fails 4–5/22 Chromium tests under parallel CPU contention (deterministic,
+  distinct from the fixed issue-#55 Firefox flake), CI is hard-pinned to `1`,
+  and the lane's software fallback keeps the config's serial default;
+  `retries: 0` keeps any regression visible. See the "Local test parallelism"
+  note above and `codev/reviews/41-parallelize-local-e2e-runs.md`.

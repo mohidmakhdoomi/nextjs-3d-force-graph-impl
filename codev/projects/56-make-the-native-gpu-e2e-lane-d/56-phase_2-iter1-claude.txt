@@ -1,0 +1,86 @@
+I'll read the key implementation files to review Phase 2's deliverables.Now let me verify the diff against the base to confirm only the expected files are in scope, and check that no frozen files were modified.Good — I now have the full picture: the Phase 2 changes are in the uncommitted working tree, and the diff clearly shows what Phase 2 adds on top of the Phase 1 work. Let me now verify the frozen-file invariant more directly and check existing test compatibility.All frozen files have zero diff. Here's my full review:
+
+---
+
+## Phase 2 Review: Worker Visibility — Lane Log Line and Additive Report Line
+
+### 1. Spec Adherence (FR6, Decision 7)
+
+**`workerDecisionFor` (lines 654–662)** — pure exported helper with the correct three-outcome provenance:
+
+| Mode | Operator set? | Result |
+|------|------|--------|
+| hardware | no | `{value: "50%", provenance: "lane default"}` |
+| any mode | yes | `{value: <val>, provenance: "operator override"}` |
+| software-fallback | no | `{value: "1", provenance: "config serial default"}` |
+
+✅ Matches spec FR6 and Decision 7 exactly.
+
+**`formatReport` (lines 425–438)** — the `workers:` line is the **last element** of the report array. When `workers` is falsy (undefined), it outputs `n/a (no suite run)`. All pre-existing lines keep their position and phrasing verbatim. ✅
+
+**All five report call paths handled correctly:**
+
+| Path | Workers supplied? | Output |
+|------|---------|--------|
+| Full-lane success (line 1281) | ✅ decision | `workers: 50% (lane default)` etc. |
+| Build-failure (line 1259) | ✅ decision | States what suite *would have* used |
+| Software-fallback (via same build/suite flow) | ✅ decision | `workers: 1 (config serial default)` |
+| Skip-empty (line 1228) | No | `workers: n/a (no suite run)` |
+| Probe-only (line 492) | No | `workers: n/a (no suite run)` |
+
+✅ The plan explicitly required naming every report call path — all five are covered.
+
+**Log line before suite** (line 1270): `log(\`workers: ${workers.value} (${workers.provenance})\`)` appears after a successful build and before the suite stage invocation. ✅
+
+**Workers decision computed once, before build** (line 1250): `workerDecisionFor` is called before `runStage("build", ...)`, so the build-failure path can still report the intended worker decision honestly. ✅
+
+### 2. Code Quality
+
+- **`workerDecisionFor`** is pure, documented, and delegates to `operatorWorkersSet` (Phase 1 helper) — no duplicated logic.
+- **`formatReport` signature change** is backward-compatible: omitting `workers` produces `n/a (no suite run)`, which is honest for callers that don't run a suite.
+- **Doc comments updated**: the `suiteEnvFor` doc comment (line 665–667) now says "hardware-mode workers default to LANE_DEFAULT_WORKERS" instead of the old "workers/retries/timeouts untouched". The `formatReport` doc comment (lines 420–425) describes the workers entry, its provenance vocab, and the additive-only contract.
+- Clean, readable, no dead code. No new imports needed.
+
+### 3. Test Coverage
+
+Tests cover the complete FR6/FR7/Phase 2 matrix (lines 1243–1338):
+
+- **`workerDecisionFor`**: hardware + no operator → lane default; whitespace-only → lane default; operator override in any mode; fallback + no operator → config serial default. ✅
+- **`formatReport` workers line**: All five call paths have dedicated tests that:
+  - Verify the `workers:` line content and provenance
+  - Assert existing line positions are untouched (lines[4], lines[5] in the success test)
+  - Count exactly one `workers:` line via regex
+- **`probeOnlyOutcome` test** (line 1325): exercises the full `probeOnlyOutcome → formatReport` path, confirming `n/a (no suite run)`. ✅
+
+The pre-existing `formatReport` tests (lines 479–512) assert specific line indices (0–6) and don't check total line count, so the additive workers line at the end doesn't break them. ✅
+
+### 4. Error Handling
+
+- No new error paths introduced — `workerDecisionFor` always returns a valid decision (no throw path). Correct: it's a provenance reporter, not a validator.
+- The abort path in `runFullLane` returns before `workerDecisionFor` is called (line 1205–1215), so there's no need to handle that mode. ✅
+
+### 5. Plan Alignment
+
+Every Phase 2 deliverable is present:
+- [x] `workerDecisionFor` exported pure helper with the three-outcome provenance
+- [x] `formatReport` gains one additive `workers:` line; existing lines verbatim
+- [x] Report call sites (success, build-failure, fallback) pass the decision; probe-only and skip-empty omit it honestly
+- [x] `log(...)` line before suite stating the decision
+- [x] `suiteEnvFor` doc comment updated (Phase 2's scope per the plan's deduplication note)
+- [x] Unit tests for `workerDecisionFor` and `formatReport` covering every report call path
+- [x] Files touched: only `scripts/e2e-gpu-lane.mjs` and `tests/gpu-lane.test.mjs` (+ codev metadata). Frozen files zero-diff confirmed.
+
+### Minor Observation (not blocking)
+
+The `workers` decision for the `skip-empty` path in `runFullLane` (line 1228) doesn't call `workerDecisionFor` — it simply omits `workers` from the `formatReport` call, which resolves to `n/a (no suite run)`. This is the right call: skip-empty means no suite was or would be run, so computing a "decision" would be misleading. The implementation is honest.
+
+---
+
+VERDICT: APPROVE
+SUMMARY: Phase 2 delivers complete worker-visibility coverage — `workerDecisionFor`, additive report line, log line, and thorough tests covering all five report call paths — with zero behavioral change to frozen files.
+CONFIDENCE: HIGH
+
+---
+
+KEY_ISSUES:
+- None

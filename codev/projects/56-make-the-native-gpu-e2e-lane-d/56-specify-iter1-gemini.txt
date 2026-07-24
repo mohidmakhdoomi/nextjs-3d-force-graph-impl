@@ -1,0 +1,14 @@
+---
+VERDICT: APPROVE
+SUMMARY: The specification is exceptionally well-aligned with the existing architecture, precisely scopes the pure configuration change, and correctly maintains the strict boundary between the opt-in lane and the canonical CI gate.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None.
+
+**Consultant Notes:**
+- **Feasibility:** Injecting `E2E_WORKERS='50%'` within `suiteEnvFor` (for `hardware` mode only) is technically sound. It perfectly leverages the existing `resolveWorkers` parser in `playwright.config.ts` without mutating it.
+- **Gate Safety:** Because `resolveWorkers` structurally returns `1` when `env.CI` is truthy—*before* reading `E2E_WORKERS`—it is impossible for this lane default to leak into CI shards, exactly as the spec asserts.
+- **Edge Cases:** The spec correctly identifies that whitespace-only overrides must be treated as "unset" to maintain parity with `resolveWorkers`'s parsing logic.
+- **Implementation detail (minor):** For paths where no suite is executed (e.g., `--probe-only` or `skip-empty`), the builder will need to ensure the new `workers:` report line gracefully indicates "skipped" (e.g., `workers: skipped (--probe-only)`), similar to how the `suite:` line handles it today. The spec provides sufficient room for the builder to handle this naturally.

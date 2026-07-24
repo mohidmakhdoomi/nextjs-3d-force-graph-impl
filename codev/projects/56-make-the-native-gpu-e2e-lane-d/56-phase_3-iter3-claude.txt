@@ -1,0 +1,59 @@
+I'll read the changed files to review the Phase 3 implementation. Let me start with all the relevant files in parallel.Let me check the git diff for Phase 3 specifically, and also verify the frozen files weren't touched.Now let me verify the frozen files and run the tests:Good — all frozen files are untouched across the entire branch. Now let me run tests:All 75 tests pass. Let me now verify the full project-level validate also passes:Now let me check a few specific Phase 3 details more carefully — the review 41 correction and the top-of-file header comment update:Let me check the Phase 3 diff specifically (from the phase advance commit):Now I have a complete picture. The changes are uncommitted working-tree modifications on the `builder/spir-56` branch. Let me compile the review.
+
+---
+
+## Phase 3 Review: Docs Reconciliation and Re-qualification Evidence
+
+### 1. Spec Adherence
+
+**FR9 — Documentation reconciled** ✅
+
+The README received five distinct updates, all accurate and consistent:
+
+| README Section | Update | Status |
+|---|---|---|
+| "Local test parallelism" note (L84–101) | "not the SwiftShader default" + issue #56 lane default at `50%` + fallback keeps serial | ✅ |
+| "Opt-in native-GPU e2e lane" step 3 (L196–204) | "parallel by default" on verified hardware, `E2E_WORKERS=1` to force serial | ✅ |
+| Report-format snippet (L214) | Added `workers:` line with the three provenance labels + `n/a` | ✅ |
+| `E2E_WORKERS` env-table row (L280) | Describes `50%` default on hardware, override semantics, fallback serial | ✅ |
+| "Status and sequencing" (L337–349) | `50%` default + issue references + global-stays-serial explanation | ✅ |
+
+The #41 review follow-up correction (L360–369 of `codev/reviews/41-parallelize-local-e2e-runs.md`) is properly formatted as a dated inline addendum, correctly states the lane-scoped partial delivery, and preserves the global-serial rationale verbatim. It references `codev/reviews/56-gpu-lane-parallel-default.md` for qualification evidence (currently untracked — to be populated during the Review phase, which is correct workflow).
+
+**FR4/FR5 — Frozen files untouched** ✅  
+Verified: `scripts/e2e-workers.mjs`, `tests/e2e-workers.test.mjs`, `playwright.config.ts`, `.github/workflows/validation.yml` all zero-diff across the entire branch.
+
+**FR8 — Re-qualification evidence**: The plan explicitly states this is "captured for the review document (recorded in full during the Review phase)" — operational, not a code deliverable. The code infrastructure to support it (workers log line, additive report `workers:` line) is in place from Phase 2.
+
+### 2. Code Quality
+
+The `scripts/e2e-gpu-lane.mjs` header comment update (L44–47) is clean, concise, and correctly placed after the existing `E2E_GPU_REQUIRE` documentation. The wording accurately describes the relationship: "CONSULTS" (not "owns") E2E_WORKERS, with the scope qualifier "on verified-hardware runs" and the fallback qualification.
+
+No stale claims about workers remain in the file's header — the `suiteEnvFor` doc comment (from Phase 2) already describes the mechanism, so the top-of-file header correctly just summarizes the behavior. The plan's guidance to avoid churn between Phases 2–3 was followed.
+
+### 3. Test Coverage
+
+All 75 `tests/gpu-lane.test.mjs` tests pass. All `tests/e2e-workers.test.mjs` tests pass unmodified. Phase 3 added no new tests (correct — its deliverables are docs, comments, and operational evidence, not new code paths).
+
+### 4. Plan Alignment
+
+Every Phase 3 deliverable from the plan is accounted for:
+- [x] README updates (all five sections)
+- [x] Review 41 dated correction
+- [x] Lane script header comment (single edit, no duplication with Phase 2)
+- [x] Re-qualification evidence infrastructure in place (runs deferred to Review phase per plan)
+- [x] Frozen-file audit clean
+
+### 5. Minor Observations (non-blocking)
+
+- The README's inline `workers:` report snippet (L214) is a nice touch — matches the spec's example format and keeps the documentation self-contained.
+- No stale "serial by default" claims remain about the lane across any doc touched. I spot-checked and every mention of the lane's worker default now correctly says `50%` on hardware.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 3 docs reconciliation is complete — all five README sections updated, review 41 correction properly scoped, header comment clean, frozen files untouched, tests green.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

@@ -1,0 +1,114 @@
+I'll start by reading the diff and key project files in parallel to understand the full picture.Now let me read the actual implementation files and more of the diff:Let me continue reading the diff for the remaining consultation files and also verify the frozen files:Good — frozen files confirmed zero-diff. Let me read the remaining diff sections (the implementation changes and arch/lessons updates) and run the unit tests:All tests pass (0 failures on both suites). Let me do the final checks — debug code, TODOs, commit format, and branch status:I've now thoroughly reviewed the entire PR. Here's my assessment:
+
+---
+
+## PR #59 Review — [Spec 56] Native-GPU e2e lane defaults to parallel workers
+
+### 1. Completeness
+
+**All spec requirements implemented.** FR1–FR9 are all delivered:
+
+| FR | Status | Verified |
+|---|---|---|
+| FR1 (hardware default 50%) | ✅ | `suiteEnvFor` hardware branch injects `LANE_DEFAULT_WORKERS` for both Chromium-inclusive and Firefox-only arms |
+| FR2 (operator override) | ✅ | `operatorWorkersSet` guard + verbatim passthrough (incl. `"1"`, `"banana"`) |
+| FR3 (fallback untouched) | ✅ | `software-fallback` branch structurally excluded; unit-tested |
+| FR4 (CI unchanged) | ✅ | Zero diff on `validation.yml`; `CI→1` guard structural |
+| FR5 (plain suite unchanged) | ✅ | Zero diff on `e2e-workers.mjs`, `e2e-workers.test.mjs`, `playwright.config.ts` |
+| FR6 (worker visibility) | ✅ | `workerDecisionFor` provenance + additive report line + log line |
+| FR7 (unit coverage) | ✅ | 17 new tests covering the complete FR7 matrix |
+| FR8 (re-qualification) | ✅ | Serial baseline + 3/3 consecutive green; verbatim per-test output |
+| FR9 (docs reconciled) | ✅ | 5 README sections, review 41 correction, report snippet, env table |
+
+**All plan phases complete.** Phase 1 (mechanism), Phase 2 (visibility), Phase 3 (docs/evidence) — all committed.
+
+**Review document exists** at `codev/reviews/56-gpu-lane-parallel-default.md` — comprehensive with evidence, spec compliance, lessons learned.
+
+**Commit format** uses `[Spec 56]` prefix consistently.
+
+### 2. Test Status
+
+- **`tests/gpu-lane.test.mjs`**: **75 tests, 0 failures** — all pass including the 17 new spec-56 tests
+- **`tests/e2e-workers.test.mjs`**: **24 tests, 0 failures** — existing frozen tests unmodified and green
+- No skipped or flaky tests
+- FR8 re-qualification: serial baseline (212s) + 3/3 green parallel (54s/57s/59s, ~3.8× speedup) under `retries: 0`
+
+### 3. Code Quality
+
+The implementation is excellent:
+
+- **`LANE_DEFAULT_WORKERS = "50%"`** — one exported constant, one source of truth
+- **`operatorWorkersSet(baseEnv)`** — pure 2-line function mirroring `resolveWorkers` semantics exactly
+- **`workerDecisionFor(plan, baseEnv)`** — pure provenance reporter with three clean outcomes
+- **`suiteEnvFor` injection** — structurally confined to the `hardware` branch; computed once at branch top; applied identically in both Chromium and Firefox arms; `undefined` sentinel cleanly distinguishes "don't inject" from "inject default"
+- **`formatReport` workers line** — additive only, last position, existing lines unchanged; falsy `workers` gracefully produces `n/a (no suite run)`
+- **Base env immutability preserved** — the spread-copy pattern matches existing `composeEnv`/`fallbackEnv` semantics
+
+No debug code left in. The `console.log` calls are the lane's intentional output mechanism (lane log prefix + report printing). No `TODO`/`FIXME`/`REVIEW` comments needing attention.
+
+### 4. Edge Cases and Error Handling
+
+Thoroughly addressed and unit-tested:
+- Whitespace-only `E2E_WORKERS` treated as unset (default injected)
+- Malformed values (`"banana"`) pass through for fail-loud at config load (`WorkerConfigError`)
+- `E2E_WORKERS=1` forces serial (operator override wins)
+- Software-fallback never receives injected workers
+- Skip-empty / abort never produce a suite env (guarded by throw)
+- Probe-only / skip-empty reports show `workers: n/a (no suite run)`
+- Build-failure report still states what workers the suite *would have* used
+
+### 5. Documentation
+
+- **Review document** (`codev/reviews/56-gpu-lane-parallel-default.md`): comprehensive — what shipped, FR8 evidence table, verbatim per-test appendix (4 runs), spec compliance, arch/lessons routing, retrospective
+- **README**: 5 sections updated, internally consistent, no stale "serial by default" claims about the lane's hardware path
+- **`codev/reviews/41-parallelize-local-e2e-runs.md`**: dated correction accurately describes the lane-scoped partial delivery
+- **`codev/resources/arch.md`**: Validation Baseline paragraph updated with lane-scoped exception
+- **`codev/resources/lessons-learned.md`**: new entry for pnpm env-var leakage
+- **Lane script header comments**: concise, accurate, non-duplicating with Phase 2's `suiteEnvFor` doc comment
+
+### 6. Security Concerns
+
+None. This is a local developer tool with no network exposure. The env variable pass-through follows existing patterns.
+
+### 7. Frozen File Audit
+
+Verified zero diff against `main` for all spec-mandated frozen files:
+- `.github/workflows/validation.yml` ✅
+- `scripts/e2e-workers.mjs` ✅
+- `tests/e2e-workers.test.mjs` ✅
+- `playwright.config.ts` ✅
+- `package.json` / `package-lock.json` ✅
+
+### 8. Minor Observations (non-blocking)
+
+- The diff is large (1973 additions) but this is dominated by consultation artifacts (34 files, ~20 of which are consultation transcripts/rebuttals). The actual code change is **252 lines across 2 files** — well-proportioned.
+- The consultation history shows healthy iteration: codex caught a dangling evidence pointer twice, resulting in the review document being created in-tree earlier than originally planned — a genuine process improvement documented in the lessons learned.
+
+---
+
+```
+---
+VERDICT: APPROVE
+SUMMARY: Cleanly implemented, thoroughly tested (75 + 24 tests green), well-documented feature that makes the native-GPU lane ~4× faster by default on verified hardware while provably preserving the serial CI/SwiftShader gate.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None
+
+PR_SUMMARY: |
+  ## Summary
+  The opt-in native-GPU e2e lane (`npm run test:e2e:gpu`) now defaults to hardware-scaled parallel workers (`E2E_WORKERS=50%`) on verified-hardware runs, delivering a ~3.8× speedup (212s → 54–59s). The SwiftShader canonical/CI gate remains serial and byte-for-byte unchanged. The mechanism is minimal: `suiteEnvFor` injects the default only in the hardware branch unless the operator sets `E2E_WORKERS`; the value flows through the existing `resolveWorkers` machinery — no second worker-resolution path.
+
+  ## Key Changes
+  - `scripts/e2e-gpu-lane.mjs`: `LANE_DEFAULT_WORKERS`, `operatorWorkersSet`, `workerDecisionFor` helpers; `suiteEnvFor` hardware-branch injection; additive `workers:` report line
+  - `tests/gpu-lane.test.mjs`: 17 new unit tests covering the complete FR7 matrix (hardware default, operator override, whitespace-as-unset, fallback isolation, base-env immutability, report visibility across all 5 call paths)
+  - README: 5 sections reconciled to the split-model (lane parallel-by-default, gate serial)
+  - `codev/reviews/41-parallelize-local-e2e-runs.md`: dated follow-up correction (lane-scoped default delivered; global stays serial)
+  - `codev/resources/arch.md` and `lessons-learned.md`: lane-scoped exception documented; pnpm env-var leakage lesson added
+
+  ## Test Plan
+  - Run `node --test tests/gpu-lane.test.mjs` — 75 tests pass (0 failures)
+  - Run `node --test tests/e2e-workers.test.mjs` — 24 tests pass, unmodified (frozen file proof)
+  - Verify frozen files: `git diff main -- .github/workflows/validation.yml scripts/e2e-workers.mjs tests/e2e-workers.test.mjs playwright.config.ts` shows zero diff
+  - FR8 re-qualification: serial baseline (212s, 1 worker) + 3/3 consecutive green plain `npm run test:e2e:gpu` (54s/57s/59s, 10 workers) under `retries: 0`
+```

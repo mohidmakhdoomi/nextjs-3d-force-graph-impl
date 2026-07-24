@@ -1,0 +1,69 @@
+I'll review the plan by first verifying the actual codebase state against the plan's claims. Let me read the key files in parallel.Now let me check the existing `suiteEnvFor` tests and the README sections referenced by the plan.I've now read all the key files. Let me complete the review.
+
+## Plan Review: 56-gpu-lane-parallel-default
+
+### 1. Spec Coverage
+
+Every functional requirement maps cleanly to a phase:
+
+| FR | Phase | Coverage |
+|---|---|---|
+| FR1 (hardware default 50%) | 1 | `suiteEnvFor` hardware-branch injection |
+| FR2 (operator override) | 1 | `operatorWorkersSet` guard + passthrough |
+| FR3 (fallback/no-run untouched) | 1 | Injection structurally in hardware branch only |
+| FR4 (CI unaffected) | 1 | Zero-diff on CI files; structural `CI→1` guard |
+| FR5 (plain-suite unchanged) | 1 | Zero-diff on `e2e-workers.mjs`, its tests, `playwright.config.ts` |
+| FR6 (worker visibility) | 2 | Log line + additive report `workers:` line |
+| FR7 (unit coverage) | 1 | Full matrix in the plan deliverables |
+| FR8 (re-qualification) | 3 | Serial baseline + ≥3 green runs |
+| FR9 (docs reconciliation) | 3 | README + #41 review correction |
+
+All six acceptance scenarios are addressed. No phase exceeds spec scope.
+
+### 2. Phase Breakdown
+
+The three-phase linear dependency (`1→2→3`) is the right shape:
+
+- **Phase 1** is the core mechanism: two files, pure `suiteEnvFor` modification, full unit matrix. Independently committable — the lane works with a silent default even without Phase 2's visibility.
+- **Phase 2** adds observability: same two files, additive report line. Independently committable — Phase 1's default still functions if Phase 2 were reverted.
+- **Phase 3** is docs + evidence: ≤3 files of documentation, plus real lane runs that exercise Phases 1+2 together. Correct to be last since it needs the `workers:` report line to capture evidence.
+
+Phase sizes are appropriate — none is trivially small or unmanageably large.
+
+### 3. Technical Approach
+
+I verified the actual code. The plan's approach is structurally sound:
+
+**Injection point is correct.** `suiteEnvFor` (line 635) already branches on `plan.mode === "hardware"` with two sub-branches (Chromium-inclusive at line 638, Firefox-only at line 648) and a separate `software-fallback` branch (line 656). The plan injects `E2E_WORKERS` only in the hardware sub-branches — this is the exact right location. The `composeEnv` spread (`{...baseEnv, ...candidate.env, ...extraEnv}`) already copies the operator's `E2E_WORKERS` into the result, so the guard `operatorWorkersSet(baseEnv)` correctly checks the source env before deciding whether to inject the default.
+
+**No mutation risk.** The env copy semantics are already established — `composeEnv` and `fallbackEnv` both spread `baseEnv`. The new injection follows the same pattern as the existing `env.E2E_ENGINES = engineList` assignments (lines 644, 653, 658).
+
+**`formatReport` change is safe.** The current signature is `{mode, engines, suite, wallClock}` (line 420). Adding `workers` is additive. I count four call sites (probe-only at ~482, skip-empty at ~1179, build-failure at ~1206, success at ~1227) — the plan explicitly accounts for all of them with appropriate values.
+
+**Files correctly identified.** The plan's claim that only `scripts/e2e-gpu-lane.mjs` and `tests/gpu-lane.test.mjs` are modified in Phases 1–2 aligns with the codebase structure. The header comment at lines 621–623 ("workers/retries/timeouts untouched") is correctly targeted for update.
+
+### 4. Testability
+
+The FR7 test matrix is comprehensive and maps directly to existing test patterns. The current `suiteEnvFor` tests (lines 1063–1149 in `gpu-lane.test.mjs`) already assert on env properties like `E2E_ENGINES`, `PW_CHROMIUM_ARGS`, `GALLIUM_DRIVER`, and base-env immutability — the new `E2E_WORKERS` assertions slot in naturally alongside these.
+
+The `workerDecisionFor` helper (Phase 2) is pure and testable. The `formatReport` additive-line test can assert on the `workers:` line while preserving existing verbatim-phrasing assertions — the plan correctly notes this.
+
+### 5. Risk Assessment
+
+The risk table is accurate and complete. The most material risk — fallback parallelization — is addressed by the injection's structural position (hardware branch only) plus a dedicated unit test. The qualification-flake risk is handled by Decision 8's protocol. The CI-leak risk is a non-risk by structure (the `CI→1` guard at line 69 of `e2e-workers.mjs` returns before `E2E_WORKERS` is read).
+
+### 6. Minor Observations
+
+**No issues, but two small notes for the builder:**
+
+1. The `operatorWorkersSet(baseEnv)` helper should check `baseEnv.E2E_WORKERS` specifically (not the post-`composeEnv` result), since candidate envs and `extraEnv` could theoretically shadow it. The plan text says "implements 'operator has set `E2E_WORKERS`' = value exists and is not whitespace-only" which implies checking `baseEnv` — correct, but worth the builder noting when implementing.
+
+2. Phase 2's `workerDecisionFor` reports `{value: "1", provenance: "config serial default"}` for the fallback no-operator case. This is a presentational lie in the sense that the actual `1` comes from `resolveWorkers(env)` in the config, not from the lane — but it's the *right* lie for operator comprehension. The lane knows the fallback env has no injected workers, so it can honestly predict the outcome. No action needed; just documenting the reasoning.
+
+---
+VERDICT: APPROVE
+SUMMARY: Plan is tightly scoped, technically sound against the actual codebase, covers all spec FRs, and the three-phase breakdown gives a builder clear boundaries with independently committable work.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

@@ -1,0 +1,8 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 3 is close, but one committed review-doc correction claims evidence exists in a spec-56 review document that is not actually present in this PR/worktree.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `codev/reviews/41-parallelize-local-e2e-runs.md:360-366` says spec 56’s qualification evidence “is recorded in spec 56's review document, shipped in the same PR as this correction,” but there is no `codev/reviews/56-*.md` file in the worktree or this file list. Either add that review document/evidence now or rewrite this correction to reference where the evidence actually lives today.

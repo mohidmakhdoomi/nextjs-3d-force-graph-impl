@@ -41,6 +41,10 @@
 //                             GPU-capable host).
 //   E2E_GPU_REQUIRE=1         exit non-zero instead of falling back when any
 //                             requested engine does not verify hardware.
+// The lane also CONSULTS E2E_WORKERS (owned by playwright.config.ts /
+// resolveWorkers, spec 41): on verified-hardware runs it defaults the suite to
+// E2E_WORKERS=50% unless the operator set a value (spec 56); the
+// software-fallback path keeps the config's serial default.
 //
 // CLI (read ONLY by this wrapper):
 //   --engine=chromium|firefox|all  select the probe/suite engine set (default
@@ -417,7 +421,12 @@ export function engineReportLine(outcome) {
 // is an ordered [{engine, renderer}] list; every requested engine gets exactly
 // one `renderer.<engine>` line (a skipped engine is represented explicitly,
 // never omitted silently).
-export function formatReport({mode, engines, suite, wallClock}) {
+// The `workers` entry is a {value, provenance} decision from workerDecisionFor
+// for report paths that run (or would have run) a suite; omitted for
+// --probe-only and skip-empty, which honestly report `n/a (no suite run)`.
+// The line is ADDITIVE and last — every pre-existing line keeps its position
+// and phrasing verbatim (spec 52 FR10 consumers grep by line prefix).
+export function formatReport({mode, engines, suite, wallClock, workers}) {
     return [
         "=== E2E GPU LANE REPORT ===",
         `mode: ${mode}`,
@@ -425,6 +434,11 @@ export function formatReport({mode, engines, suite, wallClock}) {
         ...engines.map((entry) => `renderer.${entry.engine}: ${entry.renderer}`),
         `suite: ${suite}`,
         `wall-clock: ${wallClock}`,
+        `workers: ${
+            workers
+                ? `${workers.value} (${workers.provenance})`
+                : "n/a (no suite run)"
+        }`,
     ].join("\n");
 }
 
@@ -618,9 +632,43 @@ export function computeRunPlan({requestedEngines, verdicts = {}, controls}) {
     };
 }
 
+// Lane-scoped parallel default (spec 56): hardware-mode suite runs get a
+// hardware-scaled worker count via the existing E2E_WORKERS contract, resolved
+// by the config's resolveWorkers — no second worker-resolution path. Applies
+// ONLY to the hardware branch; software-fallback keeps the config's serial
+// default, and the absolute CI → 1 guard in resolveWorkers still wins last.
+export const LANE_DEFAULT_WORKERS = "50%";
+
+// "Operator has set E2E_WORKERS" mirrors resolveWorkers' unset/empty
+// semantics: present and not whitespace-only. A whitespace-only value is
+// treated as unset (the default is injected); any other value — including an
+// invalid one — passes through verbatim so config-load's WorkerConfigError
+// still fails loud.
+export function operatorWorkersSet(baseEnv) {
+    const value = baseEnv.E2E_WORKERS;
+    return value !== undefined && value.trim() !== "";
+}
+
+// The effective worker decision for a suite-running plan (spec 56 FR6,
+// Decision 7): what E2E_WORKERS value the suite process will see and where it
+// came from. Pure — reads only the plan mode and the operator's baseEnv.
+// Provenance vocabulary: "operator override" (E2E_WORKERS set, any mode),
+// "lane default" (hardware, lane-injected 50%), "config serial default"
+// (software-fallback with no operator value — the config's own workers: 1).
+export function workerDecisionFor(plan, baseEnv) {
+    if (operatorWorkersSet(baseEnv)) {
+        return {value: baseEnv.E2E_WORKERS, provenance: "operator override"};
+    }
+    if (plan.mode === "hardware") {
+        return {value: LANE_DEFAULT_WORKERS, provenance: "lane default"};
+    }
+    return {value: "1", provenance: "config serial default"};
+}
+
 // Env for the actual suite run (spec 44 FR4 / spec 52 FR5: the full suite for
-// the resolved engine set, workers/retries/timeouts untouched — those stay the
-// config's own defaults). Consumes the run plan from computeRunPlan:
+// the resolved engine set, retries/timeouts untouched — those stay the
+// config's own defaults; hardware-mode workers default to
+// LANE_DEFAULT_WORKERS unless the operator sets E2E_WORKERS). Consumes the run plan from computeRunPlan:
 //   - Hardware with Chromium in the set (Chromium alone OR Chromium+Firefox):
 //     inject the verified Chromium recipe's Mesa env into the suite process and
 //     set E2E_ENGINES to the resolved set; a two-engine run's Firefox INHERITS
@@ -635,6 +683,9 @@ export function computeRunPlan({requestedEngines, verdicts = {}, controls}) {
 export function suiteEnvFor(plan, baseEnv) {
     if (plan.mode === "hardware") {
         const engineList = plan.suiteEngines.join(",");
+        const laneWorkers = operatorWorkersSet(baseEnv)
+            ? undefined
+            : LANE_DEFAULT_WORKERS;
         if (plan.suiteEngines.includes("chromium")) {
             const env = composeEnv(
                 baseEnv,
@@ -643,6 +694,7 @@ export function suiteEnvFor(plan, baseEnv) {
             );
             env.E2E_ENGINES = engineList;
             env.PW_CHROMIUM_ARGS = plan.chromiumCandidate.flags.join(" ");
+            if (laneWorkers !== undefined) env.E2E_WORKERS = laneWorkers;
             return env;
         }
         const env = composeEnv(
@@ -651,6 +703,7 @@ export function suiteEnvFor(plan, baseEnv) {
             plan.firefoxExtraEnv ?? {},
         );
         env.E2E_ENGINES = engineList;
+        if (laneWorkers !== undefined) env.E2E_WORKERS = laneWorkers;
         return env;
     }
     if (plan.mode === "software-fallback") {
@@ -1196,6 +1249,10 @@ async function runFullLane(args, controls, elapsedSeconds) {
         );
     }
 
+    // Decided once, before build: the build-failure report must still state
+    // what workers the suite WOULD have run with (FR6).
+    const workers = workerDecisionFor(plan, process.env);
+
     // The build never needs recipe env; it runs under the untouched inherited
     // env in both modes.
     const build = await runStage("build", "npm", ["run", "build"], process.env);
@@ -1208,11 +1265,13 @@ async function runFullLane(args, controls, elapsedSeconds) {
                 engines: reportEntriesFromPlan(plan, requestedEngines),
                 suite: `not-run (build failed, exit ${build.code})`,
                 wallClock: `${elapsedSeconds()}s (build ${build.seconds}s)`,
+                workers,
             }),
         );
         return build.code;
     }
 
+    log(`workers: ${workers.value} (${workers.provenance})`);
     const suite = await runStage(
         "suite",
         "npx",
@@ -1233,6 +1292,7 @@ async function runFullLane(args, controls, elapsedSeconds) {
                 build.seconds,
                 suite.seconds,
             ),
+            workers,
         }),
     );
     // The suite's own pass/fail semantics are the lane's exit code (FR3).
