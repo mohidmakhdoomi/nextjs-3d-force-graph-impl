@@ -1,9 +1,18 @@
 id: '56'
 title: make-the-native-gpu-e2e-lane-d
 protocol: spir
-phase: plan
-plan_phases: []
-current_plan_phase: null
+phase: implement
+plan_phases:
+  - id: phase_1
+    title: Lane hardware-mode worker default (mechanism + unit tests)
+    status: in_progress
+  - id: phase_2
+    title: 'Worker visibility: lane log line and additive report line'
+    status: pending
+  - id: phase_3
+    title: Docs reconciliation and re-qualification evidence
+    status: pending
+current_plan_phase: phase_1
 gates:
   spec-approval:
     status: approved
@@ -21,4 +30,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-24T19:05:59.482Z'
-updated_at: '2026-07-24T19:14:59.366Z'
+updated_at: '2026-07-24T19:15:29.844Z'
