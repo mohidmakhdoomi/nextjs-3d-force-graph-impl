@@ -584,3 +584,17 @@ mode:hardware. Chromium green throughout. Evidence: phase5-*.log + phase5-summar
   :114 (comment-only), review-52, spec-52, and review-41's historical #33 mentions
   (marked correction notes citing #55); plus FR7 follow-up correction.
 - Committing phase_5, then porch check/done + 3-way consult.
+
+### Phase 5 — iter1 consult: Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES
+Committed 5a173b4. porch check ✓ (build+tests, env -u prefix). 3-way ran.
+- Gemini APPROVE (HIGH), Claude APPROVE (HIGH) — Claude verified all 5 FR6
+  deliverables + confirmed phase_6 (#33/FR7) scope correctly untouched, "no ambiguity".
+- Codex REQUEST_CHANGES (HIGH), 1 point ACCEPTED: README:95-98 (top "Local test
+  parallelism" intro) still said the native-GPU parallel lane "stays mostly green"
+  — old caveat framing (the 1/3 recurrence), contradicts the 3/3-green re-qual, so
+  FR6 "retire the caveat" incomplete. I missed it because it phrases the flake
+  without the `#33` token my sweep keyed on.
+- Fixed: rewrote 95-98 to fixed/green-3/3 state citing #55; re-swept whole README
+  (mostly green|known flake|amplif|recur|survives on hardware|open flake|#33) →
+  zero residual stale framing. Wrote 55-phase_5-iter1-rebuttals.md. Committing +
+  re-consult iter2.

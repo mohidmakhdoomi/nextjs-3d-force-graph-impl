@@ -94,7 +94,10 @@ camera-settle/drag assertions under SwiftShader CPU contention (4–5 of 22 test
 fail on **every** parallel run there — the problem is destabilization, not speed:
 parallel is actually faster), so parallelism is not the default. It is most useful
 on the [native-GPU lane](#opt-in-native-gpu-e2e-lane), where the full two-engine
-suite runs ~4× faster on real hardware and stays mostly green. Full qualification
+suite runs ~4× faster on real hardware and is **green** — the former Firefox
+background-drag flake there is fixed and re-qualified **green 3/3** on this
+parallel regime (issue #55); parallel stays opt-in only for the separate
+deterministic Chromium SwiftShader contention noted above. Full qualification
 evidence and the trade-off: `codev/reviews/41-parallelize-local-e2e-runs.md`.
 
 ### Audit evidence
