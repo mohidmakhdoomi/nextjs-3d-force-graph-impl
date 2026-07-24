@@ -1,7 +1,7 @@
 id: '56'
 title: make-the-native-gpu-e2e-lane-d
 protocol: spir
-phase: specify
+phase: plan
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -19,4 +19,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-24T19:05:59.482Z'
-updated_at: '2026-07-24T19:09:05.722Z'
+updated_at: '2026-07-24T19:09:16.667Z'
