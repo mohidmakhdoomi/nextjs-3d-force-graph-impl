@@ -39,6 +39,85 @@ export type NodeScreenById = {
     fixed: boolean;
 };
 
+/**
+ * Result of raycasting an arbitrary screen point against the node meshes —
+ * the inverse of {@link NodeScreenPoint}. Issue #55 drag-path instrumentation:
+ * `hit` mirrors the three DragControls raycast that fires node `dragstart`
+ * (NDC from the canvas rect → `raycaster.setFromCamera` → `intersectObjects`),
+ * so it decides H1 (a "background" drag that actually lands on a node). The
+ * screen-space `nearest*` fields are the continuous "how close was the pointer
+ * to a node projection" measure and a projected-disk cross-check.
+ */
+export type NodeOccupancy = {
+    // True when the pixel ray pierces a node's world sphere (the DragControls
+    // hit-test semantics): a background drag starting here would be captured by
+    // the node DragControls, disable the Trackball, and move the node instead.
+    hit: boolean;
+    hitNodeId: string | number | null;
+    // World-space distance from the camera to the nearest pierced sphere.
+    hitDepth: number | null;
+    // Nearest node by on-screen projection (in front of the camera only).
+    nearestNodeId: string | number | null;
+    nearestDistancePx: number | null;
+    nearestNodeScreen: {x: number; y: number} | null;
+    // The nearest node's projected screen radius, and whether the point falls
+    // inside that projected disk (a screen-space cross-check of `hit`).
+    nearestProjectedRadiusPx: number | null;
+    withinProjectedRadius: boolean;
+    // Nodes considered (positioned and in front of the camera).
+    candidateNodeCount: number;
+};
+
+/**
+ * Cheap, node-iteration-free sample of the TrackballControls state, usable at
+ * high frequency across the drag window (issue #55). `state` is the three
+ * `_STATE` enum (NONE −1 / ROTATE 0 / ZOOM 1 / PAN 2 …); `enabled` goes false
+ * for the duration of a node DragControls drag and is restored on `dragend`,
+ * so the H1 "controls disabled during the drag" signature is only visible
+ * mid-drag — hence a dedicated fast sampler rather than the full snapshot.
+ */
+export type ControlsSample = {
+    enabled: boolean;
+    state: number;
+    keyState: number;
+    moveCurrX: number;
+    moveCurrY: number;
+    movePrevX: number;
+    movePrevY: number;
+};
+
+export type PointerEventRecord = {
+    type: "down" | "move" | "up";
+    // performance.now() milliseconds at delivery.
+    t: number;
+    x: number;
+    y: number;
+    // event.target is the <canvas> (what the DragControls canvas listener sees).
+    onCanvas: boolean;
+    buttons: number;
+    pointerId: number;
+    pointerType: string;
+};
+
+/**
+ * Delivered-pointer-event counters plus a bounded recent-event ring (issue
+ * #55). Capture-phase document listeners count every `pointerdown` /
+ * `pointermove` / `pointerup` the content process actually receives, so H2
+ * (Firefox synthetic-input delivery loss) is directly measurable as "0
+ * pointermoves between down and up." Aggregate counts stay exact even when the
+ * ring overflows (`dropped` records the overflow).
+ */
+export type PointerLog = {
+    down: number;
+    move: number;
+    up: number;
+    canvasDown: number;
+    canvasMove: number;
+    canvasUp: number;
+    events: PointerEventRecord[];
+    dropped: number;
+};
+
 
 export type CollectedErrors = {
     consoleErrors: string[];
@@ -52,6 +131,12 @@ declare global {
         __graphFixBestNode: () => FixedNodeScreenPoint | null;
         __graphNodeScreenById: (id: string | number) => NodeScreenById | null;
         __webglContextLostCount: number;
+        // Issue #55 drag-path instrumentation (harness-side observation only).
+        __graphNodeOccupancyAtPoint: (x: number, y: number) => NodeOccupancy | null;
+        __graphControlsSample: () => ControlsSample | null;
+        __pointerLog: PointerLog;
+        __readPointerLog: () => PointerLog;
+        __resetPointerLog: () => void;
     }
 }
 
@@ -72,6 +157,99 @@ export async function installGraphProbe(page: Page): Promise<void> {
             () => {
                 window.__webglContextLostCount += 1;
             },
+            true,
+        );
+
+        // Issue #55: delivered-pointer-event counters. Capture-phase,
+        // document-level listeners installed before app code see every
+        // pointerdown/move/up the content process actually receives — BEFORE
+        // the app's own canvas/document handlers — so "0 pointermoves between
+        // down and up" (H2 Firefox synthetic-input delivery loss) is measured
+        // directly. Aggregate counts are exact; a bounded ring keeps the
+        // coordinate/timestamp trace cheap (overflow recorded as `dropped`).
+        // The listeners only READ — no preventDefault/stopPropagation — so app
+        // pointer handling is unchanged.
+        const POINTER_LOG_CAP = 1000;
+        window.__pointerLog = {
+            down: 0,
+            move: 0,
+            up: 0,
+            canvasDown: 0,
+            canvasMove: 0,
+            canvasUp: 0,
+            events: [],
+            dropped: 0,
+        };
+        window.__resetPointerLog = () => {
+            const log = window.__pointerLog;
+            log.down = 0;
+            log.move = 0;
+            log.up = 0;
+            log.canvasDown = 0;
+            log.canvasMove = 0;
+            log.canvasUp = 0;
+            log.events = [];
+            log.dropped = 0;
+        };
+        window.__readPointerLog = () => {
+            const log = window.__pointerLog;
+            return {
+                down: log.down,
+                move: log.move,
+                up: log.up,
+                canvasDown: log.canvasDown,
+                canvasMove: log.canvasMove,
+                canvasUp: log.canvasUp,
+                dropped: log.dropped,
+                events: log.events.slice(),
+            };
+        };
+        const recordPointer = (
+            type: "down" | "move" | "up",
+            event: PointerEvent,
+        ): void => {
+            const log = window.__pointerLog;
+            const target = event.target;
+            const onCanvas =
+                target instanceof Element && target.tagName === "CANVAS";
+            log[type] += 1;
+            if (onCanvas) {
+                if (type === "down") {
+                    log.canvasDown += 1;
+                } else if (type === "move") {
+                    log.canvasMove += 1;
+                } else {
+                    log.canvasUp += 1;
+                }
+            }
+            if (log.events.length < POINTER_LOG_CAP) {
+                log.events.push({
+                    type,
+                    t: performance.now(),
+                    x: event.clientX,
+                    y: event.clientY,
+                    onCanvas,
+                    buttons: event.buttons,
+                    pointerId: event.pointerId,
+                    pointerType: event.pointerType,
+                });
+            } else {
+                log.dropped += 1;
+            }
+        };
+        document.addEventListener(
+            "pointerdown",
+            (event) => recordPointer("down", event),
+            true,
+        );
+        document.addEventListener(
+            "pointermove",
+            (event) => recordPointer("move", event),
+            true,
+        );
+        document.addEventListener(
+            "pointerup",
+            (event) => recordPointer("up", event),
             true,
         );
 
@@ -317,6 +495,205 @@ export async function installGraphProbe(page: Page): Promise<void> {
             const coords = handle.graph2ScreenCoords(node.x, node.y, node.z);
             return {x: coords.x, y: coords.y, fixed: node.fx !== undefined};
         };
+
+        // Issue #55 H1 discriminator: does an arbitrary screen point sit on a
+        // node mesh? This mirrors the three DragControls hit-test — normalized
+        // device coords from the canvas rect, a camera ray, and a ray-sphere
+        // test against each node's world sphere (the same `node.__threeObj`
+        // meshes DragControls raycasts). A `hit` here is a "background" drag
+        // that would instead capture a node, disable the Trackball, and move
+        // the node (camera delta ~0 — the observed failure signature). THREE's
+        // Vector3 is reached through an existing instance (`camera.position`)
+        // since the app exposes no global THREE; cloning yields a real Vector3
+        // with set/unproject/sub, so no import is needed in page context.
+        window.__graphNodeOccupancyAtPoint = (x, y) => {
+            const handle = findHandle();
+            if (handle === null) {
+                return null;
+            }
+            const canvas = document.querySelector("canvas");
+            if (canvas === null) {
+                return null;
+            }
+
+            const camera = handle.camera();
+            const Vec3 = camera.position.constructor;
+            const rect = canvas.getBoundingClientRect();
+
+            // NDC exactly as three DragControls._updatePointer computes it, so a
+            // hit mirrors the raycast that fires node dragstart.
+            const ndcX = ((x - rect.left) / rect.width) * 2 - 1;
+            const ndcY = -((y - rect.top) / rect.height) * 2 + 1;
+
+            // raycaster.setFromCamera semantics for a perspective camera:
+            // origin at the camera, direction toward the unprojected NDC point.
+            camera.updateWorldMatrix(true, false);
+            const origin = camera.getWorldPosition(new Vec3());
+            const direction = new Vec3(ndcX, ndcY, 0.5)
+                .unproject(camera)
+                .sub(origin)
+                .normalize();
+            const viewDirection = camera.getWorldDirection(new Vec3());
+            // Camera right axis (world) for projecting a sphere's edge to pixels.
+            const right = new Vec3(1, 0, 0)
+                .applyQuaternion(camera.quaternion)
+                .normalize();
+
+            const center = new Vec3();
+            const scale = new Vec3();
+
+            let hitNodeId: string | number | null = null;
+            let hitDepth = Number.POSITIVE_INFINITY;
+            let nearestNodeId: string | number | null = null;
+            let nearestDistancePx = Number.POSITIVE_INFINITY;
+            let nearestScreen: {x: number; y: number} | null = null;
+            let nearestProjectedRadiusPx: number | null = null;
+            let candidateNodeCount = 0;
+
+            for (const node of collectNodeData(handle)) {
+                if (
+                    typeof node.x !== "number" ||
+                    typeof node.y !== "number" ||
+                    typeof node.z !== "number"
+                ) {
+                    continue;
+                }
+                const obj = node.__threeObj;
+                if (!obj) {
+                    continue;
+                }
+                obj.updateWorldMatrix(true, false);
+                obj.getWorldPosition(center);
+
+                // Behind-camera nodes are not real targets (graph2ScreenCoords
+                // maps them to plausible on-screen coords), so exclude them from
+                // both the raycast and the nearest-projection search.
+                const depthAlongView =
+                    (center.x - origin.x) * viewDirection.x +
+                    (center.y - origin.y) * viewDirection.y +
+                    (center.z - origin.z) * viewDirection.z;
+                if (depthAlongView <= 0) {
+                    continue;
+                }
+                candidateNodeCount += 1;
+
+                // World-space sphere radius read from the node mesh geometry
+                // (the mesh DragControls raycasts), scaled by world scale.
+                let worldRadius = 0;
+                obj.traverse((child: any) => {
+                    const geometry = child.geometry;
+                    if (!geometry) {
+                        return;
+                    }
+                    if (geometry.boundingSphere === null) {
+                        geometry.computeBoundingSphere();
+                    }
+                    if (geometry.boundingSphere === null) {
+                        return;
+                    }
+                    child.getWorldScale(scale);
+                    const maxScale = Math.max(
+                        Math.abs(scale.x),
+                        Math.abs(scale.y),
+                        Math.abs(scale.z),
+                    );
+                    const r = geometry.boundingSphere.radius * maxScale;
+                    if (r > worldRadius) {
+                        worldRadius = r;
+                    }
+                });
+
+                // Ray-sphere intersection (the sphere-mesh case of
+                // raycaster.intersectObjects): the pixel ray pierces the node
+                // when its perpendicular distance to the center is within the
+                // radius and an entry lies ahead of the camera.
+                const lx = center.x - origin.x;
+                const ly = center.y - origin.y;
+                const lz = center.z - origin.z;
+                const tca =
+                    lx * direction.x + ly * direction.y + lz * direction.z;
+                const d2 = lx * lx + ly * ly + lz * lz - tca * tca;
+                const r2 = worldRadius * worldRadius;
+                if (d2 <= r2) {
+                    const thc = Math.sqrt(r2 - d2);
+                    const t0 = tca - thc;
+                    const t1 = tca + thc;
+                    const t = t0 >= 0 ? t0 : t1;
+                    if (t >= 0 && t < hitDepth) {
+                        hitDepth = t;
+                        hitNodeId = node.id;
+                    }
+                }
+
+                // Screen-space nearest projection + that node's projected radius.
+                const coords = handle.graph2ScreenCoords(
+                    node.x,
+                    node.y,
+                    node.z,
+                );
+                const distancePx = Math.hypot(coords.x - x, coords.y - y);
+                if (distancePx < nearestDistancePx) {
+                    nearestDistancePx = distancePx;
+                    nearestNodeId = node.id;
+                    nearestScreen = {x: coords.x, y: coords.y};
+                    const edge = handle.graph2ScreenCoords(
+                        center.x + right.x * worldRadius,
+                        center.y + right.y * worldRadius,
+                        center.z + right.z * worldRadius,
+                    );
+                    nearestProjectedRadiusPx = Math.hypot(
+                        edge.x - coords.x,
+                        edge.y - coords.y,
+                    );
+                }
+            }
+
+            return {
+                hit: hitNodeId !== null,
+                hitNodeId,
+                hitDepth: Number.isFinite(hitDepth) ? hitDepth : null,
+                nearestNodeId,
+                nearestDistancePx: Number.isFinite(nearestDistancePx)
+                    ? nearestDistancePx
+                    : null,
+                nearestNodeScreen: nearestScreen,
+                nearestProjectedRadiusPx,
+                withinProjectedRadius:
+                    nearestProjectedRadiusPx !== null &&
+                    Number.isFinite(nearestDistancePx) &&
+                    nearestDistancePx <= nearestProjectedRadiusPx,
+                candidateNodeCount,
+            };
+        };
+
+        // Issue #55: cheap TrackballControls state sample (no node iteration),
+        // for high-frequency sampling across the drag window. `state` is the
+        // three _STATE enum (NONE −1 / ROTATE 0 / ZOOM 1 / PAN 2); `enabled`
+        // drops to false for the duration of a node DragControls drag.
+        window.__graphControlsSample = () => {
+            const handle = findHandle();
+            if (handle === null) {
+                return null;
+            }
+            const controls = handle.controls();
+            const moveCurr = controls._moveCurr;
+            const movePrev = controls._movePrev;
+            return {
+                enabled: controls.enabled === true,
+                state:
+                    typeof controls.state === "number"
+                        ? controls.state
+                        : Number.NaN,
+                keyState:
+                    typeof controls.keyState === "number"
+                        ? controls.keyState
+                        : Number.NaN,
+                moveCurrX: moveCurr ? moveCurr.x : Number.NaN,
+                moveCurrY: moveCurr ? moveCurr.y : Number.NaN,
+                movePrevX: movePrev ? movePrev.x : Number.NaN,
+                movePrevY: movePrev ? movePrev.y : Number.NaN,
+            };
+        };
     });
 }
 
@@ -343,6 +720,47 @@ export async function nodeScreenPointById(
     id: string | number,
 ): Promise<NodeScreenById | null> {
     return page.evaluate((nodeId) => window.__graphNodeScreenById(nodeId), id);
+}
+
+/**
+ * Issue #55: raycast a screen point against the node meshes (H1 discriminator).
+ * See {@link NodeOccupancy}.
+ */
+export async function nodeOccupancyAtPoint(
+    page: Page,
+    x: number,
+    y: number,
+): Promise<NodeOccupancy | null> {
+    return page.evaluate(
+        (point) => window.__graphNodeOccupancyAtPoint(point.x, point.y),
+        {x, y},
+    );
+}
+
+/**
+ * Issue #55: cheap TrackballControls state sample for mid-drag observation.
+ * See {@link ControlsSample}.
+ */
+export async function sampleControls(
+    page: Page,
+): Promise<ControlsSample | null> {
+    return page.evaluate(() => window.__graphControlsSample());
+}
+
+/**
+ * Issue #55: zero the delivered-pointer-event counters/ring, so a subsequent
+ * gesture's events are counted in isolation. See {@link PointerLog}.
+ */
+export async function resetPointerLog(page: Page): Promise<void> {
+    await page.evaluate(() => window.__resetPointerLog());
+}
+
+/**
+ * Issue #55: read the delivered-pointer-event counters + recent-event ring.
+ * See {@link PointerLog}.
+ */
+export async function readPointerLog(page: Page): Promise<PointerLog> {
+    return page.evaluate(() => window.__readPointerLog());
 }
 
 /**
