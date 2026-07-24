@@ -1,0 +1,9 @@
+Using direct file reads to review only phase_6 deliverables (FR7 + FR8).---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 6 mostly matches FR7/FR8, but the README corrections were applied as silent rewrites instead of the marked #55 correction note style the spec/plan require.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `README.md:233-260` updates the former Firefox flake narrative, but unlike `codev/reviews/41-parallelize-local-e2e-runs.md:53-59`, `codev/reviews/52-firefox-hardware-webgl-gpu-lane.md:183-186`, and `codev/specs/52-firefox-hardware-webgl-gpu-lane.md:567-579`, it does **not** use a clearly marked correction note citing `#55`. Phase 6 explicitly requires FR8 corrections to be additive/marked rather than silent rewrites, so this should be brought into the same correction-note pattern.
+- None otherwise; FR7 looks correctly addressed in `codev/reviews/41-parallelize-local-e2e-runs.md:344-355`, and the `playwright.config.ts` `#33` reference was corrected comment-only as planned.

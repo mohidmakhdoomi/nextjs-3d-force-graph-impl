@@ -259,6 +259,12 @@ genuinely-background start point** (node-free with a pixel margin) so the
 engines, both rendering paths, serial and parallel — see
 `codev/reviews/55-firefox-background-drag-flake.md`.
 
+> **Correction (#55):** earlier docs (reviews 41/52, spec 52,
+> `playwright.config.ts`) sometimes labeled this flake the "**#33** family." That
+> was a misattribution — **#33** was a *distinct*, already-closed enable-delay
+> inertness race (`matrix.spec.ts` navigation-inertness test). This
+> background-drag flake is tracked and fixed by **#55**.
+
 ### Env controls and flags
 
 | Control | Effect |

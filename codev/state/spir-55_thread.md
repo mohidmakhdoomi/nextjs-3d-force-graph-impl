@@ -633,3 +633,20 @@ Doc/comment-only corrections; wording reflects the actual Phase 2–5 outcome
   - README: already zero #33 (phase_5).
 - Acceptance grep: no bare this-flake→#33 remains; genuine #34 (click-to-focus) and
   #11 references intact. Committing phase_6, then porch check/done + 3-way consult.
+
+### Phase 6 — iter1 consult: Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES
+Committed 78cd636. porch check ✓. 3-way ran.
+- Gemini APPROVE (HIGH), Claude APPROVE (HIGH, "Decision-7-compliant marked
+  corrections, zero residual #33, doc/comment-only").
+- Codex REQUEST_CHANGES (HIGH), 1 point ACCEPTED: the README fixed-state block was a
+  direct rewrite, unlike the MARKED #55 correction notes in reviews 41/52 + spec 52;
+  Decision-7/FR8 want the same marked-note pattern on the README. (Scoping note: the
+  README rewrite was FR6/phase_5 on a current-state user doc — a different category
+  from historical qualification records — but Codex's consistency ask is reasonable
+  and genuinely helpful for cross-referencing old "#33" mentions, so accepted not
+  disputed.)
+- Fixed: added a marked `> Correction (#55)` note to the README FIXED block flagging
+  the "#33 family" misattribution (#33 = distinct closed enable-delay race). The one
+  resulting README #33 is in FR8-permitted "was #33, is #55" form; grep audit still
+  shows zero bare this-flake→#33. Wrote 55-phase_6-iter1-rebuttals.md. Committing +
+  re-consult iter2.
