@@ -213,14 +213,38 @@ behavior to observe.
    failure** (measure node-occupancy of the start point across N fresh
    layouts post-zoom, per engine); a preventive fix may then ship only if
    that measurement demonstrates the mechanism, with the disposition
-   documented honestly in the review.
+   documented honestly in the review. **Terminal outcome if neither branch
+   demonstrates the mechanism** — the flake does not reproduce within budget
+   *and* the H1 occupancy measurement is negative/inconclusive (the start
+   point is reliably background across the N sampled layouts): no speculative
+   root-cause fix ships (Decision 3's evidence bar is unmet), and the review
+   records the full budget and measurements as an explicit negative result.
+   The flake stays *accepted + documented*, now consolidated under its
+   dedicated tracker (#55) with the retained probe fields (Decision 6, FR2)
+   so the next occurrence is captured cheaply. The fix-independent
+   documentation follow-through still proceeds: FR8's "#33"-misattribution
+   correction and FR7's follow-up clarification are completed, and FR6's #41
+   caveat is **re-pointed to #55 and updated to reflect the instrument-first
+   outcome rather than retired** (no fix was qualified — see FR6's non-green
+   branch, which this reuses). A strictly test-strengthening,
+   behavior-preserving change (a verified-background start point and/or a
+   frame-settled gesture, each independently justified as a fidelity /
+   robustness improvement, neither weakening the assertion nor adding a
+   retry) MAY still ship in this branch, but must be labeled defense-in-depth
+   — explicitly *not* a proven root-cause fix. If instrumentation instead
+   demonstrates a fourth mechanism outside H1/H2/H3, it is documented and
+   fixed under the same instrument-first, minimal, behavior-preserving
+   discipline (Decisions 1–4).
 6. **Instrumentation must ride along cheaply.** Diagnostic capture must be
    active in the same runs used for reproduction (page-side counters/probe
    fields, dumped on failure), so a single failing occurrence yields the
    discriminating evidence — reproduction is too expensive to burn on
    uninstrumented failures. Instrumentation is harness-side observation
    (`addInitScript` / probe extension); the app is not modified for
-   observability.
+   observability. *Riding along during reproduction does not mean remaining
+   committed*: what survives into the canonical suite after the mechanism is
+   documented is bounded by FR2's committed-vs-evidence-only rule
+   (fix-dependencies plus cheap, silent-in-passing probe fields only).
 7. **Documentation follow-through is in scope and sequenced last.** The #41
    parallel re-qualification, caveat retirement, follow-up correction, and
    "#33" misattribution fixes (FR6–FR8) are part of this issue's Definition
@@ -320,7 +344,8 @@ document the mechanism, then apply the smallest fix the evidence selects:
 
 The committed canonical suite keeps only behavior-preserving harness changes;
 heavyweight diagnostics stay in scratch/evidence unless they are cheap,
-silent-in-passing-runs probe fields worth keeping for future triage.
+silent-in-passing-runs probe fields worth keeping for future triage (the
+committed-vs-evidence-only rule is stated authoritatively in FR2).
 
 ### Approach C: Bounded in-harness drag retry ("drag again if the camera didn't move")
 
@@ -350,6 +375,22 @@ position samples. All capture is harness-side (`addInitScript`, probe
 extension, or a diagnostic spec variant); app code is not modified for
 observability; passing-run overhead is negligible so the instrumentation can
 ride every reproduction run (Decision 6).
+
+**Committed final state vs evidence-only tooling.** The diagnostics that ride
+every reproduction run are *investigation-time* observation and are not all
+retained. After the mechanism is documented, the committed canonical suite
+keeps only (a) whatever the selected fix depends on, and (b) cheap,
+silent-in-passing-runs probe fields with standalone future-triage value (e.g.
+a node-occupancy / verified-background-point helper colocated with the
+existing `graph-handle.ts` probe), each documented at the existing comment
+standard. Heavyweight diagnostics — verbose per-event pointer logs,
+`controls.enabled` sampling traces, dumped-on-failure counters, and any
+diagnostic-only spec variant — are **evidence-only**: they live in
+scratch/evidence artifacts referenced by the review and are not added to (or
+are removed from) the committed suite once the mechanism is documented. The
+decision rule: a diagnostic is committed only if the fix depends on it or it
+is a cheap, silent probe field worth keeping for future triage; otherwise it
+is evidence-only.
 
 ### FR3 — Root cause documented with evidence
 
@@ -536,3 +577,42 @@ follow-up states the necessary-but-not-sufficient relationship.
   Caveat / Decision 10); `README.md` (Known Firefox flake note).
 - Closed issues #33 (enable-delay inertness race — distinct) and #34
   (click-to-focus hover race — distinct); issues #44/#52 (native-GPU lane).
+
+## Consultation Log
+
+### Specify — iteration 1 (3-way: Gemini, Codex, Claude)
+
+- **Gemini — APPROVE (HIGH).** "Masterclass in disciplined flake
+  investigation"; hypotheses map to the exact software layers; the H1
+  statistical fallback and the verified-background-start-point fix (which
+  *strengthens* fidelity) singled out as strong. No issues.
+- **Claude — APPROVE (HIGH).** Verified every technical claim against the
+  codebase (line numbers for `matrix.spec.ts:224`, `TrackballControls.js:663-664`,
+  `3d-force-graph.mjs` DragControls gate/`controls.enabled = false`,
+  `three-render-objects.mjs:264`, `FocusGraph.tsx` props, `playwright.config.ts`
+  `retries: 0`) — all confirmed exact. One minor, low-probability note: no
+  explicit plan for a *fourth* mechanism beyond "document it."
+- **Codex — REQUEST_CHANGES (HIGH).** Two actionable ambiguities:
+  1. *No-repro fallback incomplete* — Decision 5 defined a statistical
+     fallback only for H1 but not the terminal outcome when the flake never
+     reproduces **and** the H1 occupancy measurement is negative/inconclusive.
+  2. *Instrumentation final-state ambiguous* — FR2/Decision 6 ("rides every
+     reproduction run") read in tension with Approach B ("heavyweight
+     diagnostics stay in scratch"); the spec did not state what must remain in
+     the committed harness vs what is evidence-only.
+
+**Changes applied (all three verdicts incorporated):**
+- Decision 5 now defines the **doubly-negative terminal outcome** (no
+  speculative fix; honest negative result; flake consolidated under #55 with
+  retained probe fields; fix-independent FR7/FR8 still done; FR6 caveat
+  re-pointed not retired; an optional strictly-strengthening defense-in-depth
+  change permitted but labeled *not* a proven root-cause fix) — addresses
+  Codex #1. The same clause folds in Claude's fourth-mechanism note (a
+  demonstrated fourth mechanism is fixed under the same instrument-first,
+  minimal, behavior-preserving discipline).
+- FR2 gains an authoritative **committed-vs-evidence-only rule** (committed =
+  fix-dependencies + cheap silent probe fields only; everything heavyweight is
+  evidence-only in scratch), Decision 6 clarifies "riding along ≠ remaining
+  committed," and Approach B cross-references FR2 — addresses Codex #2.
+
+Rebuttal detail: `codev/projects/55-firefox-e2e-flake-background-d/55-specify-iter1-rebuttals.md`.
