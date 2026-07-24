@@ -529,3 +529,24 @@ has webgl.force-enabled), bracketed by lane --probe-only runs that verify D3D12
 RTX 3080 hardware before+after (the suite reads a sanitized renderer, so the
 probe is the hardware evidence — exactly how the lane works internally).
 evidence/phase4b-gpu-targeted.sh (btn02ol4v). No code change to the lane.
+
+## Phase 4 — COMPLETE (force-advanced at iter-3 safety ceiling) → phase_5 transition
+Phase_4 qualification consult ran 3 iterations. Gemini + Claude APPROVE
+throughout; Codex raised 3 successive (all substantively addressed):
+- iter1: missing ≥60 targeted :224 on the native-GPU HARDWARE lane → added
+  phase4b (60/60 on RTX-3080 d3d12, probe-bracketed).
+- iter2: driver/summary described the pre-rebuttal matrix → added Step 5
+  (phase4b) + fixed summary.
+- iter3: (a) driver only gated step 1, exited 0 on step 2-5 failures; (b) step-2
+  validate was the failing in-worktree run, not the green clean-checkout one.
+  → hardened driver: overall accumulator + exit "$overall"; step 2 now RUNS the
+  clean-checkout validate (worktree+npm ci+validate); removed orphaned
+  phase4-2-validate.log; end-to-end reproduction now literally true. (bc93a0c)
+porch force-advanced at its iter-3 safety ceiling (81a0c53) before a 4th consult
+re-approve, then advanced → phase_5 (c80be55) + build-complete (2ea8377).
+
+## PAUSED at phase_4→phase_5 transition (per architect)
+Architect instruction: finish phase_4 completely + porch check/done through the
+transition to phase_5, then PAUSE before starting any phase_5 work + notify.
+Transition done; phase_5 build-complete recorded. NOT running the phase_5
+consults or any #41 re-qualification work. Awaiting architect's phase_5 go.
