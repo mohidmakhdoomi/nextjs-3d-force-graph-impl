@@ -1,0 +1,8 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 1 is close, but the diagnostic harness currently miscounts “moves between down and up,” which weakens the core H2 discriminator it was built to provide.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `tests/diagnostics/55-drag/drag-diagnostic.spec.ts:133,188-192,240-243` labels `pointerLog.move` as “pointermoves between down and up,” but the log is reset **before** the pre-drag `mouse.move(DRAG_START.x, DRAG_START.y)`, so that setup move is included in the count. That means an H2 case with zero delivered drag moves would still report at least one move, undermining the spec/plan’s key “0 moves between down and up” discriminator. Reset after moving to the start point, or derive the between-down-up count from the recorded event sequence instead of using the raw aggregate.
