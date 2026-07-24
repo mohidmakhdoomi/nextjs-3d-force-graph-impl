@@ -179,3 +179,32 @@ pre-existing: it fails identically with my graph-handle.ts change stashed, and
 `npm test` (node --test) is NOT part of the `validate` green gate
 (validate = lint && typecheck && test:smoke). Same category as the untracked
 `.claude/hooks` lint noise. To be re-proven on a clean checkout in Review.
+
+### BLOCKED on porch phase_1 `tests` check — session env contamination
+`porch done 55` ran its implement-phase checks: `build` ✓ (9.8s), `tests` ✗
+(5.3s). The `tests` check = the node unit suite (`npm test` → node --test).
+It fails on exactly ONE assertion: `toolchain.test.mjs` "declares the exact
+Node and npm baseline", which requires `$npm_config_user_agent` to start with
+`npm/10.9.8`.
+
+Root cause = the pnpm-launched agent-farm session exports
+`npm_config_user_agent=pnpm/10.33.0 npm/? node/v22.23.1` (plus a suite of
+pnpm `npm_config_*` / `pnpm_config_*` vars, globalconfig=/home/user/.config/
+pnpm/rc). The REAL toolchain is genuinely npm 10.9.8 (`which npm` = nvm's npm,
+`npm --version` = 10.9.8); the pnpm user-agent is a spurious value inherited
+from the session launcher that npm treats as a config override and does not
+replace.
+
+Proof it is env-only, not my code and not a project defect:
+- `env -u npm_config_user_agent npm test` → **121/121 pass** (0 fail).
+- Fails identically with my graph-handle.ts change stashed (git stash) — so
+  it would fail on `main` in this same session too.
+- Not in the `validate` green gate (validate = lint && typecheck &&
+  test:smoke; node --test is separate). CI / clean checkouts set the
+  user-agent to npm/10.9.8 naturally, so the assertion passes there.
+
+Proposed resolution (replicates clean-checkout conditions, changes NO committed
+file, does NOT weaken the test): invoke porch with the spurious var removed —
+`env -u npm_config_user_agent porch done 55`. Escalated to architect for a
+go-ahead vs. a session-level env fix before proceeding (strict mode: not
+working around a porch check unilaterally).
