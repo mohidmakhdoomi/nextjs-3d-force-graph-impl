@@ -106,6 +106,11 @@ type DragDiagnostics = {
     variant: string;
     engine: string;
     renderer: string | null;
+    // Camera distance post-zoom / pre-drag: the H1 "Firefox dominance" measure —
+    // Firefox's wheel(0,-240) zooms CLOSER than Chromium's (per-deltaY effect
+    // differs by ~an order of magnitude between engines), so node projections at
+    // the fixed (150,450) are larger on Firefox → higher raycast-hit probability.
+    cameraDistance: number;
     maxDelta: number;
     motionFloor: number;
     reproduced: boolean;
@@ -200,8 +205,43 @@ async function dumpDiagnostics(
                 `state=${sample.controls?.state}`,
         );
     }
-    // Only spell out the full trace when the flake actually reproduced; passing
-    // reps keep the log to the single `#55 ok ...` summary line.
+
+    // One stable, machine-parseable record PER RUN (pass or fail), so a
+    // reproduction campaign's stdout log is itself the dataset for BOTH the
+    // reproduction attempt AND the Decision-5 statistical H1 measurement
+    // (node-occupancy of the start point across every fresh post-zoom layout,
+    // per engine) — the occupancy rides along on passing reps too (Decision 6),
+    // and a `list`-reporter run needs no attachment parsing to aggregate it.
+    // Prefixed `#55DATA ` so the campaign runner can grep exactly these lines.
+    const occ = diagnostics.occupancyAtStart;
+    const dataRecord = {
+        variant: diagnostics.variant,
+        engine: diagnostics.engine,
+        renderer: diagnostics.renderer,
+        cameraDistance: diagnostics.cameraDistance,
+        maxDelta: diagnostics.maxDelta,
+        reproduced: diagnostics.reproduced,
+        occHit: occ?.hit ?? null,
+        occHitNodeId: occ?.hitNodeId ?? null,
+        nearestPx: occ?.nearestDistancePx ?? null,
+        projRadiusPx: occ?.nearestProjectedRadiusPx ?? null,
+        withinDisk: occ?.withinProjectedRadius ?? null,
+        candidates: occ?.candidateNodeCount ?? null,
+        ctrlBefore: diagnostics.before?.controlsEnabled ?? null,
+        ctrlAfter: diagnostics.after?.controlsEnabled ?? null,
+        fixedBefore: diagnostics.before?.fixedNodeCount ?? null,
+        fixedAfter: diagnostics.after?.fixedNodeCount ?? null,
+        down: pointerLog.down,
+        move: pointerLog.move,
+        up: pointerLog.up,
+        canvasMove: pointerLog.canvasMove,
+        movesBetweenDownUp,
+        dropped: pointerLog.dropped,
+    };
+    console.log(`#55DATA ${JSON.stringify(dataRecord)}`);
+
+    // Only spell out the full human-readable trace when the flake actually
+    // reproduced; passing reps keep the log to the header + the #55DATA line.
     console.log(diagnostics.reproduced ? lines.join("\n") : header);
 }
 
@@ -241,6 +281,7 @@ test.describe("issue #55 background-drag diagnostic", () => {
             variant: "faithful",
             engine: testInfo.project.name,
             renderer: errors.renderer,
+            cameraDistance: beforeDrag.cameraDistance,
             maxDelta,
             motionFloor: MOTION_FLOOR,
             reproduced: maxDelta <= MOTION_FLOOR,
@@ -311,6 +352,7 @@ test.describe("issue #55 background-drag diagnostic", () => {
             variant: "stepped",
             engine: testInfo.project.name,
             renderer: errors.renderer,
+            cameraDistance: beforeDrag.cameraDistance,
             maxDelta,
             motionFloor: MOTION_FLOOR,
             reproduced: maxDelta <= MOTION_FLOOR,

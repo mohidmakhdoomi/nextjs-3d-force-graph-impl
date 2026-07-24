@@ -251,3 +251,93 @@ parallel GPU-lane runs), then root-cause with the Phase-1 instrumentation.
 Reminder for phase_2+: prefix porch check invocations with
 `env -u npm_config_user_agent` (architect-approved) to dodge the pnpm
 user-agent env artifact.
+
+## RESUMED — Phase 2 started (per user "Start phase_2 now") — 2026-07-24
+Pause lifted (AskUserQuestion → "Start phase_2 now"). Phase 2 = amplified
+reproduction & root-cause determination (FR1/FR3; Decisions 5, 6).
+
+Environment confirmed:
+- Firefox installed (firefox-1532); `.next` production build present; diag
+  harness sanity-runs green on Firefox SwiftShader (delta ~3500/3112 > floor 1,
+  ~15s/rep).
+- **Native-GPU hardware lane AVAILABLE** (`npm run test:e2e:gpu -- --probe-only`):
+  chromium = "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080),
+  OpenGL 4.6)"; firefox = "D3D12 (NVIDIA GeForce RTX 3080)". Both engines verify
+  hardware — the #52 RTX-3080 recipe. So both repro arms (SwiftShader + native
+  GPU) are runnable.
+- All harnesses use port 3000 (reuseExistingServer:false) → campaign segments
+  MUST run sequentially, not as parallel background jobs.
+
+Evidence-only diag enhancement (phase_2, Decision 5/6): the drag diagnostic now
+emits one machine-parseable `#55DATA {json}` record PER REP (pass or fail) —
+occupancy@start, nearest-node px, withinDisk, fixedNodeCount before/after,
+controls.enabled before/after, pointer counts, movesBetweenDownUp, delta. So the
+campaign stdout log IS the dataset for BOTH the reproduction attempt AND the
+statistical H1 occupancy measurement, with no attachment parsing. typecheck +
+lint clean. (Diag harness is evidence-only tooling; canonical suite untouched.)
+
+Campaign JOB 1 (diag segments, background bj7t1s8by), Firefox-focused:
+  A SwiftShader parallel (E2E_WORKERS=50%, repeat-each=25, 50 inst)
+  D GPU-lane  parallel (Mesa d3d12, 50 inst) — highest-recurrence isolated arm
+  B SwiftShader serial (repeat-each=15, 30 inst) — repeat-alone baseline
+  E GPU-lane  serial (30 inst)
+  + probe-only renderer brackets pre/post.
+A+B=80, D+E=80 targeted reps (≥60 each path per Decision 5). Every rep also
+yields an occupancy sample. JOB 2 (≥3 full two-engine + ≥3 parallel GPU-lane
+full runs — the rest of the Decision-5 budget) runs after I analyze Job 1.
+
+## ROOT CAUSE FOUND — H1 (stray node capture) — decisive, 2026-07-24
+Segment A (SwiftShader PARALLEL) reproduced the flake in the first ~16 reps
+(both diag variants). Discriminators are unambiguous and match the spec's H1
+prediction (Scenario 1) exactly:
+
+REPRODUCED reps: occHit=true, withinDisk=true, nearestPx≈0.07, hitNodeId set
+(a real node), fixedNodeCount 0→1 (DragControls dragstart LOCKED the node),
+controls.enabled=false THROUGHOUT the drag (stepped samples: afterDown/move3/6/
+9/12 all enabled=false state=0 ROTATE-suppressed; restored true only afterUp),
+pointer up=2 (drag lifecycle), movesBetweenDownUp=12 & dropped=0 (perfect
+delivery), camera delta ≈0.00003–0.0008.
+PASSING reps: occHit=false, fixedAfter=0, ctrlAfter=true, up=1, delta ~2300–3500.
+
+⇒ H2 (Firefox synthetic-input delivery loss) RULED OUT — all 12 moves delivered.
+⇒ H3 (drag-readiness) RULED OUT — controls enabled before the drag.
+⇒ H1 CONFIRMED — the "background" start point (150,450) occasionally sits on a
+   node whose projection grew after wheel-zoom-in; the 3d-force-graph DragControls
+   pointerdown raycast hits it, fires dragstart → controls.enabled=false + locks
+   the node, three-render-objects skips controls.update(), and the drag moves the
+   NODE not the camera → delta≈0. This is CPU-side three.js raycast geometry, so
+   it is rasterizer-independent (explains hardware survival) and per-run-random
+   (random layout seed → coin flip → repeat-alone greens).
+
+Fix direction (Phase 3): H1 ⇒ probe-verified genuinely-background start point
+(inverse of pickNodeScreenPoint; node-free with a pixel margin) so the
+background-drag premise is true every run. NOT a settle helper (delivery is fine).
+Letting Job 1 finish to characterize parallel-vs-serial (amplification) and
+software-vs-hardware (survival); will add a small Chromium occupancy comparison
+to evidence Firefox-dominance.
+
+## Phase 2 evidence complete — H1 confirmed, Firefox-dominance quantified
+Campaign totals: 24 reproductions / 288 instrumented reps. Firefox 24 (Job 1:
+16/160 across SwiftShader±GPU × parallel±serial; Job 1b: 8/64 serial both-paths),
+Chromium 0/64. EVERY reproduction = node capture (occHit + fixedAfter 0→1 +
+mid-drag controls.enabled=false) with all 12 pointermoves delivered (H2/H3 ruled
+out). Rate regime-independent ~10% (software≈hardware, parallel≈serial) — pure
+layout geometry.
+
+Firefox-dominance (Job 1b F1 clean both-engine SwiftShader): Chromium 0/40 hits
+vs Firefox 6/40; Firefox zooms ~18-22% closer (cameraDist ~1752 vs ~2234) →
+larger node projections → higher hit prob at fixed (150,450). Exactly the spec's
+H1 prediction. (F2 chromium inadvertently ran SwiftShader — diag config defaults
+chromium to --use-angle=swiftshader unless PW_CHROMIUM_ARGS carries HW flags;
+noted verbatim; doesn't change conclusion since F1 is the clean comparison.)
+
+Evidence written to codev/projects/55-.../evidence/phase2-mechanism.md (FR3
+write-up) + verbatim logs + aggregator. Decision on budget (honest): reproduced
+DECISIVELY at the cheapest tier, so the ≥3-full-suite / ≥3-parallel-GPU-lane
+tiers (the Decision-5 fallback budget for NON-repro, and the Phase 4/5
+qualification vehicles) were NOT re-run redundantly on the unfixed tree. Phase_1's
+green 22/22 full two-engine run is the pre-fix full-suite baseline.
+
+Next: commit evidence + diag #55DATA/cameraDistance additions, porch check,
+3-way consult, land phase_2→phase_3 transition, then PAUSE per architect (report
+back; no phase_3 until go).

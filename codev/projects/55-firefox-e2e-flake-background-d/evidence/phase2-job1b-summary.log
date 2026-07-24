@@ -1,0 +1,6 @@
+=== Phase 2 campaign JOB 1b starting 2026-07-24T05:27:21Z ===
+--- [F1-swift-both-serial] START 2026-07-24T05:27:21Z ---
+--- [F1-swift-both-serial] END rc=1 reps=80 reproduced=6 ---
+--- [F2-gpu-both-serial] START 2026-07-24T06:30:32Z ---
+--- [F2-gpu-both-serial] END rc=1 reps=48 reproduced=2 ---
+=== Phase 2 campaign JOB 1b done 2026-07-24T07:08:24Z ===

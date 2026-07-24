@@ -1,0 +1,19 @@
+CMD: env -u npm_config_user_agent npm run test:e2e:gpu -- --probe-only
+
+> test:e2e:gpu
+> node scripts/e2e-gpu-lane.mjs --probe-only
+
+[gpu-lane] host: platform=linux dxg=true wslLib=true wslgSocket=true DISPLAY=:0
+[gpu-lane] [chromium] candidate native-linux-angle-vulkan SKIPPED: host is WSL2 (/dev/dxg present) — ANGLE-Vulkan/native-GL is a known llvmpipe dead end under WSL2; the d3d12 recipe covers this host
+[gpu-lane] [chromium] candidate native-linux-angle-gl SKIPPED: host is WSL2 (/dev/dxg present) — ANGLE-Vulkan/native-GL is a known llvmpipe dead end under WSL2; the d3d12 recipe covers this host
+[gpu-lane] probing candidate wsl2-d3d12-angle-gl (WSL2 Mesa d3d12 via ANGLE native-GL (proven: bugfix-22 / PR #43; headless validated by the spec-44 FR5 matrix + full-suite run))
+[gpu-lane] candidate wsl2-d3d12-angle-gl VERIFIED hardware renderer: "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)"
+[gpu-lane] probing candidate wsl2-d3d12-firefox (WSL2 Mesa d3d12 via Firefox (no ANGLE flags; probe-only webgl.sanitize-unmasked-renderer=false to read the raw renderer))
+[gpu-lane] candidate wsl2-d3d12-firefox VERIFIED hardware renderer: "D3D12 (NVIDIA GeForce RTX 3080)"
+=== E2E GPU LANE REPORT ===
+mode: hardware
+engines: chromium,firefox
+renderer.chromium: ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)
+renderer.firefox: D3D12 (NVIDIA GeForce RTX 3080)
+suite: skipped (--probe-only)
+wall-clock: 2s

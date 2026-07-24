@@ -1,0 +1,260 @@
+CMD: env E2E_ENGINES=firefox npx playwright test --config tests/diagnostics/55-drag/playwright.diag.config.ts --repeat-each=15
+[WebServer] 
+[WebServer] > start
+[WebServer] > next start --hostname 127.0.0.1 --port 3000
+[WebServer] 
+[WebServer] ▲ Next.js 16.2.10
+[WebServer] - Local:         http://127.0.0.1:3000
+[WebServer] - Network:       http://127.0.0.1:3000
+[WebServer] ✓ Ready in 98ms
+[WebServer] ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/package-lock.json
+[WebServer] 
+
+Running 30 tests using 1 worker
+
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.603853936554,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":4.1879096415312915,"projRadiusPx":1.4528531961150293,"withinDisk":false,"candidates":2630,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.603853936554 > floor 1
+  ✓   1 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.7s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3007.8865828527487,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":8.753094996357962,"projRadiusPx":5.492969428152463,"withinDisk":false,"candidates":2626,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3007.8865828527487 > floor 1
+  ✓   2 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.6s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6038539365527,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":16.480753117511835,"projRadiusPx":1.4395935149205172,"withinDisk":false,"candidates":2629,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6038539365527 > floor 1
+  ✓   3 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.5s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":0.0006443659645876926,"reproduced":true,"occHit":true,"occHitNodeId":"user10581981","nearestPx":5.115600571360565,"projRadiusPx":5.475105659784646,"withinDisk":true,"candidates":2627,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":1,"down":1,"move":12,"up":2,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 REPRODUCED (stepped / firefox): drag delta 0.0006443659645876926 <= floor 1
+  renderer: Generic Renderer
+  occupancy@start(150,450): hit=true hitNodeId=user10581981 nearestPx=5.115600571360565 projRadiusPx=5.475105659784646 withinDisk=true candidates=2627
+  controls.enabled before=true after=true
+  fixedNodeCount before=0 after=1
+  pointer counts: down=1 move=12 up=2 (canvas move=12) dropped=0
+  pointermoves between down and up: 12
+  step afterDown: enabled=false state=0
+  step move3: enabled=false state=0
+  step move6: enabled=false state=0
+  step move9: enabled=false state=0
+  step move12: enabled=false state=0
+  step afterUp: enabled=true state=3
+  ✘   4 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (21.4s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6038539365545,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":21.073458619972627,"projRadiusPx":1.7880419359512416,"withinDisk":false,"candidates":2628,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6038539365545 > floor 1
+  ✓   5 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.5s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.4903417517435,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":22.94215285085729,"projRadiusPx":5.523990242693031,"withinDisk":false,"candidates":2625,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.4903417517435 > floor 1
+  ✓   6 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.5s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.601019690444,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":21.02324243956933,"projRadiusPx":1.7877762556778407,"withinDisk":false,"candidates":2628,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.601019690444 > floor 1
+  ✓   7 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (15.0s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.487502453261,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":15.505577312642991,"projRadiusPx":5.509309028877652,"withinDisk":false,"candidates":2625,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.487502453261 > floor 1
+  ✓   8 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.6s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6006571905104,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":29.5612742466078,"projRadiusPx":3.207489666332606,"withinDisk":false,"candidates":2621,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6006571905104 > floor 1
+  ✓   9 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (15.4s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":0.0006443659645876926,"reproduced":true,"occHit":true,"occHitNodeId":"user10581981","nearestPx":5.100886623856906,"projRadiusPx":5.475462293985174,"withinDisk":true,"candidates":2627,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":1,"down":1,"move":12,"up":2,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 REPRODUCED (stepped / firefox): drag delta 0.0006443659645876926 <= floor 1
+  renderer: Generic Renderer
+  occupancy@start(150,450): hit=true hitNodeId=user10581981 nearestPx=5.100886623856906 projRadiusPx=5.475462293985174 withinDisk=true candidates=2627
+  controls.enabled before=true after=true
+  fixedNodeCount before=0 after=1
+  pointer counts: down=1 move=12 up=2 (canvas move=12) dropped=0
+  pointermoves between down and up: 12
+  step afterDown: enabled=false state=0
+  step move3: enabled=false state=0
+  step move6: enabled=false state=0
+  step move9: enabled=false state=0
+  step move12: enabled=false state=0
+  step afterUp: enabled=true state=3
+  ✘  10 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (21.5s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6038539365527,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":16.480753117511835,"projRadiusPx":1.4395935149205172,"withinDisk":false,"candidates":2629,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6038539365527 > floor 1
+  ✓  11 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.6s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.4875024532603,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":8.753094996357962,"projRadiusPx":5.492969428152463,"withinDisk":false,"candidates":2626,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.4875024532603 > floor 1
+  ✓  12 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.6s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6008183015806,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":21.03642045677164,"projRadiusPx":1.7878474841617447,"withinDisk":false,"candidates":2628,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6008183015806 > floor 1
+  ✓  13 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.9s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.487502453263,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":22.66834000924145,"projRadiusPx":5.526903670491436,"withinDisk":false,"candidates":2625,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.487502453263 > floor 1
+  ✓  14 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.6s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.604814235555,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":16.480772839726068,"projRadiusPx":1.4395934094414997,"withinDisk":false,"candidates":2629,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.604814235555 > floor 1
+  ✓  15 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.4s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.4903417517417,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":15.695107336452692,"projRadiusPx":5.507388497463353,"withinDisk":false,"candidates":2625,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.4903417517417 > floor 1
+  ✓  16 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.2s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.604814235557,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":4.187923242527983,"projRadiusPx":1.4528530886840656,"withinDisk":false,"candidates":2630,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.604814235557 > floor 1
+  ✓  17 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.4s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.4903417517426,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":5.519634637368956,"projRadiusPx":1.4072986212821945,"withinDisk":false,"candidates":2628,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.4903417517426 > floor 1
+  ✓  18 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.2s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6048142355567,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":7.2730122432696716,"projRadiusPx":1.4483039009475362,"withinDisk":false,"candidates":2628,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6048142355567 > floor 1
+  ✓  19 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.2s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.4903417517417,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":15.73586617561461,"projRadiusPx":5.506976144744556,"withinDisk":false,"candidates":2625,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.4903417517417 > floor 1
+  ✓  20 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.1s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6038539365545,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":7.280402707715511,"projRadiusPx":1.4483401493602344,"withinDisk":false,"candidates":2628,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6038539365545 > floor 1
+  ✓  21 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.3s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":0.0006443659645876926,"reproduced":true,"occHit":true,"occHitNodeId":"user10581981","nearestPx":5.086722976828733,"projRadiusPx":5.475809939658092,"withinDisk":true,"candidates":2627,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":1,"down":1,"move":12,"up":2,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 REPRODUCED (stepped / firefox): drag delta 0.0006443659645876926 <= floor 1
+  renderer: Generic Renderer
+  occupancy@start(150,450): hit=true hitNodeId=user10581981 nearestPx=5.086722976828733 projRadiusPx=5.475809939658092 withinDisk=true candidates=2627
+  controls.enabled before=true after=true
+  fixedNodeCount before=0 after=1
+  pointer counts: down=1 move=12 up=2 (canvas move=12) dropped=0
+  pointermoves between down and up: 12
+  step afterDown: enabled=false state=0
+  step move3: enabled=false state=0
+  step move6: enabled=false state=0
+  step move9: enabled=false state=0
+  step move12: enabled=false state=0
+  step afterUp: enabled=true state=3
+  ✘  22 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (21.5s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.603853936554,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":4.182928112007866,"projRadiusPx":1.4528179764849085,"withinDisk":false,"candidates":2630,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.603853936554 > floor 1
+  ✓  23 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.3s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.487502453263,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":22.700141809846066,"projRadiusPx":5.526570761559412,"withinDisk":false,"candidates":2625,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.487502453263 > floor 1
+  ✓  24 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.6s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6038539365536,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":30.767245176337653,"projRadiusPx":3.2253227554554087,"withinDisk":false,"candidates":2619,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6038539365536 > floor 1
+  ✓  25 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.7s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.487502453264,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":29.54016321196844,"projRadiusPx":3.207509073612499,"withinDisk":false,"candidates":2621,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.487502453264 > floor 1
+  ✓  26 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.6s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.6038539365545,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":7.280402707715511,"projRadiusPx":1.4483401493602344,"withinDisk":false,"candidates":2628,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.6038539365545 > floor 1
+  ✓  27 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.5s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.490341751744,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":29.71401423541285,"projRadiusPx":1.376847957432318,"withinDisk":false,"candidates":2621,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.490341751744 > floor 1
+  ✓  28 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.3s)
+#55DATA {"variant":"faithful","engine":"firefox","renderer":"Generic Renderer","maxDelta":3503.603853936554,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":29.720058642193514,"projRadiusPx":1.37695070295959,"withinDisk":false,"candidates":2621,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (faithful / firefox): drag delta 3503.603853936554 > floor 1
+  ✓  29 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:248:9 › issue #55 background-drag diagnostic › faithful :224 gesture — delivery counters + occupancy (14.7s)
+#55DATA {"variant":"stepped","engine":"firefox","renderer":"Generic Renderer","maxDelta":3112.487502453261,"reproduced":false,"occHit":false,"occHitNodeId":null,"nearestPx":15.43600128653565,"projRadiusPx":5.510009067176014,"withinDisk":false,"candidates":2625,"ctrlBefore":true,"ctrlAfter":true,"fixedBefore":0,"fixedAfter":0,"down":1,"move":12,"up":1,"canvasMove":12,"movesBetweenDownUp":12,"dropped":0}
+#55 ok (stepped / firefox): drag delta 3112.487502453261 > floor 1
+  ✓  30 [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state (15.6s)
+
+
+  1) [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state 
+
+    Error: a stepped background drag should rotate the camera
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 1
+    Received:   0.0006443659645876926
+
+      363 |             maxDelta,
+      364 |             "a stepped background drag should rotate the camera",
+    > 365 |         ).toBeGreaterThan(MOTION_FLOOR);
+          |           ^
+      366 |     });
+      367 | });
+      368 |
+        at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/tests/diagnostics/55-drag/drag-diagnostic.spec.ts:365:11
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat1/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat1/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state 
+
+    Error: a stepped background drag should rotate the camera
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 1
+    Received:   0.0006443659645876926
+
+      363 |             maxDelta,
+      364 |             "a stepped background drag should rotate the camera",
+    > 365 |         ).toBeGreaterThan(MOTION_FLOOR);
+          |           ^
+      366 |     });
+      367 | });
+      368 |
+        at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/tests/diagnostics/55-drag/drag-diagnostic.spec.ts:365:11
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat4/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat4/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat4/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat4/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat4/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state 
+
+    Error: a stepped background drag should rotate the camera
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 1
+    Received:   0.0006443659645876926
+
+      363 |             maxDelta,
+      364 |             "a stepped background drag should rotate the camera",
+    > 365 |         ).toBeGreaterThan(MOTION_FLOOR);
+          |           ^
+      366 |     });
+      367 | });
+      368 |
+        at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/tests/diagnostics/55-drag/drag-diagnostic.spec.ts:365:11
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat10/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat10/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat10/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat10/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/55-drag-diag/drag-diagnostic-issue-55-b-f17a2-e-—-mid-drag-controls-state-firefox-repeat10/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state 
+    [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state 
+    [firefox] › tests/diagnostics/55-drag/drag-diagnostic.spec.ts:303:9 › issue #55 background-drag diagnostic › stepped :224 gesture — mid-drag controls/state 
+  27 passed (8.2m)
