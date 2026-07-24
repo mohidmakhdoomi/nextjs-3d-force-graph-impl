@@ -1,0 +1,42 @@
+I'll read the key Phase 5 deliverable files to verify the implementation. Let me start with the files that matter most for this phase.Now let me verify the specific Codex iteration-1 fix (README:95-98 "mostly green" rewrite) and check for any remaining stale caveat language. Let me also verify the evidence logs.Good. Now let me verify the Codex iteration-1 fix was applied — sweeping the README for any residual stale caveat language.Let me check the context around the grep hits at lines 236 and 241 to verify they use fixed-state framing.Let me check the Follow-up section in review-41 — the addendum references "the corrected Follow-up below," which should be Phase 6 (FR7). Let me verify the current state.I've reviewed all the Phase 5 deliverables thoroughly. Here's my assessment:
+
+## Phase 5 Review — #41 GPU-lane parallel re-qualification & caveat
+
+### Deliverable Verification
+
+**1. Three parallel GPU-lane runs at `retries: 0` with renderer evidence** ✅
+- All 3 runs: 22/22 passed, `Running 22 tests using 10 workers`, `mode: hardware`
+- Renderer evidence verified per-run AND bracketed with `--probe-only` before/after: `D3D12 (NVIDIA GeForce RTX 3080)` for both engines
+- The Firefox background-drag test (`:225`) passed every run at ~18–19s steady
+- Evidence files: `phase5-gpu-parallel-run{1,2,3}.log`, `phase5-probe-{before,after}.log`, `phase5-summary.{log,md}`
+
+**2. README caveat retirement** ✅
+- Lines 96-101: the old "stays mostly green" (Codex iter-1 catch) is now "is **green** — the former Firefox background-drag flake there is fixed and re-qualified **green 3/3** on this parallel regime (issue #55)"
+- Lines 233-243: properly frames the historical "2/3 green" as now **fixed** and re-qualified **green 3/3**
+- Lines 245-260: "FIXED (issue #55)" block with full root-cause summary
+- `#33` grep on README returns zero matches — all references now cite `#55`
+- Stale-language sweep (`mostly green|known flake|survives on hardware|open flake`) returns zero matches in active-caveat framing — the two remaining hits (lines 236, 241) are properly fixed-state narrative ("recurred once... is now **fixed**" and "`retries: 0` keeps any recurrence honest" about the separate SwiftShader issue)
+
+**3. Dated review-41 addendum** ✅
+- Lines 132-151: correctly dated "2026-07-24", records green 3/3 verbatim, cites evidence files, explicitly states it does NOT change the serial default
+
+**4. Serial default untouched** ✅
+- Both the addendum and the driver script explicitly scope-guard against changing `DEFAULT_LOCAL_WORKERS`
+
+### Iteration 1 Codex Concern Resolution ✅
+The "mostly green" framing at README:95-98 is fully retired. The builder's re-sweep for `mostly green|known flake|amplif|recur|survives on hardware|open flake|#33` confirmed no residual stale language.
+
+### Minor Observation (non-blocking)
+The addendum line 150 says "see the corrected Follow-up below" — but the Follow-up hasn't been corrected yet (that's Phase 6/FR7). This is a forward-reference to Phase 6 work. Given the strictly sequential phase structure and single-PR shipping model, this is fine — Phase 6 will land before the PR.
+
+### Scope Guard ✅
+- Phase 6 items (FR7 follow-up correction, FR8 `#33` misattributions in review-41/review-52/specs-52/playwright.config.ts) are correctly untouched
+- The Follow-up section (lines 326-332) still references `#33` — that's Phase 6 scope, not Phase 5
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 5 delivers a complete FR6 re-qualification — green 3/3 parallel GPU-lane runs with verified hardware, properly retired README caveat (including the iter-1 "mostly green" fix), and a correctly dated review-41 addendum, with Phase 6 scope correctly untouched.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None
