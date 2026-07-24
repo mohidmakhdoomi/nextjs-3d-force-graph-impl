@@ -236,3 +236,18 @@ working around a porch check unilaterally).
 Gemini APPROVE (HIGH), Codex APPROVE (HIGH), Claude APPROVE (HIGH) — all "no
 key issues". Codex confirmed the pointermove-count fix resolves its iter-1
 REQUEST_CHANGES. Phase_1 verified complete. Advancing via porch.
+
+## PAUSED after Phase 1 (per user instruction) — 2026-07-24
+Phase_1 (drag-path instrumentation) COMPLETE and unanimously approved; porch
+committed the transition (`901df83 advance plan phase → phase_2`). Worktree
+clean (only untracked builder-harness files). Per user instruction "pause once
+phase 1 is complete", stopping here — NOT starting phase_2 (Amplified
+reproduction & root-cause determination). Porch's own rule agrees (don't start
+the next phase without re-running porch + /compact).
+
+Resume point: phase_2 is the reproduction campaign (targeted --repeat-each on
+SwiftShader + GPU lane, ≥3 instrumented full two-engine runs, ≥3 E2E_WORKERS-
+parallel GPU-lane runs), then root-cause with the Phase-1 instrumentation.
+Reminder for phase_2+: prefix porch check invocations with
+`env -u npm_config_user_agent` (architect-approved) to dodge the pnpm
+user-agent env artifact.
