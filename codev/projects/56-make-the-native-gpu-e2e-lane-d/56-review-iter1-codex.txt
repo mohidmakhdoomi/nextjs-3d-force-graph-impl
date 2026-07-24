@@ -1,0 +1,25 @@
+---
+VERDICT: COMMENT
+SUMMARY: The implementation looks correct and spec-aligned, with strong targeted coverage; only non-blocking PR-readiness notes are the env-sensitive full `npm test` result in this workspace and several non-standard `chore(porch)` commits.
+CONFIDENCE: MEDIUM
+---
+KEY_ISSUES:
+- `scripts/e2e-gpu-lane.mjs`, `tests/gpu-lane.test.mjs`, README, spec/plan/review, and the #41 follow-up all line up with the intended lane-scoped default: hardware runs inject `E2E_WORKERS=50%`, fallback stays serial, operator overrides pass through, and worker provenance is now visible.
+- Targeted verification passed: `node --test tests/gpu-lane.test.mjs` is green, frozen files remain untouched, and the branch is up to date with `main` (`0 28` divergence).
+- Full `npm test` is not green in this builder environment (`tests/audit-report.test.mjs` and `tests/toolchain.test.mjs` fail), but those files are unchanged in this PR and the review doc already calls out environment-noise/tooling issues; I don’t see evidence that this PR introduced those failures.
+- Commit hygiene note: the branch includes several `chore(porch): ...` commits that do not match the repo’s documented `[Spec 56]` / `[Spec 56][Phase: ...]` convention.
+
+PR_SUMMARY: |
+  ## Summary
+  This PR makes the opt-in native-GPU e2e lane default to hardware-scaled parallel workers on verified hardware only, while leaving the canonical SwiftShader/CI path serial and unchanged. It also adds explicit worker provenance to lane output and updates the docs/evidence to reflect the new lane-scoped default.
+
+  ## Key Changes
+  - Injects `E2E_WORKERS=50%` only for hardware-mode GPU lane runs when the operator has not set `E2E_WORKERS`.
+  - Preserves fallback/plain-suite behavior, reusing the existing worker-resolution path with no changes to CI, `playwright.config.ts`, or `scripts/e2e-workers.mjs`.
+  - Adds unit coverage and lane reporting for worker provenance (`lane default`, `operator override`, `config serial default`), plus README/review updates with qualification evidence.
+
+  ## Test Plan
+  - Run `node --test tests/gpu-lane.test.mjs`
+  - Run `npm run test:e2e:gpu` on verified hardware and confirm `workers: 50% (lane default)`
+  - Run `E2E_WORKERS=1 npm run test:e2e:gpu` and confirm operator override
+  - Run `npm run validate` on a clean checkout / clean env
