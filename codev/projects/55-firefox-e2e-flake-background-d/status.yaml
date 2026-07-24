@@ -1,7 +1,7 @@
 id: '55'
 title: firefox-e2e-flake-background-d
 protocol: spir
-phase: specify
+phase: plan
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -16,7 +16,7 @@ gates:
   verify-approval:
     status: pending
 iteration: 1
-build_complete: true
+build_complete: false
 history: []
 started_at: '2026-07-24T03:23:21.257Z'
-updated_at: '2026-07-24T03:31:11.033Z'
+updated_at: '2026-07-24T03:31:19.795Z'
