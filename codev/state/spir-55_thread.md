@@ -44,3 +44,31 @@ smallest behavior-preserving harness fix. Documentation follow-through
   Added a Consultation Log section to the spec.
 - Wrote rebuttal: `55-specify-iter1-rebuttals.md`. Committing spec + consult
   outputs + rebuttal, then `porch done 55` for re-verification.
+- Committed `d6e7400`. Gate `spec-approval` reached; notified architect.
+
+### Spec approved → Plan phase
+- Architect approved spec (2026-07-24). Porch advanced to plan.
+- Codebase recon before drafting the plan (grounding):
+  - `matrix.spec.ts:224` matches spec exactly (`move(150,450); down;
+    move(450,250,{steps:12}); up;` poll `cameraDelta > MOTION_FLOOR(1)`).
+  - Probe `graph-handle.ts` ALREADY exposes the H1/H2/H3 surface:
+    `controlsEnabled`, `fixedNodeCount`, `noPan` in `GraphSnapshot`, plus
+    `pickNodeScreenPoint`/`fixBestNode`/`nodeScreenPointById`,
+    `contextLostCount`. Phase-1 instrumentation is a modest extension
+    (pointer counters, node-occupancy-at-arbitrary-point, controls sampling),
+    NOT from scratch.
+  - `pointer.ts` has `settleHoverThenClick` + `waitForAnimationFrames`
+    (frame-settling precedent for a `settleBackgroundDrag` sibling).
+  - `playwright.config.ts`: retries 0 local / 2 CI, `E2E_ENGINES` engine
+    filter, `resolveWorkers`, firefox project (`webgl.force-enabled`).
+  - **Firefox browser NOT installed** (Playwright cache has chromium only)
+    → `npx playwright install firefox` is a Phase-1 prereq / top risk.
+  - GPU lane `scripts/e2e-gpu-lane.mjs` runnable on this WSL2 host class
+    (Firefox HW WebGL proven here); `--engine`, `--probe-only`,
+    `E2E_GPU_FORCE_FALLBACK`, `E2E_GPU_REQUIRE`.
+  - **Discovered extra `#33` misattribution at `playwright.config.ts:114`**
+    ("amplify the known Firefox flake #33 even on hardware") — NOT in FR8's
+    file list. Flagging in the plan (comment-only, behavior-preserving; but
+    tension with Decision 2 "serial gate untouched" → confirm via review).
+- Drafting 6-phase plan (instrument → reproduce/root-cause → fix → qualify →
+  #41 re-qual/caveat → record corrections).
