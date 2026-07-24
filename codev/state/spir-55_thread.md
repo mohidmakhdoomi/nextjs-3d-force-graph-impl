@@ -482,3 +482,39 @@ pointermoves captured via relocated installDragProbe); canonical --list unchange
 (0 diag tests, 18 matrix); typecheck+lint clean. Wrote iter1 rebuttal (both
 REQUEST_CHANGES accepted + addressed via relocate-not-delete). porch check/done
 iter2 build-complete. Running iter2 3-way consult.
+
+## Phase 4 — Fix qualification (running, 2026-07-24)
+Phase_3 COMPLETE: iter2 unanimous APPROVE (Gemini/Codex/Claude). porch advanced
+→ phase_4. Context at 28% (architect's 30% monitor armed; will pause before
+phase_5 if it crosses).
+
+Launched evidence/phase4-qualify.sh in background (b7m4exygg). Steps, all
+retries:0, verbatim to evidence/phase4-*.log:
+ 1. targeted [firefox] :224 x60 (SwiftShader serial) — GATES the rest.
+ 2. npm run validate (lint+typecheck+full serial SwiftShader smoke #1).
+ 3. npm run test:smoke x2 (full two-engine serial SwiftShader #2,#3).
+ 4. npm run test:e2e:gpu x3 (full two-engine native-GPU lane, hardware —
+    RTX-3080 D3D12 verified in phase 2, exercises :224 on hardware each run).
+Note: GPU-lane wrapper runs the full suite (no per-test --repeat-each), so the
+high-volume targeted repetition is on the SwiftShader path (step 1); the
+hardware :224 arm is qualified via the 3 full GPU runs (historical highest-rate
+regime). Awaiting batch completion.
+
+## Phase 4 — COMPLETE, green throughout (2026-07-24)
+Qualification results (retries:0, verbatim in evidence/phase4-*.log, summary in
+evidence/phase4-summary.md):
+- targeted [firefox] :224 x60 SwiftShader: 60/60.
+- full two-engine serial SwiftShader x3: 22/22 each (2x test:smoke + clean-checkout
+  validate's smoke).
+- full native-GPU lane x3: 22/22 each on VERIFIED RTX-3080 hardware (chromium
+  ANGLE D3D12 RTX 3080; firefox D3D12 RTX 3080) — the #44/#52 hardware arm, now green.
+- npm run validate GREEN on a clean detached-HEAD worktree + real npm ci (EXIT 0,
+  22/22). Local validate's only failure = untracked .claude/hooks/*.cjs (env
+  noise, absent from clean checkouts; NOT suppressed in committed config —
+  lessons-critical clean-checkout proof). Chromium green throughout; 66 total :224
+  executions, 0 below floor.
+
+Context crossed 30% mid-phase (architect monitor). Architect instruction: finish
+phase_4 completely (validate proof + evidence commit + consult + porch transition
+to phase_5), then PAUSE before phase_5 and notify; no /compact. Proceeding to
+commit evidence + phase_4 consult.
