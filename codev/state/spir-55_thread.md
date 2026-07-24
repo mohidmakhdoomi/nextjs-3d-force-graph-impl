@@ -676,3 +676,23 @@ Committed the README marked note. iter2 3-way ran.
 - Re-audited: zero bare this-flake→#33; every remaining old-mechanism mention is
   adjacent to a marked correction or covered by the shorthand clause. Wrote iter2
   rebuttal. Committing + re-consult iter3.
+
+### Phase 6 — iter3 consult: UNANIMOUS APPROVE → Review phase
+Gemini/Codex/Claude all APPROVE (no key issues). Codex confirms iter2 mechanism-note
+resolved. porch advanced past phase_6 → **Review** phase (all 6 implement phases ✓).
+
+## Review phase — 2026-07-24
+- Wrote codev/reviews/55-firefox-background-drag-flake.md (Summary, per-phase build,
+  root cause table, FR1–8 compliance, qualification table, Flaky Tests = NONE
+  skipped/masked, Architecture Updates [none — Validation Baseline preserved],
+  Lessons Learned + Updates, Consultation summary, Technical Debt/Follow-ups).
+- Governance (update-arch-docs skill, diff-mode): added ONE cold-tier lesson to
+  lessons-learned.md Validation Evidence — "a hard-coded 'background' coordinate in
+  an interaction test isn't guaranteed empty after zoom/reseed; probe live scene +
+  pixel margin; discriminate input-arrived vs input-hit-what-I-meant before blaming
+  synthetic-input delivery." No HOT change (hot "'tests pass' ≠ 'it works'" carries
+  the spirit; reference-detail → cold).
+- Next: commit review+lessons+thread; final clean-checkout validate on final HEAD;
+  open PR (all phase commits, single PR per issue PR Strategy); porch check/done
+  (review checks: pr_exists, arch/lessons updates, e2e_tests) → PR gate → notify
+  architect + STOP (porch gate).
