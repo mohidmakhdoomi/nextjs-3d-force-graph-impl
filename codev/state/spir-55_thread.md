@@ -72,3 +72,22 @@ smallest behavior-preserving harness fix. Documentation follow-through
     tension with Decision 2 "serial gate untouched" → confirm via review).
 - Drafting 6-phase plan (instrument → reproduce/root-cause → fix → qualify →
   #41 re-qual/caveat → record corrections).
+- Committed initial plan `1577be3`; checks pass (plan_exists, has_phases_json,
+  min_two_phases=6).
+
+### Plan — iter 1 consultation
+- 3-way: **Gemini APPROVE (HIGH)**, **Claude APPROVE (HIGH)**,
+  **Codex REQUEST_CHANGES (HIGH)**. Gemini + Claude verified all codebase
+  refs. Full FR1–FR8 + 8-Decision coverage confirmed.
+- Codex's 2 points (both accepted):
+  1. `tests/e2e/matrix.drag-diagnostic.spec.ts` WOULD be collected by
+     `testDir:./tests/e2e` → changes canonical suite. (Claude wrongly assumed
+     the separate file sufficed; Codex correct.)
+  2. `playwright.config.ts:114` #33 comment: FR8 wants it corrected; comment-
+     only edit doesn't violate Decision 2 → include, don't defer.
+- Applied: Phase 1 diagnostic is now **out-of-tree** (`tests/diagnostics/
+  55-drag/` + dedicated `--config`), acceptance proves non-collection via
+  `playwright test --list`; Phase 3 trim reworded. Phase 6 **includes** the
+  config comment fix (comment-only, Decision-2 rationale), grep/risk/docs
+  updated. Added plan Consultation Log; wrote `55-plan-iter1-rebuttals.md`.
+- Committing plan + consult outputs + rebuttal, then `porch done 55`.

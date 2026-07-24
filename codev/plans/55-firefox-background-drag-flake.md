@@ -112,10 +112,23 @@ Mapped from the spec's Success Criteria (not time-based):
       canvas + document `pointerdown` / `pointermove` / `pointerup` counts with
       coordinates + timestamps, plus Trackball `_state` / DragControls
       `dragstart` observation where reachable from page context.
-- [ ] A **diagnostic spec variant** (e.g. `tests/e2e/matrix.drag-diagnostic.spec.ts`)
-      that runs the `:224` gesture, samples the counters/`controls.enabled`/
-      `fixedNodeCount`/start-point occupancy before/during/after the drag, and
-      dumps them on failure. Marked evidence-scoped (trimmed in Phase 3 per FR2).
+- [ ] An **out-of-tree diagnostic harness** — a spec that runs the `:224`
+      gesture and samples the counters / `controls.enabled` / `fixedNodeCount` /
+      start-point occupancy before/during/after the drag and dumps them on
+      failure. **It must NOT live under `tests/e2e/`**: the canonical config's
+      `testDir: "./tests/e2e"` (default `testMatch` for `*.spec.ts`) would
+      otherwise collect it into `playwright test` / `npm run test:smoke` and CI
+      shards, changing the canonical suite. Instead it lives out-of-tree (e.g.
+      `tests/diagnostics/55-drag/drag-diagnostic.spec.ts`) with a **dedicated
+      minimal Playwright config** (`tests/diagnostics/55-drag/playwright.diag.config.ts`)
+      whose own `testDir` points at that folder and reuses the same `webServer` /
+      engine / viewport setup; it is run explicitly via
+      `playwright test --config tests/diagnostics/55-drag/playwright.diag.config.ts`
+      in Phase 2. Alternative if kept in-tree: strict env-gating that registers
+      **zero** tests unless `E2E_DRAG_DIAG` is set (so the default run collects
+      nothing) — but out-of-tree is preferred because it makes "canonical suite
+      unchanged" literally true, not merely a no-op skip. Evidence-scoped: it is
+      never part of the committed canonical suite (FR2).
 - [ ] Prereq resolved: repo-pinned **Firefox browser installed**
       (`npx playwright install firefox`), recorded in the thread/review.
 - [ ] Comment documentation at the existing `graph-handle.ts` standard.
@@ -128,15 +141,20 @@ Mapped from the spec's Success Criteria (not time-based):
   document listeners + canvas listeners), so H2 (delivery loss) is directly
   measurable as "0 pointermoves between down and up."
 - Separate *keepable* cheap probe fields (node-occupancy helper, counters as
-  silent fields) from *heavyweight* capture (verbose per-event logs, the
-  diagnostic spec variant) — the latter is evidence-only per FR2.
+  silent fields in the `tests/e2e/graph-handle.ts` probe) from *heavyweight*
+  capture (verbose per-event logs, the out-of-tree diagnostic harness + its
+  config) — the latter is evidence-only per FR2 and never enters `tests/e2e/`.
+- The out-of-tree diagnostic imports the shared helpers by relative path
+  (`../../e2e/graph-handle`, `../../e2e/pointer`); no code is duplicated.
 
 #### Acceptance Criteria
-- [ ] The diagnostic variant captures counters + `controls.enabled` trace +
-      `fixedNodeCount` (before/after) + start-point occupancy on a real
+- [ ] The out-of-tree diagnostic harness captures counters + `controls.enabled`
+      trace + `fixedNodeCount` (before/after) + start-point occupancy on a real
       two-engine run and dumps them on an induced failure.
-- [ ] The canonical suite (`npm run test:smoke` semantics) is unchanged and
-      green on both engines; no app file modified.
+- [ ] The canonical suite is **provably unchanged**: `npx playwright test --list`
+      (default config) shows the same test set as before Phase 1 — the diagnostic
+      harness is not collected — and the full two-engine suite is green; no app
+      file modified.
 - [ ] `npm run lint` / `npm run typecheck` clean on the new harness code.
 
 #### Test Plan
@@ -243,9 +261,13 @@ is inconclusive (within budget).
       `update()` frame.
 - [ ] **Combined** only if the evidence shows both a probabilistic-background
       and a delivery component.
-- [ ] FR2 trim: remove the heavyweight diagnostic variant from the committed
-      suite; keep only the fix dependencies + cheap silent probe fields worth
-      retaining for future triage, documented at the existing standard.
+- [ ] FR2 final state: the out-of-tree diagnostic harness + its dedicated config
+      stay evidence-only (they were never in `tests/e2e/`, so there is nothing to
+      remove from the canonical suite — either leave them under
+      `tests/diagnostics/` as committed evidence or relocate to the project
+      evidence dir per the review's preference). The committed `tests/e2e/` delta
+      is only the fix dependencies + cheap silent probe fields worth retaining
+      for future triage, documented at the existing standard.
 
 #### Implementation Details
 - The drag remains a **real** synthetic `down → move → up`; no programmatic
@@ -397,12 +419,17 @@ Doc-only edits; revert the commit to restore the prior caveat wording.
         "Known Stability Caveat"; leave the genuine #11 reference intact);
       - `README.md` (the "Known Firefox flake" note + the `E2E_WORKERS` table
         row + the parallel-default caution — updated or removed per FR6).
-- [ ] **Discovered extra (flagged)**: `playwright.config.ts:114` also says
-      "amplify the known Firefox flake #33 even on hardware." **Recommendation**:
-      a comment-only, behavior-preserving correction to cite #55 (the diff shows
-      only comment lines). Because Decision 2 says the serial gate is untouched,
-      this is called out as an **open question for plan review / architect
-      confirmation** rather than assumed in scope.
+- [ ] **Discovered extra (in scope, comment-only)**: `playwright.config.ts:114`
+      also says "amplify the known Firefox flake #33 even on hardware." This is
+      **included** in FR8's scope as a comment-only, behavior-preserving
+      correction to cite #55 — the diff touches only comment lines, zero
+      executable change. Decision 2's "CI and the serial gate are untouched"
+      names `.github/workflows/validation.yml` and the *executable* gate
+      contract (`workers: 1` under `CI`, `retries`, engines); a comment
+      correction preserves the gate byte-for-executable-byte, so FR8's "all
+      remaining flake/caveat references cite #55" governs and the edit is
+      included. (Trivially droppable if the architect prefers to exclude it —
+      surfaced in the rebuttal; not blocking.)
 - [ ] All remaining flake/caveat references cite **#55** with wording matching
       the actual outcome; no document attributes this flake to #33.
 
@@ -412,10 +439,10 @@ Doc-only edits; revert the commit to restore the prior caveat wording.
   enable-delay inertness race"). Qualification history is not silently rewritten.
 
 #### Acceptance Criteria
-- [ ] `grep -rn '#33' README.md codev/reviews/41-*.md codev/reviews/52-*.md
-      codev/specs/52-*.md` shows no remaining *this-flake* attribution to #33
-      (genuine distinct-#33 mentions may remain only as corrected "was #33, is
-      #55" notes).
+- [ ] `grep -rn '#33' README.md playwright.config.ts codev/reviews/41-*.md
+      codev/reviews/52-*.md codev/specs/52-*.md` shows no remaining *this-flake*
+      attribution to #33 (genuine distinct-#33 mentions may remain only as
+      corrected "was #33, is #55" notes).
 - [ ] The #41 follow-up states the necessary-but-not-sufficient relationship.
 - [ ] `npm run validate` still green (doc/comment-only changes).
 
@@ -430,8 +457,9 @@ Doc/comment-only; revert the commit.
 - **Risk**: over-editing qualification history. **Mitigation**: marked
   correction notes, not rewrites (Decision 7).
 - **Risk**: the `playwright.config.ts` comment edit is read as touching the
-  gate. **Mitigation**: comment-only diff + explicit open-question flag for
-  confirmation.
+  gate. **Mitigation**: comment-only diff (zero executable change; verify with
+  `git diff` showing only comment lines) + surfaced to the architect in the
+  plan rebuttal; trivially droppable.
 
 ## Dependency Map
 ```
@@ -451,7 +479,7 @@ shape is selected by Phase 2's evidence; Phase 6's wording reflects Phases 2–5
 | GPU-lane hardware unavailable | M | M | SwiftShader arm host-independent; GPU-lane records renderer or documented skip |
 | Chromium regression from shared harness change | L | M | FR5 qualifies both engines; helper runs on both |
 | #41 parallel re-run surfaces a different failure | M | L | FR6 non-green branch: honest disposition, dedicated tracker, caveat re-pointed |
-| `playwright.config.ts` #33 comment edit read as gate change | L | L | Comment-only diff; flagged as open question for confirmation |
+| `playwright.config.ts` #33 comment edit read as gate change | L | L | Comment-only diff (zero executable change); included per FR8, surfaced in rebuttal, trivially droppable |
 
 ### Process Risks
 | Risk | Probability | Impact | Mitigation |
@@ -480,6 +508,8 @@ shape is selected by Phase 2's evidence; Phase 6's wording reflects Phases 2–5
       addendum (Phase 5) + FR7 follow-up correction + FR8 "#33" corrections.
 - [ ] `codev/reviews/52-...md`, `codev/specs/52-...md` — "#33 family" / "Known
       Stability Caveat" corrections (Phase 6).
+- [ ] `playwright.config.ts` — comment-only "#33" → "#55" correction at line
+      ~114 (Phase 6; zero executable change).
 - [ ] `codev/reviews/55-firefox-background-drag-flake.md` — the SPIR Review doc
       (produced in the Review phase; consolidates the recorded evidence).
 - [ ] Governance docs (`arch-critical.md` / `lessons-critical.md` and cold
@@ -500,6 +530,40 @@ shape is selected by Phase 2's evidence; Phase 6's wording reflects Phases 2–5
 | Date | Change | Reason |
 |------|--------|--------|
 | 2026-07-24 | Initial plan draft | Transform approved Spec 55 into 6 phases |
+| 2026-07-24 | Plan with multi-agent review | Address Codex REQUEST_CHANGES (2 pts) |
 
 ## Consultation Log
-<!-- Populated after the 3-way plan consultation. -->
+
+### Plan — iteration 1 (3-way: Gemini, Codex, Claude)
+
+- **Gemini — APPROVE (HIGH).** Verified codebase claims (`matrix.spec.ts`,
+  `graph-handle.ts`, `pointer.ts`, `playwright.config.ts`) — accurate;
+  "flawlessly translates the spec into an evidence-gated, strictly sequenced
+  pipeline." Endorsed the `playwright.config.ts:114` catch. No issues.
+- **Claude — APPROVE (HIGH).** Full FR1–FR8 + all 8 Decisions coverage;
+  correct sequencing; verified every file reference. Non-blocking notes on
+  Trackball-internals reachability (already hedged) and the review-doc/evidence
+  distinction (already stated). Notably assumed the separate diagnostic file was
+  enough to keep it out of the suite — which Codex correctly refuted.
+- **Codex — REQUEST_CHANGES (HIGH).** Two actionable points:
+  1. A `tests/e2e/matrix.drag-diagnostic.spec.ts` **would still be collected**
+     by `testDir: "./tests/e2e"` and run in `playwright test` / `test:smoke`,
+     contradicting "canonical suite unchanged." Must specify out-of-tree
+     location, a distinct non-collected pattern, or explicit env-gating.
+  2. The `playwright.config.ts:114` "#33" comment was left an "open question,"
+     but FR8/Decision 7 require correcting remaining misattributions to #55;
+     as a comment-only, behavior-preserving edit it should be included directly
+     or excluded with a spec-backed reason.
+
+**Changes applied (both Codex points accepted; Claude/Gemini needed none):**
+- Phase 1's diagnostic is now an explicit **out-of-tree harness**
+  (`tests/diagnostics/55-drag/…` + a dedicated minimal `--config`) that the
+  canonical `testDir` never collects; env-gating documented as the alternative.
+  Acceptance now *proves* non-collection via `npx playwright test --list`.
+  Phase 3's FR2 "trim" becomes "was never in the canonical suite."
+- The `playwright.config.ts:114` comment correction is **included in FR8 scope**
+  as comment-only (zero executable change), with the Decision-2 rationale
+  (Decision 2 governs the workflow file + executable gate contract, not
+  comments); surfaced to the architect as trivially droppable.
+
+Rebuttal: `codev/projects/55-firefox-e2e-flake-background-d/55-plan-iter1-rebuttals.md`.

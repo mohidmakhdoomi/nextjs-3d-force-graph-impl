@@ -1,0 +1,10 @@
+Using direct file reads to verify the plan against the repo before reviewing.Checking the referenced docs/comments the plan intends to touch, to verify scope and file accuracy.Verifying whether the proposed evidence-artifact location already exists or needs to be defined explicitly.---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Strong, evidence-driven plan, but it leaves two implementation-critical scope/behavior ambiguities unresolved.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- The Phase 1 “diagnostic spec variant” conflicts with the requirement that the canonical suite remain unchanged unless the plan explicitly says how it will be kept out of `playwright test` / `npm run test:smoke` (different filename pattern, out-of-tree location, or explicit env-gating). As written, `tests/e2e/matrix.drag-diagnostic.spec.ts` would be collected by the current Playwright config.
+- Phase 6 treats the `playwright.config.ts:114` `#33` comment correction as an “open question,” but the spec’s FR8/Decision 7 require correcting remaining misattributions to `#55`. Since this is a comment-only, behavior-preserving edit in an already-referenced file, the plan should either include it directly or explain a spec-backed reason to exclude it.
+
