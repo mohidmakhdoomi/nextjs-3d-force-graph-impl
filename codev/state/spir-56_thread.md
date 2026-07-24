@@ -31,3 +31,9 @@
   - Full logs preserved in the session scratchpad (`qual/*.log`) for the Review-phase evidence appendix.
 - Scenario 5 diff audit clean: diff vs main touches only README, lane script, lane tests, #41 review, plan/status/thread — no frozen files (`validation.yml`, `e2e-workers.mjs`, `playwright.config.ts`, lockfile untouched).
 - Final gate: in-worktree `npm run validate` failed only on 21 lint errors in the untracked builder-harness hook `.claude/hooks/worktree-write-guard.cjs` (the documented environment-noise case). Proved the gate per lessons-critical on a clean detached checkout (`git worktree add --detach HEAD` + working-tree files copied in + real `npm ci`): lint + typecheck + test:smoke all green, 22/22 passed serially — CLEAN_VALIDATE_EXIT=0.
+
+## Verify phase (2026-07-24)
+
+- PR #59 merged into main (regular merge, all CI checks green — quality + 4 serial Chromium shards, proving the lane default does not leak into CI). Merged main pulled into the worktree.
+- Post-merge verification: plain `npm run test:e2e:gpu` from the integrated tree — `mode: hardware`, both engines verified, `suite: pass`, `workers: 50% (lane default)`, wall-clock 59s. Exit 0.
+- Per architect: porch-state commits made after the merge will land via a small follow-up PR once porch reaches protocol complete.
