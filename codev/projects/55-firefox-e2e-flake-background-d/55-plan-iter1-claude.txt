@@ -1,0 +1,79 @@
+I need to verify the plan's claims against the actual codebase before rendering a verdict. Let me read the key files referenced.Good — every file reference and content claim in the plan checks out. Now let me assess the plan holistically against the spec.
+
+---
+
+## Plan Review: 55-firefox-background-drag-flake
+
+### 1. Spec Coverage
+
+**All FRs mapped to phases:**
+
+| FR | Phase | Covered? |
+|---|---|---|
+| FR1 (amplified reproduction) | Phase 2 | ✅ |
+| FR2 (instrumentation + committed-vs-evidence rule) | Phases 1, 3 (trim) | ✅ |
+| FR3 (root cause documented) | Phase 2 | ✅ |
+| FR4 (minimal fix) | Phase 3 | ✅ |
+| FR5 (both-engine qualification) | Phase 4 | ✅ |
+| FR6 (#41 parallel re-qual) | Phase 5 | ✅ |
+| FR7 (correct #41 follow-up) | Phase 6 | ✅ |
+| FR8 (#33 misattributions) | Phase 6 | ✅ |
+
+All eight Decisions are respected across the phases. No phase exceeds spec scope. The plan explicitly encodes the Decision-5 doubly-negative terminal outcome and the defense-in-depth labeling constraint — both added during the specify consultation. **Full coverage.**
+
+### 2. Phase Breakdown & Sequencing
+
+The strictly sequential `1→2→3→4→5→6` chain is correct and well-justified: each phase's deliverable is a genuine prerequisite for the next. Phase 2 can't run without Phase 1's instrumentation; Phase 3's fix shape is *selected by* Phase 2's evidence (not pre-decided); Phase 4 qualifies Phase 3; Phase 5 re-qualifies #41 atop Phase 4; Phase 6's wording reflects Phases 2–5's actual outcome.
+
+**Phase sizing is reasonable.** Phase 1 (instrumentation) and Phase 3 (fix) are the heaviest implementation phases; Phases 2/4/5 are run-and-record; Phase 6 is doc-only. None is oversized for a single builder commit.
+
+### 3. Technical Approach
+
+**Strengths:**
+- The plan correctly identifies that the diagnostic surface is *additive* to `graph-handle.ts`'s existing probe — not a new subsystem. The "inverse of `pickNodeScreenPoint`" framing is precise and grounded in the existing raycaster setup.
+- The pointer-event counter approach (capture-phase document + canvas listeners) is the right level — it directly measures H2 without needing library internals.
+- The diagnostic spec variant as a separate file (`matrix.drag-diagnostic.spec.ts`) cleanly separates evidence-only tooling from the canonical suite, making the FR2 trim in Phase 3 a simple deletion.
+- The `settleBackgroundDrag` helper pattern mirrors the proven `settleHoverThenClick` precedent — same shape, same file, predictable for a builder.
+
+**One technical note (minor):** Phase 1 mentions installing pointer counters via `addInitScript` and also mentions observing Trackball `_state` / DragControls `dragstart` "where reachable from page context." The plan correctly hedges this as "a bonus, not required" in the Risks section, which is the right call — three.js internals may not be reachable from page context without app modification, and the DOM-level counters + probe fields already discriminate the hypotheses.
+
+### 4. Testability
+
+Each phase has clear, verifiable acceptance criteria:
+- **Phase 1**: diagnostic variant captures fields on both engines; canonical suite unchanged + green; lint/typecheck clean.
+- **Phase 2**: mechanism stated with verbatim evidence, or fallback explicitly engaged.
+- **Phase 3**: fixed test green on both engines; `MOTION_FLOOR`/`retries: 0` unchanged; diff minimal; diagnostics trimmed.
+- **Phase 4**: FR5 matrix green; `npm run validate` green.
+- **Phase 5**: 3 runs recorded; caveat updated per outcome.
+- **Phase 6**: grep audit; validate green.
+
+The acceptance criteria are concrete enough that the Defend step (writing the review with qualification evidence) is well-supported — the evidence *is* the qualification runs.
+
+### 5. Risk Assessment
+
+All significant risks are identified and have realistic mitigations:
+- The top risk (no reproduction) has the Decision-5 fallback fully spelled out including the terminal outcome.
+- Firefox install is correctly flagged as a Phase-1 prerequisite/blocker.
+- GPU-lane availability is handled with the SwiftShader fallback arm.
+- The Chromium regression risk is mitigated by FR5's both-engine qualification.
+
+### 6. Minor Observations (non-blocking)
+
+**a.** Phase 6 flags the `playwright.config.ts:114` comment edit as an "open question for architect confirmation." This is appropriately conservative — a comment-only, behavior-preserving change to correct a misattribution is clearly within spec scope (FR8 says "all remaining flake/caveat references cite #55"), but calling it out for confirmation is good discipline since Decision 2 says the gate is untouched. The plan handles this correctly by not assuming it's in scope.
+
+**b.** The plan says the review document is produced in the SPIR Review phase, not as an implement phase. This is correct per SPIR protocol — but the builder should know that the evidence artifacts committed during Phases 2/4/5 are the raw material, not the final review. The plan states this clearly in the Notes section.
+
+**c.** The plan's prerequisite step ("Firefox browser installed via `npx playwright install firefox`") is correctly scoped as a Phase 1 deliverable with no `package.json`/lockfile change. This is accurate — Playwright browser binaries are managed outside the npm dependency tree.
+
+---
+
+**Buildability assessment:** A builder receiving this plan would know exactly what files to touch, what helpers to model after, what to keep vs. trim, and what evidence to capture. The decision points (Phase 2→3 evidence selection, Phase 5 green/non-green branch, Decision-5 terminal outcome) are explicitly encoded rather than left implicit. The plan is unusually thorough for a flake investigation because the spec demands it — and the plan faithfully reflects that rigor without inflating scope.
+
+---
+VERDICT: APPROVE
+SUMMARY: Plan fully covers all 8 FRs and 8 Decisions with correct sequencing, verified file references, concrete acceptance criteria, and well-encoded decision points — a builder can follow this successfully.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

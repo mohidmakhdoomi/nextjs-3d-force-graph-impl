@@ -1,0 +1,13 @@
+
+> test:e2e:gpu
+> node scripts/e2e-gpu-lane.mjs --engine=firefox --probe-only
+
+[gpu-lane] host: platform=linux dxg=true wslLib=true wslgSocket=true DISPLAY=:0
+[gpu-lane] probing candidate wsl2-d3d12-firefox (WSL2 Mesa d3d12 via Firefox (no ANGLE flags; probe-only webgl.sanitize-unmasked-renderer=false to read the raw renderer))
+[gpu-lane] candidate wsl2-d3d12-firefox VERIFIED hardware renderer: "D3D12 (NVIDIA GeForce RTX 3080)"
+=== E2E GPU LANE REPORT ===
+mode: hardware
+engines: firefox
+renderer.firefox: D3D12 (NVIDIA GeForce RTX 3080)
+suite: skipped (--probe-only)
+wall-clock: 2s

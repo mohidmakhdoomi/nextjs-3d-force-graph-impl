@@ -1,0 +1,9 @@
+---
+VERDICT: APPROVE
+SUMMARY: Phase 2 successfully executed the reproduction campaign and decisively identified the root cause (H1) with airtight evidence.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None.
+
+The execution of Phase 2 is exemplary. The reproduction campaign was run across both SwiftShader and hardware-GPU lanes, capturing the precise failure signature. Stopping the cost-escalation (skipping the full-suite/parallel-suite tiers) once the failure reproduced decisively in the targeted repetitions is a correct and honest interpretation of the plan's budget fallback rules. The mechanism write-up in `phase2-mechanism.md` provides clear, undeniable evidence ruling out H2 and H3, and confirming H1 (stray node capture), satisfying all Phase 2 deliverables perfectly.

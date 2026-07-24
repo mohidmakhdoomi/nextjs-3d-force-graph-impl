@@ -1,0 +1,55 @@
+I'll read the Phase 6 target files to verify the record corrections (FR7 + FR8) against the spec/plan requirements. Let me start by reading all the relevant files in parallel.Now let me verify the acceptance criteria by checking for residual "#33" attributions across the target files:I've now read all five target files and verified every `#33` occurrence. Let me deliver my review.
+
+---
+
+## Phase 6 Review: Record Corrections (FR7 + FR8)
+
+### FR7 — "Revisit the default" follow-up correction ✅
+
+`codev/reviews/41-parallelize-local-e2e-runs.md` lines 344–358: the corrected follow-up explicitly says "**necessary-but-not-sufficient**" and "must **not** be read as 'flake fixed ⇒ parallel default.'" It names the standing blocker (deterministic Chromium SwiftShader parallel-contention, 4–5/22 every parallel run), gives concrete resolution examples (fewer workers on the SwiftShader path, or moving the gate off SwiftShader), and states "**neither attempted here**." The wording correctly reflects the Phase 2–5 outcome (flake fixed + re-qualified green 3/3 parallel), and the genuine #34 click-to-focus flake is distinguished as a separate open item. This is exactly what the spec requires.
+
+### FR8 — "#33" misattribution corrections ✅
+
+All five target files carry marked correction notes citing #55 (not silent rewrites), conforming to Decision 7:
+
+| File | Form | Verified |
+|---|---|---|
+| `codev/reviews/41-parallelize-local-e2e-runs.md` | `> **Correction (issue #55, 2026-07-24):**` blockquote (lines 53–61); body text corrected to #55 with "labeled '#33' here originally" back-references | ✅ |
+| `codev/reviews/52-firefox-hardware-webgl-gpu-lane.md` | Inline `**Correction (#55, 2026-07-24):**` note (lines 183–196); the genuine #11 reference preserved intact | ✅ |
+| `codev/specs/52-firefox-hardware-webgl-gpu-lane.md` | `> **Correction (#55, 2026-07-24):**` blockquote (lines 567–579) | ✅ |
+| `README.md` | Current-state narrative (FIXED, issue #55) per FR6, plus a `> **Correction (#55):**` blockquote (lines 262–266) per iteration-1 Codex feedback | ✅ |
+| `playwright.config.ts` | Comment-only correction at line 115: `(issue #55 — miscalled "#33" then, since FIXED)` — zero executable change | ✅ |
+
+### Residual #33 grep audit ✅
+
+All 12 remaining `#33` tokens across the five target files are in the FR8-permitted "was #33, is #55" correction-note form. Zero bare this-flake attributions to #33 remain. Specifically verified:
+
+- **README.md**: 2 occurrences — both inside the `> **Correction (#55):**` blockquote
+- **playwright.config.ts**: 1 occurrence — `miscalled "#33"` in a comment
+- **review-41**: 7 occurrences — all inside correction notes or cross-referencing them ("labeled '#33' here originally", "formerly miscalled '#33'", etc.)
+- **review-52**: 2 occurrences — both inside the correction note
+- **spec-52**: 1 occurrence — inside the correction note
+
+### Iteration 1 Codex feedback (README correction-note style) ✅
+
+Codex's request that the README carry the same marked correction-note pattern (not a silent rewrite) was accepted and applied. The builder's scoping note — that a user-facing current-state doc is a different category from historical qualification records — is accurate and well-reasoned, and the added correction note is genuinely useful for cross-reference.
+
+### Plan alignment ✅
+
+All four Phase 6 deliverables are complete:
+- [x] FR7 follow-up correction
+- [x] FR8 marked corrections across all five files
+- [x] `playwright.config.ts` comment-only inclusion (the "discovered extra")
+- [x] No residual bare #33 this-flake attribution
+
+### Code quality ✅
+
+Changes are doc/comment-only with zero executable delta. The correction notes are well-written, accurately date-stamped, and consistent in style across all files. The `playwright.config.ts` comment is correctly scoped (comment lines only, zero executable change — Decision 2 satisfied).
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 6 record corrections (FR7 + FR8) are thorough and correctly implemented — all five target files carry Decision-7-compliant marked correction notes, zero residual bare #33 misattributions remain, and the iteration-1 Codex README correction-note feedback is cleanly addressed.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

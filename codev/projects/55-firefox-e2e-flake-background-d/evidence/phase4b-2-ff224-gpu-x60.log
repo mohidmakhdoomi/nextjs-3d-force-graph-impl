@@ -1,0 +1,80 @@
+[WebServer] 
+[WebServer] > start
+[WebServer] > next start --hostname 127.0.0.1 --port 3000
+[WebServer] 
+[WebServer] ▲ Next.js 16.2.10
+[WebServer] - Local:         http://127.0.0.1:3000
+[WebServer] - Network:       http://127.0.0.1:3000
+[WebServer] ✓ Ready in 108ms
+[WebServer] ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/package-lock.json
+[WebServer] 
+
+Running 60 tests using 1 worker
+
+  ✓   1 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.4s)
+  ✓   2 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.4s)
+  ✓   3 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.9s)
+  ✓   4 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓   5 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.6s)
+  ✓   6 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.5s)
+  ✓   7 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓   8 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓   9 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  10 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  11 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.6s)
+  ✓  12 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  13 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  14 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  15 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  16 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  17 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  18 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.0s)
+  ✓  19 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.0s)
+  ✓  20 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  21 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (16.0s)
+  ✓  22 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  23 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  24 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  25 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  26 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.5s)
+  ✓  27 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  28 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  29 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  30 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  31 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.6s)
+  ✓  32 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  33 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  34 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  35 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  36 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  37 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  38 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  39 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  40 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  41 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  42 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  43 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  44 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  45 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  46 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.4s)
+  ✓  47 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.3s)
+  ✓  48 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.4s)
+  ✓  49 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  50 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  51 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  52 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  53 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  54 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  55 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.6s)
+  ✓  56 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.4s)
+  ✓  57 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.5s)
+  ✓  58 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.2s)
+  ✓  59 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  60 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+
+  60 passed (16.4m)

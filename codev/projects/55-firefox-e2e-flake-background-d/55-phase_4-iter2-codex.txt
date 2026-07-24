@@ -1,0 +1,9 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 4’s evidence is strong, but the checked-in qualification driver/docs still describe and execute the pre-rebuttal matrix, not the final FR5-qualified one.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `codev/projects/55-firefox-e2e-flake-background-d/evidence/phase4-qualify.sh:7-18` still says the hardware `:224` arm is covered only by the 3 full GPU-suite runs and does **not** run the added ≥60 native-GPU targeted repetition required by Phase 4. After the accepted review feedback, the actual qualified matrix now includes `phase4b-2-ff224-gpu-x60.log`, but the driver cannot reproduce it.
+- `codev/projects/55-firefox-e2e-flake-background-d/evidence/phase4-summary.md:6-8` says “All runs” are in `phase4-*.log` and points to `phase4-qualify.sh` as the driver, but the final hardware targeted evidence lives in `phase4b-*` and is launched separately. The summary should match the real qualification workflow so future reruns/audits are not misled.

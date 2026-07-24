@@ -1,0 +1,10 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: The H1 fix is implemented perfectly, but the canonical suite retains heavyweight verbose pointer event logs in violation of FR2's trim rules.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- **FR2 Violation (Heavyweight diagnostics in canonical suite)**: `tests/e2e/graph-handle.ts` (lines 89-100, 117-118, 226-237) retains the verbose per-event pointer log (`PointerEventRecord` and the `log.events.push(...)` array allocation). The Phase 1 and Phase 3 plans explicitly categorize "verbose per-event logs" as heavyweight evidence-only capture that "never enters tests/e2e/" and must be trimmed from the committed suite once the mechanism is documented. Only the scalar counters (which were designated as "cheap, silent-in-passing-runs probe fields") are allowed to remain. You must remove the `events` array and `dropped` tracking from `PointerLog` and the associated `log.events.push(...)` logic in `installGraphProbe`.
+
+**Praise**:
+The actual fix in `tests/e2e/matrix.spec.ts:224` (`pickBackgroundDragPoint` with the margin-checked candidates array) is an exceptionally clean and robust implementation of the H1 fix direction that completely preserves the original semantic assertion. `nodeOccupancyAtPoint` is also a great, reusable piece of harnessing. Once the per-event array allocation is trimmed from the pointer listener, this phase is good to go.

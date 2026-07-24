@@ -1,0 +1,84 @@
+I'll review this spec by verifying its claims against the actual codebase. Let me read the key referenced files in parallel.Good — the spec's claims about the library internals check out precisely. Let me verify the remaining cross-references.I've verified all the key claims against the codebase. Now let me give my review.
+
+---
+
+## Specification Review: 55 — Root-Cause and Fix the Firefox Background-Drag Rotation Flake
+
+### 1. Completeness
+
+**Excellent.** This is one of the most thorough specs I've reviewed. The problem analysis is deeply researched with a complete recurrence table, three discriminable hypotheses, and a clear evidence-first methodology. Requirements FR1–FR8 are well-ordered and individually verifiable. Success criteria map 1:1 to functional requirements.
+
+### 2. Technical Feasibility — Verified Against Codebase
+
+I verified every technical claim the spec makes:
+
+- **`matrix.spec.ts:224`** — Confirmed: the test at line 224 does exactly the described sequence: zoom-in, `waitForStableCameraDistance`, then `mouse.down(150,450) → move(450,250, steps:12) → up`, polling `cameraDelta > MOTION_FLOOR (1)` with a 5s local timeout. ✓
+- **`MOTION_FLOOR = 1`, `SETTLE_TIMEOUT_MS = CI ? 20_000 : 5_000`** — Confirmed at lines 21, 30. ✓
+- **TrackballControls listener attachment** — Confirmed: `pointerdown` is on `this.domElement` (line 279), and `pointermove`/`pointerup` are attached to `document` *inside* the pointerdown handler (lines 663–664). The spec said "TrackballControls.js:663-664" — **exact**. ✓
+- **`_movePrev → _moveCurr` rotation state** — Confirmed: `_rotateCamera()` computes delta from the pair and ends with `_movePrev.copy(_moveCurr)` (line 488). ✓
+- **DragControls instantiation** — Confirmed at `3d-force-graph.mjs:365-370`: gated on `state.enableNodeDrag && state.enablePointerInteraction`. ✓
+- **`controls.enabled = false` on dragstart** — Confirmed at line 375. ✓
+- **`controls.enabled && state.controls.update` gate** — Confirmed in `three-render-objects.mjs:264`. ✓
+- **FocusGraph.tsx** — Confirmed: `enableNodeDrag={clickEnabled}` and `enablePointerInteraction={clickEnabled}` at lines 200–201. Both become `true` post-enablement. ✓
+- **`settleHoverThenClick` precedent** — Confirmed in `pointer.ts`. The spec's proposed `settleBackgroundDrag` helper would be a natural sibling. ✓
+- **`graph-handle.ts` probe** — Confirmed: already exposes `controlsEnabled`, `fixedNodeCount`, and `pickNodeScreenPoint` — all directly relevant to the H1/H2/H3 discrimination. ✓
+- **README "Known Firefox flake"** — Confirmed at line 238, currently attributing to "#33". ✓
+- **Review 41 "#33" references** — Confirmed multiple mentions (lines 80, 90, 112, 117–118, 147, 300, 307). ✓
+- **`retries: 0` local, `retries: 2` CI** — Confirmed in `playwright.config.ts:130`. ✓
+
+The spec's line-number citations to vendor code are accurate to the installed versions. The hypothesis analysis is mechanically grounded in the actual library code, not in speculation.
+
+### 3. Hypothesis Assessment
+
+**H1 (stray node capture)** is the strongest hypothesis and the spec correctly identifies it as such. The reasoning chain is sound:
+
+1. DragControls raycasts all node meshes at pointerdown
+2. If a node is under `(150, 450)`, `dragstart` fires → `controls.enabled = false` → TrackballControls' `update()` is skipped entirely → camera delta ≈ 0
+3. Firefox-specific zoom difference means closer camera → larger node projections → higher probability of node-under-point
+4. Random force layout seed per page load explains per-run nondeterminism
+5. Passing when repeated alone is consistent (same seed tends to reproduce same layout)
+
+The predicted discriminators (`fixedNodeCount 0→1`, `controls.enabled === false`, `dragstart` event) are clean and unambiguous — they'd prove H1 from a single occurrence.
+
+The spec's proposed fix for H1 (verified-background start point via an inverse `pickNodeScreenPoint`) is the right shape — it turns a probabilistic premise into a verified one, which is strictly stronger.
+
+### 4. Edge Cases and Risks
+
+Well-covered:
+
+- **Non-reproduction fallback** (Decision 5) — Statistical node-occupancy measurement even without a failure is a creative and sound approach.
+- **Chromium regression** from shared harness changes — FR5 explicitly qualifies both engines.
+- **#41 re-run surfacing a *different* failure** — FR6's honest-branch is explicitly specified.
+- **Hardware dependency** — Acknowledged; SwiftShader arm is host-independent.
+
+**One minor gap I notice**: The spec doesn't explicitly state what happens if the instrumentation reveals a **fourth mechanism** outside H1/H2/H3. It says "H1, H2, H3, or a demonstrated fourth" in FR2, which is the right framing, but there's no explicit fallback plan for a surprising fourth mechanism beyond "document it." Given the exhaustive decomposition over the three layers, this is a very low-probability gap and acceptable as stated.
+
+### 5. Security Considerations
+
+Not applicable — this is a test harness change with no app-facing or user-facing surface. The spec correctly constrains all changes to `tests/e2e/` and explicitly prohibits app behavior changes unless separately justified. No new dependencies, no CI changes.
+
+### 6. Testing Strategy
+
+Sound and thorough:
+
+- **FR5's qualification matrix** (both engines × both rendering paths × repeated runs, all at `retries: 0`) is rigorous.
+- **Decision 6** (instrumentation rides every run) avoids the classic mistake of uninstrumented reproduction runs.
+- **Decision 5's budget** (≥60 targeted + ≥3 full suite + ≥3 parallel GPU-lane) is generous enough to be meaningful without being unbounded.
+
+### 7. Minor Observations
+
+- The README at line 233 currently says "flake #33" and the env-controls table at line 258 also says "flake #33". FR8 correctly identifies both for correction.
+- The spec correctly notes the "#33" attribution is wrong — #33 is a *different* test and mechanism (enable-delay inertness race). The misattribution appears to have propagated across multiple review documents and the README, making FR8's systematic correction appropriate.
+- The "revisit the default" follow-up correction (FR7) is precisely scoped — it doesn't overreach by trying to change the default, just corrects the implication that this fix alone would justify it.
+
+---
+
+```
+---
+VERDICT: APPROVE
+SUMMARY: Exceptionally thorough spec; every technical claim verified against codebase; hypotheses are mechanically grounded and discriminable; scope is tight and well-bounded.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None
+```

@@ -1,0 +1,9 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Targeted repetition on the native-GPU lane was skipped, reducing hardware qualification volume from ≥60 to 3.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- The plan explicitly requires "Targeted repetition of the fixed test on the Firefox arm at ≥ the Decision-5 targeted budget (e.g. `--repeat-each` ≥ 60), on the SwiftShader path **and** the native-GPU lane". The implementation skipped the targeted repetition on the native-GPU lane entirely, relying only on the 3 full suite runs (which only exercise the test 3 times on hardware). 
+- The justification in `phase4-qualify.sh` and `phase4-summary.md` that "The GPU-lane wrapper runs the full suite (no per-test --repeat-each passthrough)" is insufficient to violate the plan. If `npm run test:e2e:gpu` doesn't pass the flag through, you must either modify the wrapper to support it or run Playwright directly against the hardware setup. A sample size of 3 on the hardware lane does not meet the "volume" requirement, especially since this flake historically survives on hardware.
+- The `npm run validate` failure in the working tree (`phase4-2-validate.log`) due to a lint error in `.claude/hooks` was worked around by running it in a clean checkout. While the clean checkout proof is valid and respects the Toolchain-and-Worktree-Hygiene rule, the blocking issue is the missing hardware repetition volume.

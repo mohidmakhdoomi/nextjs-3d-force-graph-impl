@@ -1,0 +1,51 @@
+I'll start by reading the key Phase 5 deliverables and evidence files in parallel.Now let me read the review-41 addendum, the probe logs, and the run logs to verify the evidence chain.Let me read the rest of the review-41 file to see the addendum, and verify a second run log for completeness.I've now read all the key Phase 5 deliverables. Let me verify one more thing — the E2E_WORKERS table row in the README env controls section, and confirm the Follow-up section in review-41 is still untouched (Phase 6 scope).Good — the README has zero remaining `#33` references (they were naturally eliminated when the caveat was rewritten as part of the FR6 retirement, not as a separate FR8 correction). The review-41's Follow-up section (lines 326-332) still has the old "#33/#34" wording — that's correctly Phase 6 (FR7+FR8) scope.
+
+Let me do a final check on the `#33` grep in review-41 to confirm Phase 6 work is waiting correctly:I have a complete picture of Phase 5. Here's my review:
+
+## Phase 5 Review: #41 GPU-lane parallel re-qualification & caveat
+
+### Spec Adherence (FR6)
+
+Every FR6 deliverable is met:
+
+1. **3 parallel GPU-lane runs at `retries: 0`** — ✅ All three runs are green 3/3 (22/22 passed, 10 workers each), captured in `phase5-gpu-parallel-run{1,2,3}.log`. The regime matches exactly (`E2E_WORKERS=50%`, `retries: 0`, native-GPU hardware lane).
+
+2. **Renderer evidence** — ✅ Bracketed with `--probe-only` before and after the 3-run set. Both probes and all three per-run GPU LANE REPORTs consistently show `renderer.chromium: ANGLE (… D3D12 (NVIDIA GeForce RTX 3080) …)` and `renderer.firefox: D3D12 (NVIDIA GeForce RTX 3080)`, `mode: hardware`.
+
+3. **Green 3/3 → retire README caveat** — ✅ The old "Known Firefox flake" opt-in-parallel caveat is replaced with a "FIXED (issue #55)" block (README lines 242–257) that documents the root cause, fix, and re-qualification evidence. The `E2E_WORKERS` table row (line 267) is updated to cite #55 as fixed.
+
+4. **Dated addendum to review-41** — ✅ Lines 132–151 of `codev/reviews/41-parallelize-local-e2e-runs.md` contain a properly dated addendum ("Update (issue #55, 2026-07-24)") that records the green 3/3 result and cross-references the Phase 5 evidence files.
+
+5. **Serial default NOT changed** — ✅ The scope guard is respected: `DEFAULT_LOCAL_WORKERS` is untouched, and the README explicitly states "Parallel nonetheless **remains opt-in**."
+
+### Code Quality
+
+- The driver script (`phase5-gpu-parallel-requal.sh`) is well-structured: probe-bracketed, with a `report_run` helper that extracts renderer/result/mode from each log, and a simple green-count verdict at the end.
+- README prose is accurate and follows the existing documentation style — the retired caveat section is thorough without being overwrought.
+- The review-41 addendum follows the house dated-addendum pattern correctly.
+
+### Evidence Chain
+
+The evidence chain is solid and honest:
+- **Probe-before** and **probe-after** logs are identical → hardware state stable across the campaign.
+- Per-run logs show complete test output with all 22 tests individually green, wall-clock times (43–44s suite, 55–56s total), and renderer reports.
+- Summary log and summary markdown cross-reference correctly.
+- The Phase 2 unfixed-tree baseline (2/3 failed on this same regime) provides the meaningful contrast.
+
+### Scope Discipline
+
+- `#33` references in review-41's original body (lines 80, 90, 112, 117–118, 168, 321, 328) and the Follow-up section (line 328) are correctly **left untouched** for Phase 6 (FR7 + FR8). The Phase 5 addendum itself uses only `#55`.
+- The README's `#33` references were naturally eliminated when the caveat text was rewritten (not as a separate FR8 correction) — this is a clean consequence of retiring the caveat, within Phase 5 scope.
+
+### Minor Observations (non-blocking)
+
+None. This is a cleanly executed qualification + documentation phase with no ambiguity.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 5 delivers a complete FR6 re-qualification — green 3/3 parallel GPU-lane runs with verified hardware, properly retired README caveat, and a correctly dated review-41 addendum, with Phase 6 scope (#33 corrections, FR7) untouched.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

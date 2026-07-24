@@ -1,0 +1,14 @@
+=== Phase 2 campaign JOB 1 starting 2026-07-24T05:04:02Z ===
+--- [probe-pre] START 2026-07-24T05:04:02Z ---
+--- [probe-pre] END rc=0 reps=0 reproduced=0 ---
+--- [A-swift-parallel] START 2026-07-24T05:04:09Z ---
+--- [A-swift-parallel] END rc=1 reps=50 reproduced=6 ---
+--- [D-gpu-parallel] START 2026-07-24T05:06:16Z ---
+--- [D-gpu-parallel] END rc=1 reps=50 reproduced=5 ---
+--- [B-swift-serial] START 2026-07-24T05:08:28Z ---
+--- [B-swift-serial] END rc=1 reps=30 reproduced=3 ---
+--- [E-gpu-serial] START 2026-07-24T05:16:38Z ---
+--- [E-gpu-serial] END rc=1 reps=30 reproduced=2 ---
+--- [probe-post] START 2026-07-24T05:24:41Z ---
+--- [probe-post] END rc=0 reps=0 reproduced=0 ---
+=== Phase 2 campaign JOB 1 done 2026-07-24T05:24:48Z ===

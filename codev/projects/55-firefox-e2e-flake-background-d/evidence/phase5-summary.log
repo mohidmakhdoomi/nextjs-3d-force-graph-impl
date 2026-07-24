@@ -1,0 +1,34 @@
+=== Phase 5 GPU-lane PARALLEL re-qualification (FR6) — E2E_WORKERS=50% x3, retries:0 ===
+
+========== PROBE BEFORE: native-GPU hardware renderer (lane --probe-only, both engines) ==========
+
+========== RUN 1/3: E2E_WORKERS=50% npm run test:e2e:gpu (retries:0) ==========
+--- [run1] rc=0
+    result : 22 passed 
+    :ff-bg : ✓  16 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (19.0s)
+    suite: pass | mode: hardware
+    renderer.chromium: ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)
+    renderer.firefox: D3D12 (NVIDIA GeForce RTX 3080)
+
+========== RUN 2/3: E2E_WORKERS=50% npm run test:e2e:gpu (retries:0) ==========
+--- [run2] rc=0
+    result : 22 passed 
+    :ff-bg : ✓  16 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (18.3s)
+    suite: pass | mode: hardware
+    renderer.chromium: ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)
+    renderer.firefox: D3D12 (NVIDIA GeForce RTX 3080)
+
+========== RUN 3/3: E2E_WORKERS=50% npm run test:e2e:gpu (retries:0) ==========
+--- [run3] rc=0
+    result : 22 passed 
+    :ff-bg : ✓  16 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (18.8s)
+    suite: pass | mode: hardware
+    renderer.chromium: ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)
+    renderer.firefox: D3D12 (NVIDIA GeForce RTX 3080)
+
+========== PROBE AFTER: native-GPU hardware renderer (lane --probe-only, both engines) ==========
+
+========== PHASE 5 VERDICT ==========
+green runs: 3 / 3
+OUTCOME: GREEN 3/3 -> retire README opt-in-parallel caveat + append review-41 addendum
+=== Phase 5 done ===

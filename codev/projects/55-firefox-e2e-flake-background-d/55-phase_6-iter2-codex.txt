@@ -1,0 +1,10 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: FR7 and the #33→#55 correction-note work are mostly solid, but phase_6 still leaves residual record text that states the wrong mechanism for #55.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `codev/reviews/41-parallelize-local-e2e-runs.md:90-93` still states the flake “is” Firefox synthetic-input-delivery nondeterminism. That conflicts with the documented #55 root cause (stray node capture) and does not match phase_6’s “wording reflects the actual Phase 2–5 outcome” objective.
+- `codev/reviews/52-firefox-hardware-webgl-gpu-lane.md:179-186` and `codev/reviews/52-firefox-hardware-webgl-gpu-lane.md:247-249` likewise still describe the flake as synthetic-input/input-delivery nondeterminism in present-tense prose. Those passages need the same kind of marked correction/qualification used elsewhere so the historical record is not still materially misleading.
+- None otherwise; the README correction note, the `playwright.config.ts` comment correction, and the FR7 necessary-but-not-sufficient follow-up wording all look good.

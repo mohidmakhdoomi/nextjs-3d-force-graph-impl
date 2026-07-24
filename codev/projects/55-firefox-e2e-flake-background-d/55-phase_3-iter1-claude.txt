@@ -1,0 +1,56 @@
+I'll start by reading the key files for Phase 3's scope: the fix in `matrix.spec.ts`, the probe extensions in `graph-handle.ts`, the Phase 2 mechanism evidence, and the builder's thread log for context.Now let me read the `graph-handle.ts` file to see the `pickBackgroundDragPoint` implementation and the phase2 mechanism evidence more closely:Let me check the git log for the Phase 3 commits and look at the original `matrix.spec.ts` to understand the diff:Let me verify a few more things — check the diagnostic harness is still there (per FR2 they can stay as evidence), the lint fix in aggregate-55data.mjs, and ensure no app files were modified:Let me do a few final verification checks:Good — `MOTION_FLOOR = 1` unchanged, `retries: 0` local unchanged, CI workflow untouched (empty diff). Let me also verify no app files were modified in this phase:No app files touched. Now let me do a final check — verify the drag endpoint stays on-canvas for every candidate and review the overall implementation against Phase 3's acceptance criteria:I've now thoroughly reviewed all the Phase 3 implementation files. Here's my assessment:
+
+---
+
+## Phase 3 Review: Minimal Behavior-Preserving Fix
+
+### Spec Adherence
+
+**FR4 (Minimal behavior-preserving fix)** — Fully met. The fix is the H1-selected path from the spec's Approach B: a probe-verified, genuinely-background start point. The evidence (H1 confirmed with 26 reproductions, H2/H3 ruled out) correctly selects this fix and rules out a `settleBackgroundDrag` delivery helper.
+
+**FR2 (committed-vs-evidence-only rule)** — Met. The committed `tests/e2e/` delta is exactly the fix dependencies (`pickBackgroundDragPoint` + `BackgroundDragPoint` type in `graph-handle.ts`) plus the cheap silent probe fields (`nodeOccupancyAtPoint`, already committed in Phase 1). The out-of-tree diagnostic harness under `tests/diagnostics/55-drag/` remains evidence-only — correctly never part of the canonical suite. The `aggregate-55data.mjs` lint fix is a minor housekeeping touch on evidence tooling.
+
+**Decision 1 (flake discipline)** — Met. `MOTION_FLOOR = 1` unchanged. `retries: 0` local unchanged. No retry loop of any kind. No weakened assertion.
+
+**Decision 2 (CI untouched)** — Met. `.github/workflows/validation.yml` has zero diff. No app files modified.
+
+**Decision 4 (harness-first)** — Met. Fix is entirely in `tests/e2e/`. No app code change.
+
+### Code Quality
+
+1. **`pickBackgroundDragPoint`** — Clean, well-documented. The edge-clearance metric (`nearestDistancePx − nearestProjectedRadiusPx`) is the right one, directly informed by the Phase 2 evidence (probe showed ~3px close calls with center-distance-based metrics). The `edgeClearancePx <= 0` guard handles the numeric corner case where 2D disk check says "outside" but the clearance is negative.
+
+2. **Candidate spread** — All 14 candidates have `start + (300, −200)` landing within `[360, 580] × [220, 360]` on the 800×600 canvas. The starts themselves range `[60, 280] × [420, 560]` — all well inside the viewport. The original `(150, 450)` is preserved as the first candidate (backward-compatible when the layout is clear there).
+
+3. **Fail-loud guard** — `throw new Error(...)` with the clearance value rather than silently dragging from an unverified point. This is correct — it makes a degenerate layout (all candidates covered) an explicit failure rather than a masked flake.
+
+4. **Comment quality** — The 15-line comment block in `matrix.spec.ts:248–262` explains the mechanism, the fix, and why it strengthens the test — exactly the project's existing standard.
+
+### Test Coverage
+
+Phase 3's test plan says: "run the fixed `:224` test on both engines; confirm real motion clears MOTION_FLOOR by orders of magnitude." The thread records successful runs (the `#55TUNE` verification showed ~25px typical clearance, well above the 10px margin). Full qualification is explicitly deferred to Phase 4 (the right sequencing per the plan).
+
+### Error Handling
+
+- `pickBackgroundDragPoint` returns `null` when no candidate is available → the caller throws a descriptive error.
+- `edgeClearancePx < DRAG_MARGIN_PX` is checked explicitly → loud failure with clearance value.
+- The `occupancy === null` guard inside `pickBackgroundDragPoint` handles the case where the probe is unavailable.
+
+### Plan Alignment
+
+Phase 3 plan deliverables:
+- ✅ **H1 fix**: probe-verified background start point via `pickBackgroundDragPoint`, applied at `matrix.spec.ts:224`.
+- ✅ **Not combined with delivery helper**: H2/H3 ruled out — no `settleBackgroundDrag`, correctly.
+- ✅ **FR2 final state**: out-of-tree diagnostic stays evidence-only; committed delta is only fix dependencies + cheap probe fields.
+- ✅ **Real drag preserved**: `down → move(+300, −200, {steps: 12}) → up`.
+- ✅ **No retries, no weakened assertion, CI untouched**.
+- ✅ **Minimal diff**: 4 files in the phase commit, only 2 under `tests/e2e/`.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 3 delivers the evidence-selected H1 fix (probe-verified background start point with edge-clearance margin) — minimal, behavior-preserving, correctly scoped, and well-documented.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

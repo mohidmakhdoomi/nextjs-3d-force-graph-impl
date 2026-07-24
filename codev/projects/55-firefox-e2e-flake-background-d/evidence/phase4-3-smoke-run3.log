@@ -1,0 +1,80 @@
+
+> test:smoke
+> npm run build && playwright test
+
+
+> build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/package-lock.json
+
+▲ Next.js 16.2.10 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.4s
+  Running TypeScript ...
+  Finished TypeScript in 5.9s ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/4) ...
+  Generating static pages using 5 workers (1/4) 
+  Generating static pages using 5 workers (2/4) 
+  Generating static pages using 5 workers (3/4) 
+✓ Generating static pages using 5 workers (4/4) in 302ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+└ ○ /_not-found
+
+
+○  (Static)  prerendered as static content
+
+[WebServer] 
+[WebServer] > start
+[WebServer] > next start --hostname 127.0.0.1 --port 3000
+[WebServer] 
+[WebServer] ▲ Next.js 16.2.10
+[WebServer] - Local:         http://127.0.0.1:3000
+[WebServer] - Network:       http://127.0.0.1:3000
+[WebServer] ✓ Ready in 97ms
+[WebServer] ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/package-lock.json
+[WebServer] 
+
+Running 22 tests using 1 worker
+
+  ✓   1 [chromium] › tests/e2e/matrix.spec.ts:76:5 › settles an initial force layout with positioned nodes (7.2s)
+  ✓   2 [chromium] › tests/e2e/matrix.spec.ts:105:5 › rotates the camera automatically until paused, then resumes (40.3s)
+  ✓   3 [chromium] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses (44.7s)
+  ✓   4 [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel (44.5s)
+  ✓   5 [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (1.3m)
+  ✓   6 [chromium] › tests/e2e/matrix.spec.ts:314:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (1.3m)
+  ✓   7 [chromium] › tests/e2e/matrix.spec.ts:478:5 › toggles AxesHelper visibility through the axes control (53.4s)
+  ✓   8 [chromium] › tests/e2e/matrix.spec.ts:511:5 › keeps the canvas consistent and interactive across a resize (34.5s)
+  ✓   9 [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation (1.0m)
+  ✓  10 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (1.5m)
+  ✓  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (38.9s)
+  ✓  12 [firefox] › tests/e2e/matrix.spec.ts:76:5 › settles an initial force layout with positioned nodes (3.0s)
+  ✓  13 [firefox] › tests/e2e/matrix.spec.ts:105:5 › rotates the camera automatically until paused, then resumes (8.1s)
+  ✓  14 [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses (7.4s)
+  ✓  15 [firefox] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel (9.0s)
+  ✓  16 [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag (15.1s)
+  ✓  17 [firefox] › tests/e2e/matrix.spec.ts:314:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (18.3s)
+  ✓  18 [firefox] › tests/e2e/matrix.spec.ts:478:5 › toggles AxesHelper visibility through the axes control (4.9s)
+  ✓  19 [firefox] › tests/e2e/matrix.spec.ts:511:5 › keeps the canvas consistent and interactive across a resize (4.3s)
+  ✓  20 [firefox] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation (2.8s)
+  ✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (20.3s)
+  ✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (8.8s)
+
+  Slow test file: [chromium] › tests/e2e/matrix.spec.ts (7.4m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  22 passed (11.7m)

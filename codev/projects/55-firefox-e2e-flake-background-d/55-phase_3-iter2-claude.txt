@@ -1,0 +1,65 @@
+I'll start by reading the key implementation files for Phase 3. Let me read them in parallel.Now let me read the diagnostic spec to verify the relocated imports work correctly, and check the builder thread for Phase 3 context.Let me also read the diagnostic Playwright config and verify the Phase 3 plan section for precise alignment.I've now read all the relevant files. Let me compile my review.
+
+## Phase 3 Review: Minimal Behavior-Preserving Fix (Iteration 2)
+
+### Scope Check
+
+Phase 3's deliverables (per plan):
+1. **H1 fix**: probe-verified background start point at `matrix.spec.ts:224` ✅
+2. **FR2 trim**: heavyweight diagnostics out of canonical `tests/e2e/` ✅
+3. **Constraints**: real drag, unchanged MOTION_FLOOR/retries, minimal diff ✅
+
+### 1. Spec Adherence — FR4 + FR2
+
+**FR4 (minimal behavior-preserving fix):**
+- `MOTION_FLOOR = 1` unchanged (line 22)
+- `retries: 0` untouched in `playwright.config.ts`
+- The drag is still a real synthetic `down → move({steps:12}) → up` (lines 294–297)
+- No retry loop, no programmatic camera manipulation
+- No app code modified
+- Diff confined to `tests/e2e/` + out-of-tree evidence diagnostics
+
+**FR2 (committed-vs-evidence-only trim) — the iter1 blocking concern:**
+Both Gemini and Codex's iteration 1 REQUEST_CHANGES are fully addressed:
+
+- `tests/e2e/graph-handle.ts` now contains **only** the H1 fix dependencies: `NodeOccupancy` type, `__graphNodeOccupancyAtPoint` window declaration + page-context implementation, `nodeOccupancyAtPoint` wrapper, `pickBackgroundDragPoint`, `BackgroundDragPoint`. No `PointerLog`, no `ControlsSample`, no `installDragProbe`, no pointer counters, no controls sampler.
+- `tests/diagnostics/55-drag/drag-probe.ts` receives all the relocated heavyweight tooling with its own self-contained `findHandle` (intentionally duplicated to keep the canonical probe decoupled).
+- `drag-diagnostic.spec.ts` correctly splits imports: keepable from `../../e2e/graph-handle`, heavyweight from `./drag-probe`, and calls `installDragProbe(page)` before `openGraphPage(page)`.
+
+### 2. Code Quality
+
+**`pickBackgroundDragPoint` (graph-handle.ts:605–640):** Clean design. It probes each candidate via the same raycast DragControls fires on pointerdown, rejects 3-D hits and within-disk points, and returns the candidate with the **maximum edge clearance** — the correct metric (`nearestDistancePx − nearestProjectedRadiusPx`, not distance to node centre, which was the builder's first-attempt bug, caught and fixed before commit).
+
+**Test integration (matrix.spec.ts:248–296):** 14 candidates spread across the lower-left region. `DRAG_MARGIN_PX = 10` is well above the observed ~3px close calls. Fails loudly with a descriptive error if no candidate has enough clearance. The drag vector is the same `(+300, −200)` — geometry and rotation magnitude are unchanged. The inline comment (lines 248–262) is thorough and traces the mechanism clearly.
+
+**`drag-probe.ts`:** Well-documented header explains its relationship to the canonical suite and why it exists. The duplicated `findHandle` is a justified tradeoff (avoids coupling the canonical probe to heavyweight surface; the diagnostic is evidence-only tooling run explicitly).
+
+Minor note: `pickBackgroundDragPoint` makes 14 separate `page.evaluate` round-trips (one per candidate). This could be batched into a single evaluate, but at ~ms per call against a 13–52s test runtime, it's negligible. Not worth complicating the code for.
+
+### 3. Test Coverage
+
+- The fix is exercised by the canonical `:224` test itself — no separate test needed; the test still proves "a real background drag rotates the camera."
+- Builder verification: 16/16 green both engines with edge clearance 22.8–41.7px (≥2.3× the 10px margin). Post-trim: 4/4 green both engines. Canonical `--list` unchanged (0 diagnostic tests, 18 matrix tests).
+- Diagnostic still functions post-relocation: freshly reproduced H1 on Firefox with the relocated `installDragProbe`.
+
+### 4. Error Handling
+
+The guard at lines 284–293 is correctly strict: throws a descriptive `Error` (not a silent fallback or retry) when no candidate meets the margin. The null check + clearance check narrows the type cleanly. With ~85% background area and 14 spread candidates, a legitimate failure here would indicate something fundamentally changed in the scene geometry — correct to fail loudly.
+
+### 5. Plan Alignment
+
+All Phase 3 acceptance criteria met:
+- ✅ Fixed test issues real background drag with unchanged MOTION_FLOOR
+- ✅ Diff minimal, confined to `tests/e2e/` + out-of-tree diagnostics
+- ✅ Heavyweight diagnostics not in canonical suite (relocated per FR2)
+- ✅ `npm run lint` / `npm run typecheck` clean (builder-verified)
+- ✅ Canonical suite provably unchanged (`--list` shows same 18 tests)
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 3 delivers the H1 fix (probe-verified background start point with edge-clearance margin) and fully addresses the iteration 1 FR2 trim concern by relocating all heavyweight diagnostics to the out-of-tree diagnostic — minimal, behavior-preserving, well-documented, correctly scoped.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

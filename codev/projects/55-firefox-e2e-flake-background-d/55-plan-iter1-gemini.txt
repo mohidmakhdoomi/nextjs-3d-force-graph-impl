@@ -1,0 +1,26 @@
+This is a meticulously constructed plan that perfectly translates the spec's requirements into an actionable, strictly sequential pipeline. You have accurately mapped the codebase realities (the `graph-handle.ts` probe surface, `pointer.ts` helpers, and the Playwright config) into the execution phases.
+
+### 1. Alignment with Specification
+Excellent. The plan respects every constraint, especially the non-trivial "instrument-first" mandate and the strict "committed-vs-evidence-only" rule for diagnostics. The handling of the Decision 5 terminal outcome (statistical H1 fallback and doubly-negative branch) is perfectly captured in Phase 2 and Phase 3. 
+
+### 2. Implementation Approach
+Sound and minimally invasive. Relying on `addInitScript` and extending the existing `graph-handle.ts` probe to capture DOM events and Trackball state ensures the app itself remains untouched for observability. The evidence-selected fix branching in Phase 3 correctly defers the exact shape of the fix to the Phase 2 findings.
+
+### 3. Task Breakdown and Ordering
+The strict phase dependency (`Phase 1 -> 2 -> 3 -> 4 -> 5 -> 6`) is correct and necessary. Gating the documentation and caveat retirement (Phases 5 and 6) on the qualification outcome of Phase 4 ensures the record will match reality.
+
+### 4. Risk Identification and Mitigation
+Your risk matrix is thorough. Identifying the Firefox cache absence as a Phase 1 prereq (`npx playwright install firefox`) prevents an early blocker. The fallback strategies for hardware unavailability and repro-budget exhaustion are well-defined.
+
+### 5. Missing Steps / Considerations
+Your discovery of the extra `#33` attribution in `playwright.config.ts:114` is a great catch. Given that it's a comment-only change, it poses no risk to the CI gate contract, but flagging it as an open question for architect confirmation is exactly the right protocol discipline.
+
+I have verified your codebase claims against `matrix.spec.ts`, `graph-handle.ts`, `pointer.ts`, and `playwright.config.ts`, and they are entirely accurate. The plan is ready for execution.
+
+---
+VERDICT: APPROVE
+SUMMARY: The plan flawlessly translates the spec into an evidence-gated, strictly sequenced pipeline with accurate codebase grounding.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

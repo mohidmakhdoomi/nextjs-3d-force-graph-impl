@@ -1,0 +1,52 @@
+I'll review Phase 4 by reading the key evidence and implementation files. Let me start with the phase summary and the new GPU-targeted evidence that was added in response to iteration 1.Now let me check the remaining original Phase 4 evidence and the actual test implementation:Now let me check the `pickBackgroundDragPoint` implementation and verify the remaining evidence logs:Let me also read the `pickBackgroundDragPoint` implementation and confirm the validate log and smoke runs:Let me verify the key invariants — that `MOTION_FLOOR`, `retries: 0`, and the CI workflow are untouched:Let me verify the in-worktree validate log to check the eslint claim, and confirm no app code was changed:I've now reviewed all the Phase 4 evidence files, the implementation code, and the invariants. Here's my assessment.
+
+## Phase 4 Review: Fix qualification (both engines, both rendering paths)
+
+### FR5 Deliverable Checklist — All Met
+
+| Deliverable | Evidence | Verdict |
+|---|---|---|
+| **Targeted ≥60 Firefox `:224` on SwiftShader** | `phase4-1-ff224-swift-x60.log`: 60/60 passed, `retries: 0` | ✅ |
+| **Targeted ≥60 Firefox `:224` on native-GPU** | `phase4b-2-ff224-gpu-x60.log`: 60/60 passed, bracketed by probes | ✅ |
+| **≥3 serial SwiftShader full runs (both engines)** | clean-validate: 22/22, smoke-run2: 22/22, smoke-run3: 22/22 | ✅ |
+| **≥3 GPU-lane full runs (both engines, renderer evidence)** | gpu-run1/2/3: all 22/22, all show `D3D12 (NVIDIA GeForce RTX 3080)` | ✅ |
+| **`npm run validate` green on final tree** | `phase4-5-clean-validate.log`: EXIT 0, clean detached worktree | ✅ |
+| **Chromium green throughout** | All 8 run logs show Chromium passing | ✅ |
+
+### Iteration 1 Concern — Fully Addressed
+
+Gemini and Codex both requested the targeted ≥60 Firefox repeat on the **native-GPU lane** (previously only 3 full-suite GPU runs). The builder delivered:
+
+- **60/60 green** on the hardware recipe (`GALLIUM_DRIVER=d3d12`, `LD_LIBRARY_PATH=/usr/lib/wsl/lib`, `webgl.force-enabled=true`)
+- **Probe-before**: `D3D12 (NVIDIA GeForce RTX 3080)` verified (`phase4b-1-probe-before.log`)
+- **Probe-after**: same renderer verified (`phase4b-3-probe-after.log`)
+
+The approach is sound — the `gpu-lane` wrapper rejects unknown Playwright args, so rather than modifying shared lane tooling the builder read the lane's own `FIREFOX_PROBE_RECIPE` environment directly and ran with those env vars. The bracketing probes use the lane's own `--probe-only` mode (which sets `webgl.sanitize-unmasked-renderer=false` to read the raw renderer string that Firefox otherwise privacy-sanitizes). This is the same pattern the lane uses internally (probe → suite).
+
+### Invariants Verified
+
+- **`MOTION_FLOOR = 1`** at `matrix.spec.ts:22` — unchanged, still the assertion floor
+- **`retries: 0`** locally — confirmed in `playwright.config.ts:130`
+- **`.github/workflows/validation.yml`** — zero diff, byte-for-byte untouched
+- **No app code modified** — all changes confined to `tests/e2e/`
+- **Clean-checkout validate** — the in-worktree eslint errors are exclusively from the untracked `.claude/hooks/worktree-write-guard.cjs` (builder-harness file absent from clean checkouts), correctly diagnosed as environment noise per lessons-critical
+
+### Qualification Volume
+
+Total `:224` executions this phase: **126 green, 0 failures**
+- 60 targeted SwiftShader + 60 targeted hardware + 3 serial-suite + 3 GPU-suite
+- Both rendering paths qualified at the targeted ≥60 budget
+- Both engines exercised in all 6 full-suite runs
+
+### No Issues Found
+
+The evidence is thorough, verbatim, and internally consistent. The `phase4b-gpu-targeted.sh` script is reproducible and well-documented. The `phase4-summary.md` accurately reflects all results.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 4 delivers comprehensive qualification — 126/126 green `:224` executions across both engines and both rendering paths at retries:0, with the iteration 1 gap (native-GPU targeted repeat) now fully closed by 60/60 hardware-bracketed runs.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

@@ -1,0 +1,15 @@
+Using the project files directly to verify the spec against the repo context.I’m checking one more project file to verify the test/worker/retry contract the spec depends on.---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Strong, evidence-driven spec that is technically feasible and well-scoped, but it leaves one key fallback path and one instrumentation deliverable ambiguous.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- The no-repro fallback is incomplete. Decision 5 defines a statistical fallback only for H1 (node capture), but does not say what the builder should do if the flake never reproduces **and** the H1 occupancy measurement is negative/inconclusive. The spec should explicitly define the acceptable terminal outcome in that branch.
+- The final-state expectation for instrumentation is ambiguous. FR2/Decision 6 require diagnostics to ride reproduction runs, but Approach B also says heavyweight diagnostics may stay in scratch/evidence. The spec should say exactly what, if anything, must remain in the committed harness after the fix versus what may be temporary evidence-only tooling.
+
+Everything else is strong:
+- Requirements are unusually clear and testable.
+- Feasibility is good and matches the repo: `matrix.spec.ts:224`, `pointer.ts`, `graph-handle.ts`, `playwright.config.ts`, `validate`, CI invariants, and the referenced review/doc targets all exist and align with the spec.
+- Edge cases are well covered, especially the honest non-green branches in FR6 and the renderer-path distinctions.
+- Security concerns are low and appropriately bounded to test harness behavior; no obvious missing product-security requirement stands out.

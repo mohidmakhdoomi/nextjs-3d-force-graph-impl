@@ -1,0 +1,51 @@
+I'll read the key files changed in Phase 6 to verify the record corrections (FR7 + FR8) are properly implemented.Now let me verify no residual "#33" this-flake attributions remain in the target files:Let me also verify the spec 55 file for any Phase-6 relevant updates and check the thread for validate evidence:I've now completed a thorough review of Phase 6. Let me summarize my findings.
+
+## Phase 6 Review: Record Corrections (FR7 + FR8)
+
+### FR7 — "Revisit the default" Follow-up ✅
+
+The Follow-up in `codev/reviews/41-parallelize-local-e2e-runs.md` (lines 344–358) is precisely what the spec requires. It:
+- States **"necessary-but-not-sufficient"** (bold) in the first sentence
+- Explicitly says it **"must not be read as 'flake fixed ⇒ parallel default'"**
+- Names the standing blocker: deterministic Chromium SwiftShader parallel-contention (4–5/22 every run)
+- Lists concrete remedies needed (fewer workers on SwiftShader, or moving the gate off SwiftShader) and states **"neither attempted here"**
+- Correctly distinguishes the separate #34 click-to-focus flake
+- Is marked as a correction per Decision 7: `(corrected per #55, 2026-07-24)`
+
+This is clear, unambiguous, and cannot be misread.
+
+### FR8 — "#33" Misattributions Corrected ✅
+
+All five target files have been corrected:
+
+| File | Corrections |
+|------|-------------|
+| `codev/reviews/41-parallelize-local-e2e-runs.md` | Dated correction banner (lines 53–61) + every inline this-flake "#33" corrected to "#55" across Qualification Evidence, serial gate note, Flaky Tests/Disposition, and Technical Debt |
+| `codev/reviews/52-firefox-hardware-webgl-gpu-lane.md` | `Correction (#55, 2026-07-24):` note at lines 183–186; the "#33 family" follow-up now records fulfillment by #55 (lines 193–196) |
+| `codev/specs/52-firefox-hardware-webgl-gpu-lane.md` | `Correction (#55, 2026-07-24):` note at lines 567–579 in the Known Stability Caveat |
+| `README.md` | **Zero** "#33" references remain — all references cite #55 with FIXED status |
+| `playwright.config.ts` | Comment-only correction at line 115: `(issue #55 — miscalled "#33" then, since FIXED)` — **zero executable change** verified |
+
+### Decision 7 Compliance (Marked Corrections, Not Silent Rewrites) ✅
+
+Every correction follows the pattern `Correction (#55, 2026-07-24):` or `(issue #55 — miscalled "#33" then, ...)`. Historical qualification evidence is annotated, not rewritten. The original "#33" labels are explicitly called out as misattributions with the correct tracker identified.
+
+### Grep Audit ✅
+
+All remaining "#33" tokens in the target files are exclusively in "was #33, is #55" correction-note form — no bare this-flake attribution to #33 survives. Genuine distinct references (#34 click-to-focus, #11) are intact and unmodified.
+
+### `playwright.config.ts` Comment-Only Change ✅
+
+The diff touches only `//` comment lines (lines 114–118). Executable code is untouched. The canonical test list (`npx playwright test --list`) remains 22 tests per the builder's thread.
+
+### Code Quality
+
+The correction wording is precise, internally consistent across all five files, and accurately reflects the Phase 2–5 outcome (stray node capture mechanism, probe-verified background start point fix, green 3/3 parallel re-qualification). No over-editing of qualification history — each correction is additive and clearly bounded.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 6 record corrections (FR7 + FR8) are thorough, Decision-7-compliant marked corrections with zero residual #33 misattributions and a clear necessary-but-not-sufficient follow-up — doc/comment-only changes, no executable delta.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

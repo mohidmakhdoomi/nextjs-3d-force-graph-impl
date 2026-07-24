@@ -1,0 +1,60 @@
+I'll read the key files changed in Phase 6 to verify the record corrections (FR7 + FR8) and check that the iteration-2 Codex feedback about residual wrong-mechanism text has been addressed.Now let me run the acceptance criteria grep audit and check the spec-55 file for the correction notes:Let me check for any remaining "synthetic-input" or "input-race" mechanism references that might still be uncorrected, and verify the iteration-2 corrections the builder described:I've now read all five target files and run the acceptance criteria grep. Here is my review of Phase 6.
+
+---
+
+## Phase 6 Review: Record Corrections (FR7 + FR8)
+
+### FR7 — #41 "revisit the default" follow-up ✅
+
+**review-41, lines 345–359**: The Follow-up section is clear and comprehensive:
+- Explicitly states fixing #55 is **"necessary-but-not-sufficient"**
+- Names the standing blocker: **deterministic Chromium SwiftShader parallel-contention** (4–5/22 on every parallel run)
+- States the conjunction required: "Only once BOTH hold (Firefox flake fixed — done — **and** the SwiftShader Chromium contention solved)…"
+- Cannot be misread as "flake fixed ⇒ parallel default"
+
+### FR8 — "#33" misattributions corrected via marked notes ✅
+
+Verified all five target files carry Decision-7-compliant marked correction notes:
+
+| File | Style | Lines |
+|------|-------|-------|
+| **review-41** | Blockquote `> **Correction (issue #55, 2026-07-24):**` at lines 53–61; inline "see the correction note above" cross-refs at 91, 181, 339, 346 | ✅ |
+| **review-52** | `**Correction (#55, 2026-07-24) — two updates.**` at 183–191; lessons bullet correction at 255–258; annotation correction at 335 | ✅ |
+| **spec-52** | `> **Correction (#55, 2026-07-24):**` blockquote at 567–581, including the shorthand clause covering scattered "synthetic-input flake" uses | ✅ |
+| **README** | `> **Correction (#55):**` blockquote at 262–266; "FIXED" section correctly states the mechanism | ✅ |
+| **playwright.config.ts** | Comment-only: `(issue #55 — miscalled "#33" then, since FIXED)` at line 115; zero executable change | ✅ |
+
+### Grep audit (acceptance criteria) ✅
+
+The `#33` grep across all five files shows **13 hits** — every single one is in the FR8-permitted "was #33, is #55" correction-note form. No bare this-flake attribution to #33 remains. Genuine `#34` / `#11` references are intact and unaffected.
+
+### Iteration-2 Codex feedback (mechanism corrections) ✅
+
+The builder accepted Codex's observation that present-tense "synthetic-input-delivery nondeterminism" mechanism claims conflicted with #55's documented root cause (stray node capture). I verified each fix:
+
+- **review-41:91–93**: Corrected to `stray node capture, *not* the synthetic-input-delivery loss hypothesized at #41 time`
+- **review-52:183–191**: Class correction note extended to explain the then-current hypothesis vs the #55 root cause
+- **review-52:253–258**: Lessons bullet retitled + marked `(Correction, #55: …)` note; lesson itself ("don't paper over with retries") preserved
+- **review-52:335**: Annotation corrected to `stray node capture, not an input-race, and fixed`
+- **spec-52:579–581**: Shorthand clause covers scattered "synthetic-input flake" uses throughout the spec
+
+All remaining "synthetic-input" / "input-race" text in these files is either (a) inside a correction note explaining old vs. new mechanism, (b) original historical text immediately adjacent to a correction note, or (c) covered by the spec-52 shorthand clause. No uncorrected present-tense mechanism claim remains.
+
+### Code quality ✅
+
+- All changes are doc/comment-only — zero executable delta
+- Correction notes are consistently formatted across files
+- Cross-references between correction notes are accurate (e.g., review-41's "see the correction note above" back-refs)
+- The `playwright.config.ts` comment edit touches only comment lines (confirmed by reading the full file — the executable code is identical)
+
+### No issues found
+
+All previous iteration feedback has been addressed. No new concerns.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 6 record corrections (FR7 + FR8) are thorough and correctly implemented — all five target files carry Decision-7-compliant marked corrections, the iteration-2 mechanism-text fixes are verified, zero residual bare #33 misattributions remain, and the #41 follow-up clearly states the necessary-but-not-sufficient relationship.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

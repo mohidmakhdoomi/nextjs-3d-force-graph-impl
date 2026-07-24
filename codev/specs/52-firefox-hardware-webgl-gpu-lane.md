@@ -564,6 +564,22 @@ a software-WebGL timing problem. Per Decision 10 it must be fixed/qualified
 separately or explicitly accepted and documented — not hidden with retries and not
 used to weaken the canonical assertion.
 
+> **Correction (#55, 2026-07-24):** the Decision-10 "fixed/qualified separately"
+> path was taken. This flake is tracked, root-caused, and **fixed** by **issue
+> #55** — the mechanism is **stray node capture** (the hard-coded background-drag
+> start point occasionally lands on a node whose projection grew after the
+> wheel-zoom-in, so the DragControls pointer-down raycast captures the node and the
+> camera never rotates), *not* synthetic-input delivery loss as hypothesized above;
+> that CPU-side three.js raycast is why it survived on hardware. The
+> behavior-preserving harness fix (a probe-verified genuinely-background start
+> point) was re-qualified green on both engines and both rendering paths
+> (SwiftShader + native-GPU, serial + parallel). It was never hidden with retries
+> and the canonical assertion was never weakened. Elsewhere this flake was
+> sometimes called the "#33 family"; that was a misattribution — #33 was a
+> distinct, already-closed enable-delay inertness race. (The "synthetic-input
+> flake" shorthand used elsewhere in this spec likewise predates the #55 root
+> cause and should be read as the background-drag / stray-node-capture flake.)
+
 ## Dependencies
 
 - **Internal**: the #44 lane (`scripts/e2e-gpu-lane.mjs`, `tests/gpu-lane.test.mjs`,

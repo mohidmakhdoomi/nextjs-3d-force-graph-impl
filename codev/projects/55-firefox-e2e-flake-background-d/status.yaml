@@ -1,0 +1,202 @@
+id: '55'
+title: firefox-e2e-flake-background-d
+protocol: spir
+phase: verified
+plan_phases:
+  - id: phase_1
+    title: Drag-path instrumentation (harness-side)
+    status: complete
+  - id: phase_2
+    title: Amplified reproduction & root-cause determination
+    status: complete
+  - id: phase_3
+    title: Minimal behavior-preserving fix
+    status: complete
+  - id: phase_4
+    title: Fix qualification (both engines, both rendering paths)
+    status: complete
+  - id: phase_5
+    title: '#41 GPU-lane parallel re-qualification & caveat'
+    status: complete
+  - id: phase_6
+    title: Record corrections (FR7 + FR8)
+    status: complete
+current_plan_phase: null
+gates:
+  spec-approval:
+    status: approved
+    requested_at: '2026-07-24T03:30:37.514Z'
+    approved_at: '2026-07-24T03:31:11.033Z'
+  plan-approval:
+    status: approved
+    requested_at: '2026-07-24T03:43:23.725Z'
+    approved_at: '2026-07-24T03:44:47.887Z'
+  pr:
+    status: approved
+    requested_at: '2026-07-24T12:01:35.911Z'
+    approved_at: '2026-07-24T12:13:30.381Z'
+  verify-approval:
+    status: approved
+    requested_at: '2026-07-24T12:19:46.597Z'
+    approved_at: '2026-07-24T12:20:44.251Z'
+iteration: 1
+build_complete: true
+history:
+  - iteration: 1
+    plan_phase: phase_1
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_1-iter1-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_1-iter1-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_1-iter1-claude.txt
+  - iteration: 1
+    plan_phase: phase_2
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_2-iter1-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_2-iter1-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_2-iter1-claude.txt
+  - iteration: 1
+    plan_phase: phase_3
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_3-iter1-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_3-iter1-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_3-iter1-claude.txt
+  - iteration: 1
+    plan_phase: phase_4
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter1-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter1-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter1-claude.txt
+  - iteration: 2
+    plan_phase: phase_4
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter2-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter2-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter2-claude.txt
+  - iteration: 3
+    plan_phase: phase_4
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter3-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter3-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_4-iter3-claude.txt
+  - iteration: 1
+    plan_phase: phase_5
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_5-iter1-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_5-iter1-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_5-iter1-claude.txt
+  - iteration: 1
+    plan_phase: phase_6
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_6-iter1-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_6-iter1-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_6-iter1-claude.txt
+  - iteration: 2
+    plan_phase: phase_6
+    build_output: ''
+    reviews:
+      - model: gemini
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_6-iter2-gemini.txt
+      - model: codex
+        verdict: REQUEST_CHANGES
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_6-iter2-codex.txt
+      - model: claude
+        verdict: APPROVE
+        file: >-
+          /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_6-iter2-claude.txt
+started_at: '2026-07-24T03:23:21.257Z'
+updated_at: '2026-07-24T12:20:45.487Z'
+force_advanced:
+  phase: phase_4
+  iteration: 3
+  max_iterations: 3
+  rebuttal_file: 55-phase_4-iter3-rebuttals.md
+  at: '2026-07-24T10:53:52.666Z'
+pr_history:
+  - phase: review
+    pr_number: 57
+    branch: builder/spir-55
+    created_at: '2026-07-24T12:00:36.078Z'
+pr_ready_for_human: false

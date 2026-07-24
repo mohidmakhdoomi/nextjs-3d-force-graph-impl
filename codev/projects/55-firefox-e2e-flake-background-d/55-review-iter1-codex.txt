@@ -1,0 +1,30 @@
+Using direct file inspection to review the PR against the codebase, spec/plan, and tests.Running a quick verification pass on the changed test files and repo test counts.---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Implementation looks aligned and technically solid, but the branch is not PR-ready because many commits do not follow the required `[Spec 55][Phase]` format.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- Commit history does not meet the repo’s required format. `git log main..HEAD` includes many commits like `chore(porch): 55 ...` instead of the mandated `[Spec 55][Phase] ...`.
+- None
+
+PR_SUMMARY: |
+  ## Summary
+  This PR root-causes and fixes the long-standing Firefox background-drag flake in `tests/e2e/matrix.spec.ts` by proving the issue was stray node capture, not synthetic-input loss. The fix keeps the test semantics intact by selecting a probe-verified empty background drag start instead of weakening assertions or adding retries.
+
+  ## Key Changes
+  - Add node-occupancy/background-point probing in `tests/e2e/graph-handle.ts` and use it in the wheel+drag matrix test.
+  - Add out-of-tree diagnostic harness files under `tests/diagnostics/55-drag/` plus evidence/docs for the root-cause and requalification.
+  - Update README, review/spec docs, and historical references to reflect the confirmed mechanism and the requalified parallel GPU lane.
+
+  ## Test Plan
+  - `npx eslint tests/e2e/graph-handle.ts tests/e2e/matrix.spec.ts tests/diagnostics/55-drag/* playwright.config.ts`
+  - `npm run typecheck`
+  - Confirm canonical Playwright collection remains 22 tests: `npm exec -- playwright test --list`
+  - Review recorded qualification evidence in `codev/projects/55-firefox-e2e-flake-background-d/evidence/`, including clean-checkout `npm run validate`
+
+Additional review notes:
+- Code/spec/plan alignment looks good. The implemented approach matches the spec’s harness-first, no-retries, unchanged-assertion requirements.
+- The main code change is reasonable and well-contained: `pickBackgroundDragPoint` plus the updated matrix test are consistent with the documented root cause.
+- Targeted lint passed on changed files, `npm run typecheck` passed, and Playwright still lists 22 canonical tests.
+- I could not fully rerun `node --test tests/*.test.mjs` in this read-only sandbox: `audit-report.test.mjs` fails here because it needs writable `/tmp`, and `toolchain.test.mjs` fails here because `npm_config_user_agent` is absent outside an npm-launched context. Those are environment limitations, not regressions from this PR.
+- Branch is up to date with `main` (`git rev-list --left-right --count main...HEAD` → `0 74`).

@@ -31,6 +31,18 @@ gotcha, or constraint.
   rates (observed 2/4 == 2/4 for node drag across the 0.172→0.185 three upgrade)
   prove a harness property, not a regression; only a rate that shifts with the
   upgrade is attributable to it.
+- A hard-coded "background"/empty screen coordinate in an interaction test is not
+  guaranteed to stay empty after a camera zoom or a reseeded layout: a fixed pixel
+  can land on a pickable object, so the gesture hits the object instead of the
+  background — a near-zero, per-run-random, **rasterizer-independent** failure that
+  survives on real hardware and passes when repeated alone (it looks like an
+  input-delivery flake but isn't). Probe the live scene for a verified-empty point
+  with a pixel margin rather than trusting a static coordinate, and discriminate
+  "did the input arrive?" (pointer counters) from "did it hit what I meant?"
+  (occupancy raycast) before blaming synthetic-input delivery. (Firefox
+  background-drag `matrix.spec.ts:224`: the fixed start point intermittently sat on
+  a node whose projection grew after the wheel-zoom-in, so DragControls grabbed the
+  node on pointerdown and the camera never rotated.)
 - Verify react-force-graph interactions numerically through the imperative handle,
   not screenshots: reach it by walking the React fiber up from the three.js-created
   canvas (which has no fiber key) to the first React-managed ancestor, then to the

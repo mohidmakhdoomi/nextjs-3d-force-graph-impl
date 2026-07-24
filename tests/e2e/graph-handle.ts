@@ -39,6 +39,35 @@ export type NodeScreenById = {
     fixed: boolean;
 };
 
+/**
+ * Result of raycasting an arbitrary screen point against the node meshes —
+ * the inverse of {@link NodeScreenPoint}. Issue #55 drag-path instrumentation:
+ * `hit` mirrors the three DragControls raycast that fires node `dragstart`
+ * (NDC from the canvas rect → `raycaster.setFromCamera` → `intersectObjects`),
+ * so it decides H1 (a "background" drag that actually lands on a node). The
+ * screen-space `nearest*` fields are the continuous "how close was the pointer
+ * to a node projection" measure and a projected-disk cross-check.
+ */
+export type NodeOccupancy = {
+    // True when the pixel ray pierces a node's world sphere (the DragControls
+    // hit-test semantics): a background drag starting here would be captured by
+    // the node DragControls, disable the Trackball, and move the node instead.
+    hit: boolean;
+    hitNodeId: string | number | null;
+    // World-space distance from the camera to the nearest pierced sphere.
+    hitDepth: number | null;
+    // Nearest node by on-screen projection (in front of the camera only).
+    nearestNodeId: string | number | null;
+    nearestDistancePx: number | null;
+    nearestNodeScreen: {x: number; y: number} | null;
+    // The nearest node's projected screen radius, and whether the point falls
+    // inside that projected disk (a screen-space cross-check of `hit`).
+    nearestProjectedRadiusPx: number | null;
+    withinProjectedRadius: boolean;
+    // Nodes considered (positioned and in front of the camera).
+    candidateNodeCount: number;
+};
+
 
 export type CollectedErrors = {
     consoleErrors: string[];
@@ -52,6 +81,11 @@ declare global {
         __graphFixBestNode: () => FixedNodeScreenPoint | null;
         __graphNodeScreenById: (id: string | number) => NodeScreenById | null;
         __webglContextLostCount: number;
+        // Issue #55 H1 fix dependency: node-occupancy / background-point probe
+        // (harness-side observation only). The heavyweight phase-2 diagnostics
+        // (pointer counters, controls sampler) are evidence-only and live with
+        // the out-of-tree diagnostic (tests/diagnostics/55-drag/drag-probe.ts).
+        __graphNodeOccupancyAtPoint: (x: number, y: number) => NodeOccupancy | null;
     }
 }
 
@@ -317,6 +351,176 @@ export async function installGraphProbe(page: Page): Promise<void> {
             const coords = handle.graph2ScreenCoords(node.x, node.y, node.z);
             return {x: coords.x, y: coords.y, fixed: node.fx !== undefined};
         };
+
+        // Issue #55 H1 discriminator: does an arbitrary screen point sit on a
+        // node mesh? This mirrors the three DragControls hit-test — normalized
+        // device coords from the canvas rect, a camera ray, and a ray-sphere
+        // test against each node's world sphere (the same `node.__threeObj`
+        // meshes DragControls raycasts). A `hit` here is a "background" drag
+        // that would instead capture a node, disable the Trackball, and move
+        // the node (camera delta ~0 — the observed failure signature). THREE's
+        // Vector3 is reached through an existing instance (`camera.position`)
+        // since the app exposes no global THREE; cloning yields a real Vector3
+        // with set/unproject/sub, so no import is needed in page context.
+        window.__graphNodeOccupancyAtPoint = (x, y) => {
+            const handle = findHandle();
+            if (handle === null) {
+                return null;
+            }
+            const canvas = document.querySelector("canvas");
+            if (canvas === null) {
+                return null;
+            }
+
+            const camera = handle.camera();
+            const Vec3 = camera.position.constructor;
+            const rect = canvas.getBoundingClientRect();
+
+            // NDC exactly as three DragControls._updatePointer computes it, so a
+            // hit mirrors the raycast that fires node dragstart.
+            const ndcX = ((x - rect.left) / rect.width) * 2 - 1;
+            const ndcY = -((y - rect.top) / rect.height) * 2 + 1;
+
+            // raycaster.setFromCamera semantics for a perspective camera:
+            // origin at the camera, direction toward the unprojected NDC point.
+            camera.updateWorldMatrix(true, false);
+            const origin = camera.getWorldPosition(new Vec3());
+            const direction = new Vec3(ndcX, ndcY, 0.5)
+                .unproject(camera)
+                .sub(origin)
+                .normalize();
+            const viewDirection = camera.getWorldDirection(new Vec3());
+            // Camera right axis (world) for projecting a sphere's edge to pixels.
+            const right = new Vec3(1, 0, 0)
+                .applyQuaternion(camera.quaternion)
+                .normalize();
+
+            const center = new Vec3();
+            const scale = new Vec3();
+
+            let hitNodeId: string | number | null = null;
+            let hitDepth = Number.POSITIVE_INFINITY;
+            let nearestNodeId: string | number | null = null;
+            let nearestDistancePx = Number.POSITIVE_INFINITY;
+            let nearestScreen: {x: number; y: number} | null = null;
+            let nearestProjectedRadiusPx: number | null = null;
+            let candidateNodeCount = 0;
+
+            for (const node of collectNodeData(handle)) {
+                if (
+                    typeof node.x !== "number" ||
+                    typeof node.y !== "number" ||
+                    typeof node.z !== "number"
+                ) {
+                    continue;
+                }
+                const obj = node.__threeObj;
+                if (!obj) {
+                    continue;
+                }
+                obj.updateWorldMatrix(true, false);
+                obj.getWorldPosition(center);
+
+                // Behind-camera nodes are not real targets (graph2ScreenCoords
+                // maps them to plausible on-screen coords), so exclude them from
+                // both the raycast and the nearest-projection search.
+                const depthAlongView =
+                    (center.x - origin.x) * viewDirection.x +
+                    (center.y - origin.y) * viewDirection.y +
+                    (center.z - origin.z) * viewDirection.z;
+                if (depthAlongView <= 0) {
+                    continue;
+                }
+                candidateNodeCount += 1;
+
+                // World-space sphere radius read from the node mesh geometry
+                // (the mesh DragControls raycasts), scaled by world scale.
+                let worldRadius = 0;
+                obj.traverse((child: any) => {
+                    const geometry = child.geometry;
+                    if (!geometry) {
+                        return;
+                    }
+                    if (geometry.boundingSphere === null) {
+                        geometry.computeBoundingSphere();
+                    }
+                    if (geometry.boundingSphere === null) {
+                        return;
+                    }
+                    child.getWorldScale(scale);
+                    const maxScale = Math.max(
+                        Math.abs(scale.x),
+                        Math.abs(scale.y),
+                        Math.abs(scale.z),
+                    );
+                    const r = geometry.boundingSphere.radius * maxScale;
+                    if (r > worldRadius) {
+                        worldRadius = r;
+                    }
+                });
+
+                // Ray-sphere intersection (the sphere-mesh case of
+                // raycaster.intersectObjects): the pixel ray pierces the node
+                // when its perpendicular distance to the center is within the
+                // radius and an entry lies ahead of the camera.
+                const lx = center.x - origin.x;
+                const ly = center.y - origin.y;
+                const lz = center.z - origin.z;
+                const tca =
+                    lx * direction.x + ly * direction.y + lz * direction.z;
+                const d2 = lx * lx + ly * ly + lz * lz - tca * tca;
+                const r2 = worldRadius * worldRadius;
+                if (d2 <= r2) {
+                    const thc = Math.sqrt(r2 - d2);
+                    const t0 = tca - thc;
+                    const t1 = tca + thc;
+                    const t = t0 >= 0 ? t0 : t1;
+                    if (t >= 0 && t < hitDepth) {
+                        hitDepth = t;
+                        hitNodeId = node.id;
+                    }
+                }
+
+                // Screen-space nearest projection + that node's projected radius.
+                const coords = handle.graph2ScreenCoords(
+                    node.x,
+                    node.y,
+                    node.z,
+                );
+                const distancePx = Math.hypot(coords.x - x, coords.y - y);
+                if (distancePx < nearestDistancePx) {
+                    nearestDistancePx = distancePx;
+                    nearestNodeId = node.id;
+                    nearestScreen = {x: coords.x, y: coords.y};
+                    const edge = handle.graph2ScreenCoords(
+                        center.x + right.x * worldRadius,
+                        center.y + right.y * worldRadius,
+                        center.z + right.z * worldRadius,
+                    );
+                    nearestProjectedRadiusPx = Math.hypot(
+                        edge.x - coords.x,
+                        edge.y - coords.y,
+                    );
+                }
+            }
+
+            return {
+                hit: hitNodeId !== null,
+                hitNodeId,
+                hitDepth: Number.isFinite(hitDepth) ? hitDepth : null,
+                nearestNodeId,
+                nearestDistancePx: Number.isFinite(nearestDistancePx)
+                    ? nearestDistancePx
+                    : null,
+                nearestNodeScreen: nearestScreen,
+                nearestProjectedRadiusPx,
+                withinProjectedRadius:
+                    nearestProjectedRadiusPx !== null &&
+                    Number.isFinite(nearestDistancePx) &&
+                    nearestDistancePx <= nearestProjectedRadiusPx,
+                candidateNodeCount,
+            };
+        };
     });
 }
 
@@ -343,6 +547,96 @@ export async function nodeScreenPointById(
     id: string | number,
 ): Promise<NodeScreenById | null> {
     return page.evaluate((nodeId) => window.__graphNodeScreenById(nodeId), id);
+}
+
+/**
+ * Issue #55: raycast a screen point against the node meshes (H1 discriminator).
+ * See {@link NodeOccupancy}.
+ */
+export async function nodeOccupancyAtPoint(
+    page: Page,
+    x: number,
+    y: number,
+): Promise<NodeOccupancy | null> {
+    return page.evaluate(
+        (point) => window.__graphNodeOccupancyAtPoint(point.x, point.y),
+        {x, y},
+    );
+}
+
+/**
+ * Result of {@link pickBackgroundDragPoint}: the emptiest screen point found for
+ * a "background" drag start, with its clearance to the nearest node's projected
+ * EDGE (`nearestDistancePx − nearestProjectedRadiusPx`, in screen pixels;
+ * `Infinity` when no node is in front of the camera). Edge clearance — not
+ * distance to the node centre — is the drag-capture margin: a point 34px from a
+ * node whose disk projects to a 25px radius sits only ~9px outside it.
+ */
+export type BackgroundDragPoint = {
+    x: number;
+    y: number;
+    edgeClearancePx: number;
+};
+
+/**
+ * Issue #55: choose a genuinely-background screen point to start a "background
+ * drag" — the inverse intent of {@link pickNodeScreenPoint}, rooted in the H1
+ * root cause. The failing `matrix.spec.ts:224` drag hard-coded its start at
+ * `(150, 450)`; this scene is a dense scatter of ~2600 small nodes (projected
+ * radius ~1.5–5.5px), so on ~10% of post-zoom layouts a node's disk covered
+ * that pixel (an `occHit`, reproduced on SwiftShader and on RTX-3080 hardware).
+ * The DragControls raycast then captured the node on pointerdown, disabled the
+ * Trackball, and moved the node instead of rotating the camera — the observed
+ * ~0.002 camera delta against `MOTION_FLOOR` (1).
+ *
+ * Every candidate is raycast against the live node meshes with the same test
+ * DragControls fires on pointerdown ({@link nodeOccupancyAtPoint}). Points that
+ * are a 3-D hit or fall inside the nearest node's projected disk are rejected
+ * outright (they would capture a node); of the rest, the one with the GREATEST
+ * clearance to the nearest node edge is returned — the emptiest available spot,
+ * so the small per-frame force-layout drift between this probe and the gesture
+ * (Phase-2 evidence recorded one `occHit` a few frames before pointerdown as
+ * the layout micro-drifted) cannot bring a node onto the start point. The
+ * caller applies a pixel-margin floor to the returned clearance and fails
+ * loudly if even the emptiest point is too close, rather than dragging from an
+ * unverified start. Returns `null` only when the probe is unavailable for every
+ * candidate, or no candidate is background at all.
+ */
+export async function pickBackgroundDragPoint(
+    page: Page,
+    candidates: ReadonlyArray<{x: number; y: number}>,
+): Promise<BackgroundDragPoint | null> {
+    let best: BackgroundDragPoint | null = null;
+    for (const candidate of candidates) {
+        const occupancy = await nodeOccupancyAtPoint(
+            page,
+            candidate.x,
+            candidate.y,
+        );
+        if (occupancy === null) {
+            continue;
+        }
+        // On a node — the ray pierces its sphere or the point sits inside the
+        // node's projected disk. Starting here would capture the node and
+        // defeat the background-drag premise, so it is never eligible.
+        if (occupancy.hit || occupancy.withinProjectedRadius) {
+            continue;
+        }
+        const edgeClearancePx =
+            occupancy.nearestDistancePx === null
+                ? Number.POSITIVE_INFINITY
+                : occupancy.nearestDistancePx -
+                  (occupancy.nearestProjectedRadiusPx ?? 0);
+        // Guard the numeric corner where the point is outside the disk by the
+        // 2-D check yet not strictly beyond the edge — never a safe start.
+        if (edgeClearancePx <= 0) {
+            continue;
+        }
+        if (best === null || edgeClearancePx > best.edgeClearancePx) {
+            best = {x: candidate.x, y: candidate.y, edgeClearancePx};
+        }
+    }
+    return best;
 }
 
 /**

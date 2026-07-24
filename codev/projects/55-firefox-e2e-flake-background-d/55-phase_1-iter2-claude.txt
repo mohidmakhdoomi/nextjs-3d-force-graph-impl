@@ -1,0 +1,76 @@
+I'll read the key implementation files for Phase 1 review. Let me start with the three core deliverable files and the existing codebase context.Let me check a few more things — the original graph-handle.ts to understand the diff, and verify the canonical suite is unchanged.Let me verify the canonical suite is untouched and check some structural items.Now let me check that the canonical test list is truly unchanged and review the thread for verification evidence:I've now reviewed all the Phase 1 deliverables thoroughly. Let me compile the review.
+
+---
+
+## Phase 1 Review: Drag-path instrumentation (harness-side)
+
+### Spec & Plan Adherence
+
+All four Phase 1 deliverables are met:
+
+| Deliverable | Status | Evidence |
+|---|---|---|
+| Probe extension (`graph-handle.ts`) — node-occupancy, controls sampler, pointer counters | ✅ | Types + implementations added; wrappers exported |
+| Out-of-tree diagnostic harness (`tests/diagnostics/55-drag/`) | ✅ | Dedicated folder with own config; `testDir: "."` never collected by canonical `testDir: "./tests/e2e"` |
+| Firefox browser installed | ✅ | Thread records firefox-1532 installed via `npm run browser:install` |
+| Comment documentation at existing standard | ✅ | Every new type and function has JSDoc-style comments |
+
+### Acceptance Criteria Verified
+
+1. **Diagnostic harness captures discriminating fields** — thread records induced-failure dumps on both engines (`DIAG_MOTION_FLOOR=100000`) with occupancy, controls.enabled, fixedNodeCount, pointer counts, and mid-drag step samples. ✅
+2. **Canonical suite provably unchanged** — `npx playwright test --list` shows 22 tests in 3 files; no diagnostics collected; full two-engine suite 22/22 green (11.4m). `matrix.spec.ts`, `pointer.ts`, and `playwright.config.ts` have zero diff against main. ✅
+3. **lint / typecheck clean** — confirmed in thread (only lint noise is the untracked builder-harness `.claude/hooks` file — environment-only per lessons-critical). ✅
+
+### Code Quality
+
+**`graph-handle.ts` additions** — High quality throughout:
+
+- **`NodeOccupancy` / `__graphNodeOccupancyAtPoint`**: The ray-sphere intersection math is correct (parametric form: `tca = L·d`, discriminant `d² = |L|² - tca²`, entry `t₀ = tca - √(r²-d²)`). Behind-camera exclusion via dot-product depth check is right. Getting `Vector3` constructor from `camera.position.constructor` is a clean solution for the no-global-THREE constraint. World-scale handling for sphere radius (`getWorldScale` → max component × bounding sphere radius) is proper. The NDC computation matches DragControls' `_updatePointer` — critical for H1 faithfulness.
+
+- **Pointer counters**: Capture-phase document-level listeners installed via `addInitScript` (before app code) — sees every event the content process delivers. Read-only (no `preventDefault`/`stopPropagation`), so app pointer handling is unchanged. Bounded ring with overflow counter (`dropped`) is a good memory-bounded design. The `POINTER_LOG_CAP = 1000` is generous enough for diagnostic replay.
+
+- **`ControlsSample` / `__graphControlsSample`**: Lightweight (no node iteration), suitable for mid-drag high-frequency sampling. Reads `state`/`keyState`/`_moveCurr`/`_movePrev` — exactly the TrackballControls fields that discriminate H1 (disabled mid-drag) and H3 (state never reaches ROTATE).
+
+**`drag-diagnostic.spec.ts`** — Well-structured:
+
+- Two complementary variants: "faithful" (exact `:224` gesture for H2 pointer-delivery measurement) and "stepped" (per-segment moves for mid-drag H1 controls observation). This is a good design — the spec notes `dragend` restores `controls.enabled` on pointerup, so mid-drag sampling requires the stepped variant.
+
+- **`movesBetweenDownAndUp(log)`** — correctly derives the H2 discriminator from the recorded event sequence (not the aggregate counter), scanning strictly between the first `down` and subsequent `up`. This is the belt-and-suspenders fix Codex requested in iter 1.
+
+- **Reset timing** — `mouse.move(DRAG_START)` precedes `resetPointerLog(page)` in both variants, so the positioning move is excluded. Codex's iter 1 concern is correctly addressed.
+
+- **`readRenderer`** — `getContext("webgl2") ?? getContext("webgl")` correctly handles three.js's WebGL2 default. Claude's iter 1 concern is correctly addressed.
+
+- **`measureSettledDelta`** — non-throwing design that tracks max delta within the settle window is smart for diagnostic use (captures evidence first, asserts after dump).
+
+- **`dumpDiagnostics`** — clear, structured output with all discriminating fields; JSON attachment for machine-parseable artifacts; verbose trace only on reproduced failures (passing runs get a one-line summary). Good noise discipline.
+
+**`playwright.diag.config.ts`** — Correctly mirrors canonical config:
+- Same viewport (800×600), same `PW_CHROMIUM_ARGS` SwiftShader-or-hardware hook, same Firefox `webgl.force-enabled` pref, same `resolveWorkers`, same webServer command.
+- `retries: 0` — flake discipline preserved.
+- `testDir: "."` — scoped to its own folder. Clean isolation.
+- Import paths (`../../../scripts/e2e-workers.mjs`) resolve correctly from the 3-deep location.
+
+### Iteration 1 Feedback — All Addressed
+
+| Concern | Source | Resolution |
+|---|---|---|
+| `pointerLog.move` miscounts positioning move as drag delivery | Codex (BLOCKING) | ✅ Reset after positioning + `movesBetweenDownAndUp()` derived discriminator |
+| `getContext("webgl")` returns null on WebGL2 canvas | Claude (non-blocking) | ✅ Tries `webgl2` first |
+| `waitForPointerEnablement` duplicated | Claude (non-blocking) | ✅ Kept as-is — extracting would touch canonical suite |
+
+### Minor Observations (non-blocking)
+
+1. **`controls.state` property name** — The code reads `controls.state` while the spec references TrackballControls' `_state`. The thread's evidence shows actual values (`state=0 ROTATE → -1 NONE`), confirming the property is accessible at runtime. Working as intended.
+
+2. **`waitForPointerEnablement` duplication** — Already discussed in iter 1 and correctly kept as-is. The justification (touching canonical suite would break the plan's invariant) is sound.
+
+---
+
+VERDICT: APPROVE
+SUMMARY: Phase 1 delivers all four plan deliverables — node-occupancy probe, controls sampler, pointer counters, and out-of-tree diagnostic harness — with excellent code quality, correct ray-sphere math, provably unchanged canonical suite (22/22 green), and all iter-1 feedback addressed.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

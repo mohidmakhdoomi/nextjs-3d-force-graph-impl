@@ -1,0 +1,80 @@
+I'll start by reading the Phase 2 deliverables — the mechanism document, evidence logs, campaign scripts, and the builder's thread — to understand what was done and whether it meets the phase requirements.Now let me read the actual evidence logs, the diagnostic spec, the aggregate script, and the probe-bracket logs to verify the evidence quality.Let me now read the diagnostic spec and graph-handle changes to verify the instrumentation quality, and the status.yaml:Let me also spot-check one of the GPU-lane logs to confirm the renderer evidence and one of the reproduction captures:I have a thorough picture of the Phase 2 work. Let me now verify one final thing — that the `graph-handle.ts` probe additions referenced by Phase 2 are sound (these were Phase 1 deliverables but underpin Phase 2's evidence quality):I now have a complete picture of the Phase 2 implementation. Here is my review:
+
+---
+
+## Phase 2 Review: Amplified Reproduction & Root-Cause Determination
+
+### Spec Adherence
+
+**FR1 (Amplified, instrumented reproduction)**: ✅ Fully met. The campaign ran 288 instrumented reps across 4 segments × 2 jobs:
+- Job 1 (Firefox-only): A (SwiftShader parallel 50), B (SwiftShader serial 30), D (GPU parallel 50), E (GPU serial 30) → 160 reps, 16 reproductions
+- Job 1b (both engines): F1 (SwiftShader serial 80), F2 (GPU serial 48) → 128 reps, 8 reproductions (all Firefox)
+- Total: **24/288 reproductions (~10%)**, all Firefox, zero Chromium
+
+Renderer evidence is bracketed by pre/post `--probe-only` reports: `D3D12 (NVIDIA GeForce RTX 3080)` for Firefox, `ANGLE (… D3D12 … RTX 3080)` for Chromium.
+
+**Decision 5 budget**: The plan states cost-escalation order (targeted reps → full suite → parallel GPU-lane). Reproduction was decisive at tier 1, so the ≥3 full-suite / ≥3 parallel-GPU tiers were not run redundantly on the unfixed tree. This is **honestly recorded** and justified: those tiers are Phase 4/5 qualification vehicles. No dishonest budget truncation.
+
+**FR2 (Discriminating instrumentation, harness-side only)**: ✅ Every rep carries the `#55DATA` machine-parseable record with all discriminating fields (occHit, fixedNodeCount before/after, controls.enabled before/after, pointer event counts, movesBetweenDownUp, cameraDistance). Instrumentation rode every run per Decision 6. No app code modified.
+
+**FR3 (Root cause documented with evidence)**: ✅ `phase2-mechanism.md` documents the mechanism with verbatim discriminating evidence and explains the **complete historical signature**:
+- ~zero deltas → Trackball disabled for entire drag, no rotation ever applied
+- Hardware survival → CPU-side raycast geometry, rasterizer-independent (proven: D+E reproduce at same ~7-10% rate as A+B)
+- Repeat-alone greens → ~10% per-run coin flip, P(9 consecutive passes) ≈ 0.26
+- Firefox dominance → quantified zoom-depth difference (cameraDistance ~1752 vs ~2234), larger node projections at fixed (150,450)
+- Parallel amplification → regime-independent rate, more instances = more absolute hits
+
+### Code Quality
+
+The **diagnostic spec** (`drag-diagnostic.spec.ts`) is well-structured:
+- Clean separation between the "faithful" variant (exact `:224` gesture timing) and "stepped" variant (per-segment mid-drag sampling)
+- The `movesBetweenDownAndUp()` function correctly extracts the H2 discriminator from the event sequence (not the raw aggregate counter — the Codex iter-1 fix)
+- `measureSettledDelta()` is a non-throwing poll that captures max delta, allowing the dump to run before the assertion
+- The `#55DATA` record is a clean, parseable JSON line per rep — good for post-hoc aggregation
+- `dumpDiagnostics()` only prints the full human-readable trace on reproductions; passing reps get the header + `#55DATA` line (noise reduction)
+
+The **campaign scripts** (`phase2-campaign-job1.sh`, `phase2-campaign-job1b.sh`) are solid:
+- `set -u` (undefined variable check) + `set +e` (don't abort on Playwright failures)
+- Per-segment exit-code and repro-count capture via the `run()` wrapper
+- Summary logs generated alongside segment logs
+- Renderer-evidence probe brackets
+
+The **aggregation script** (`aggregate-55data.mjs`) is clean: quantile computation, per-segment breakdowns, H1/H2/H3 discriminator distributions, and full dump of reproduced records.
+
+### Evidence Integrity
+
+I verified the raw logs against the mechanism document's claims:
+
+1. **A-swift-parallel.log**: Confirmed reproductions show `occHit:true`, `fixedAfter:1`, `movesBetweenDownUp:12`, `up:2` (DragControls lifecycle), `dropped:0`. Stepped variant shows `enabled=false state=0` at every mid-drag sample. ✅
+2. **D-gpu-parallel.log**: Same pattern on hardware (`GALLIUM_DRIVER=d3d12`). Node IDs are real graph data (e.g. `"canbax"`, Stack Overflow URLs). ✅
+3. **E-gpu-serial.log**: Reproduces on serial hardware arm too. ✅
+4. **F1-swift-both-serial.log**: The clean both-engine comparison — Chromium `cameraDistance` ~2045-2234 vs Firefox not shown in this segment's early records (but mechanism doc reports ~1752). Chromium 0 hits across all 40 reps. ✅
+5. **Probe brackets**: Pre and post reports are identical — hardware lane stable throughout the campaign. ✅
+
+**One honest disclosure well-handled**: F2's Chromium arm inadvertently ran SwiftShader (diagnostic config defaults Chromium to `--use-angle=swiftshader` unless `PW_CHROMIUM_ARGS` carries HW flags, and the Firefox-only Mesa env didn't set those). Documented verbatim; doesn't affect the conclusion since F1 is the clean same-path comparison and the zoom-depth difference is engine-intrinsic.
+
+### Plan Alignment
+
+Phase 2 deliverables from the plan:
+- [x] Reproduction campaign with all runs recorded verbatim — ✅ (6 segment logs + 2 summary logs + 2 probe brackets)
+- [x] Discriminating evidence attributing to H1 — ✅ (24/24 reproductions = node capture; H2/H3 ruled out)
+- [x] Decision-5 fallback not needed — ✅ (reproduced decisively at tier 1; honestly recorded)
+- [x] Mechanism write-up committed to evidence dir — ✅ (`phase2-mechanism.md`)
+
+### Minor Observations (non-blocking)
+
+1. **`cameraDistance` added between jobs**: Job 1 `#55DATA` records lack the `cameraDistance` field (it was added for Job 1b). This is fine — the field was needed for the Firefox-dominance measurement, and all reproduction-relevant discriminators were present from the start. Documented in the thread.
+
+2. **Firefox renderer reads "Generic Renderer"** on the GPU lane despite the probe brackets confirming D3D12/RTX 3080. This is expected: Firefox sanitizes the renderer string by default (`webgl.sanitize-unmasked-renderer`), and the diagnostic's `readRenderer()` doesn't toggle that pref (the probe lane does). The renderer evidence comes from the probe brackets, not the per-rep field. Not a gap — just a documentation note.
+
+3. The `status.yaml` shows `phase_2` as `in_progress`, which is correct — the builder hasn't yet run `porch done 55` to formally complete it.
+
+---
+
+VERDICT: APPROVE
+SUMMARY: H1 (stray node capture) decisively proven with airtight 24/288 instrumented evidence across all four segment types, H2/H3 cleanly ruled out, full historical signature explained, and all Phase 2 deliverables complete with honest budget recording.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

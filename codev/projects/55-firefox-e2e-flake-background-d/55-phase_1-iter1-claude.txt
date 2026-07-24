@@ -1,0 +1,66 @@
+I'll start by reading the key implementation files and the existing codebase context in parallel.Now let me check the existing codebase context — the canonical config, the original graph-handle.ts (via diff), and the test that's being diagnosed.Good — canonical suite is unchanged at 22 tests with no diagnostic spec. Let me check a few more things:Let me verify a few more implementation details:Let me verify the graph-handle.ts additions don't break existing tests by checking what was added vs what existed:Now let me check the thread/state docs briefly and verify no app files were modified:Good — no app files, no `package.json`, no CI workflow, no canonical `playwright.config.ts` touched. Let me do one final verification of the raycast math correctness and check if there's anything the thread doc says about lint/typecheck:I've now thoroughly reviewed all Phase 1 implementation files. Here's my assessment:
+
+---
+
+## Review: Phase 1 — Drag-path instrumentation (harness-side)
+
+### Spec Adherence ✅
+
+All Phase 1 deliverables are delivered and correct:
+
+1. **Node-occupancy-at-point** (`__graphNodeOccupancyAtPoint` in `graph-handle.ts:509–667`): Full ray-sphere intersection that mirrors three.js `DragControls._updatePointer` semantics (NDC from canvas rect → camera ray → sphere intersection). The implementation is mathematically sound — standard parametric ray-sphere with correct behind-camera exclusion. Also provides screen-space nearest projection + projected radius cross-check, giving a continuous "how close was the pointer" measure beyond the binary hit.
+
+2. **Controls sampler** (`__graphControlsSample` in `graph-handle.ts:673–696`): Cheap, no-node-iteration Trackball state read — `enabled`, `state` (the `_STATE` enum), `keyState`, `_moveCurr`/`_movePrev`. Exactly what's needed for mid-drag H1/H3 discrimination.
+
+3. **Pointer-event counters** (`graph-handle.ts:163–254`): Capture-phase document listeners with aggregate counts (canvas + document), bounded ring (cap 1000, overflow tracked), `reset`/`read` accessors. Read-only — no `preventDefault`/`stopPropagation`. H2 is directly measurable as "0 pointermoves between down and up."
+
+4. **Out-of-tree diagnostic harness**: Confirmed non-collection — `npx playwright test --list` returns 22 tests in 3 files (unchanged). The dedicated config's `testDir: "."` scopes to `tests/diagnostics/55-drag/` only. Two diagnostic variants cover the space: "faithful" (mirrors :224 verbatim) and "stepped" (single-segment mid-drag sampling). Both correctly replay the full preamble (open → settle → enable → pause rotation → zoom in → settle).
+
+5. **Firefox installed**: Documented in thread.
+
+6. **No app code modified**: Verified — zero changes to `src/`, `app/`, `components/`, `pages/`, `lib/`, `public/`, `package.json`, `package-lock.json`, `.github/`, or `playwright.config.ts`.
+
+### Code Quality ✅
+
+**Strengths:**
+- The `Vec3` constructor trick (`camera.position.constructor`) is elegant — it avoids needing a THREE import in page context while yielding a real `Vector3` with `set`/`unproject`/`sub`.
+- World-scale-aware radius computation (`child.getWorldScale` → max component → scaled bounding sphere) correctly handles multi-mesh nodes.
+- The bounded ring with separate aggregate counters is a clean design — overflow doesn't lose accuracy on the aggregate counts, just drops coordinate/timestamp detail.
+- All new exports are purely additive — existing `matrix.spec.ts` and `right-click-release.spec.ts` import lists are unchanged, so backward compatibility is trivially preserved.
+- Comment documentation is thorough and hypothesis-linked throughout (e.g., `NodeOccupancy` JSDoc explains exactly how `hit` maps to H1's DragControls capture).
+
+**Minor observations (non-blocking):**
+- `readRenderer()` in the diagnostic spec uses `getContext("webgl")` which returns `null` on WebGL2 canvases (three.js defaults to WebGL2). The `null` is handled (falls through to `"(unavailable)"` in the dump), so it's functional — but it will silently miss renderer evidence in some configurations. The GPU lane's own probe likely uses a different approach. Not blocking since renderer evidence is supplemental, not discriminating.
+- `waitForPointerEnablement` is duplicated from `matrix.spec.ts` into the diagnostic rather than extracted to a shared helper. Acceptable — the diagnostic intentionally imports only from `graph-handle.ts` (the stable shared surface), not from individual spec files.
+
+### Test Coverage ✅
+
+The diagnostic harness IS the test for this phase, and it's verified:
+- Induced-failure dump path proven on both engines (`DIAG_MOTION_FLOOR=100000`), confirming all discriminating fields capture.
+- Passes at real floor=1 (no false-fail).
+- Canonical two-engine suite: 22/22 passed (11.4m), including the flaky `:224` test, confirming no regression from instrumentation.
+- `npm run typecheck` and `npm run lint` clean on real source.
+
+### Plan Alignment ✅
+
+Phase 1 plan items mapped to implementation:
+- [x] Probe extension: `NodeOccupancy`, `ControlsSample`, pointer log types + page-context functions
+- [x] Pointer-event counters: capture-phase, bounded ring, canvas-specific counts
+- [x] Out-of-tree diagnostic: `tests/diagnostics/55-drag/` with dedicated config, proven non-collection
+- [x] Firefox installed
+- [x] Comment documentation at existing standard
+- [x] Acceptance criteria: canonical suite unchanged + green, diagnostic captures discriminating fields, lint/typecheck clean
+
+### Separation of Concerns (FR2 Compliance) ✅
+
+The heavyweight diagnostics (the out-of-tree harness, the verbose per-event ring, the step-by-step controls sampling) are properly kept in the evidence-only diagnostic — they never enter the canonical `tests/e2e/` test flow. The probe additions (`graph-handle.ts`) are all cheap, silent-in-passing fields that don't affect existing test behavior. This correctly implements FR2's committed-vs-evidence-only boundary.
+
+---
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 1 delivers all plan deliverables — node-occupancy probe, controls sampler, pointer counters, and out-of-tree diagnostic harness — with provably unchanged canonical suite, excellent code quality, and thorough documentation.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES: None

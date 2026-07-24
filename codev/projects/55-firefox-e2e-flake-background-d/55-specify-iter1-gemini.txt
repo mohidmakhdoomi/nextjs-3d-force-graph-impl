@@ -1,0 +1,19 @@
+This specification is a masterclass in disciplined flake investigation. It perfectly scopes the problem, clearly articulates testable hypotheses mapped to the exact software layers involved, and correctly draws hard boundaries against masking the issue with retries or weakened assertions.
+
+Here is the review against the requested focus areas:
+
+1. **Clarity and Completeness:** Outstanding. The spec not only defines *what* to do but explicitly rules out *what not* to do (e.g., no CI changes, no weakened assertions, no retry loops). The constraints are clear and binding.
+2. **Technical Feasibility:** High. Leveraging Playwright's `addInitScript` and the existing `graph-handle.ts` probe to capture `pointerdown`/`pointermove` events, `controls.enabled` state, and `fixedNodeCount` is standard and highly effective for this kind of observability without mutating the app itself. 
+3. **Edge Cases and Error Scenarios:** The spec brilliantly accounts for the worst-case scenario—exhausting the reproduction budget without a failure—by providing a statistical fallback for H1 (node-occupancy measurement across fresh layouts). 
+4. **Testing Strategy:** The proposed qualification process (amplified targeted runs on both engines, plus parallel GPU-lane runs) is rigorous and sufficient to prove the fix.
+5. **Ambiguities:** None. The definition of done is exact, down to which markdown documents need to be updated to correct the historical record.
+
+One minor note of endorsement: The hypothesis H1 (Stray node capture) is particularly compelling given the `wheel(0, -240)` zoom-in that precedes the drag, which naturally increases the screen-space projection of nodes and makes a collision at the hardcoded `(150, 450)` coordinate far more likely. The proposed fix for H1 (a verified-background start point via an inverse `pickNodeScreenPoint` probe) would strictly *strengthen* the test's fidelity.
+
+---
+VERDICT: APPROVE
+SUMMARY: The specification provides an exceptionally rigorous, evidence-based approach to root-causing and fixing the flake without masking it.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

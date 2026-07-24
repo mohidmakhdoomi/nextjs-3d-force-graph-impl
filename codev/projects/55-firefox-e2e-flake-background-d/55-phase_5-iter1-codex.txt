@@ -1,0 +1,8 @@
+Using direct file reads to review only phase_5 deliverables and evidence.Checking the exact README/review passages touched for the phase_5 caveat retirement/addendum.One more quick pass on the README wording around the retired caveat.---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 5 evidence and the review-41 addendum are solid, but the README’s opt-in-parallel caveat retirement is incomplete because it still describes the hardware parallel path as only “mostly green.”
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- `README.md:95-98` still says the native-GPU parallel lane “stays mostly green,” which contradicts the phase_5 3/3 green re-qualification and does not fully retire the opt-in-parallel Firefox caveat required by FR6. Update this passage to reflect the actual July 24, 2026 outcome: the Firefox background-drag flake is fixed/re-qualified green 3/3, while parallel remains opt-in only because of the separate deterministic Chromium SwiftShader contention problem.
