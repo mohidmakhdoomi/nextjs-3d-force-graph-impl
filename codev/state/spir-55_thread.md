@@ -473,3 +473,12 @@ stay under tests/diagnostics/ as committed evidence; spec wants heavyweight to
 **/*.ts typechecks the diagnostic, so dangling imports aren't an option.
 typecheck+lint clean; canonical --list unchanged (0 diagnostic tests, 18 matrix);
 diag still collects 4 tests. Verifying diagnostic runs + canonical :224 intact.
+
+## Phase 3 — iter2 verification: post-trim green + re-consult running
+Committed FR2 trim (fef88f3). Verified post-trim: canonical :224 4/4 green both
+engines; diagnostic still functions (freshly reproduced H1 on firefox: occHit
+hit=true withinDisk=true nearestPx=5.24<projRadius=5.47, controls.enabled + 12
+pointermoves captured via relocated installDragProbe); canonical --list unchanged
+(0 diag tests, 18 matrix); typecheck+lint clean. Wrote iter1 rebuttal (both
+REQUEST_CHANGES accepted + addressed via relocate-not-delete). porch check/done
+iter2 build-complete. Running iter2 3-way consult.
