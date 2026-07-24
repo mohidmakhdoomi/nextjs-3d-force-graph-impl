@@ -8,14 +8,18 @@
 #   Step 2  npm run validate               (lint+typecheck+full serial smoke #1)
 #   Step 3  npm run test:smoke x2          (full two-engine serial smoke #2,#3)
 #   Step 4  npm run test:e2e:gpu x3        (full two-engine native-GPU lane)
+#   Step 5  phase4b-gpu-targeted.sh        (targeted firefox :224 x60 on the
+#                                           native-GPU HARDWARE recipe)
 #
 # Step 1 GATES the rest: a single below-floor drag means the fix is incomplete
 # (back to phase 2/3), so we stop rather than burn an hour on the full runs.
-# The GPU-lane wrapper runs the full suite (no per-test --repeat-each
-# passthrough), so the hardware :224 arm is qualified via the 3 full GPU runs
-# (each exercises :224 on verified hardware — the historical highest-rate
-# regime), while the high-volume targeted repetition runs on the SwiftShader
-# path (step 1).
+# The FR5 matrix qualifies the targeted ≥60 :224 repetition on BOTH rendering
+# paths: SwiftShader (step 1) and the native-GPU hardware lane (step 5). The
+# gpu-lane wrapper rejects unknown Playwright args, so step 5's targeted repeat
+# runs under the lane's own firefox recipe (companion phase4b-gpu-targeted.sh),
+# bracketed by lane --probe-only hardware verification; the 3 full GPU-suite runs
+# (step 4) additionally exercise :224 on hardware. This one driver reproduces the
+# entire final qualified matrix.
 set -u
 cd "$(dirname "$0")/../../../.." || exit 3
 D=codev/projects/55-firefox-e2e-flake-background-d/evidence
@@ -51,10 +55,15 @@ for i in 1 2 3; do
     echo "gpu run $i exit=${PIPESTATUS[0]}"
 done
 
+sep "STEP 5: targeted [firefox] :224 x60 on the native-GPU HARDWARE recipe"
+bash "$D/phase4b-gpu-targeted.sh"
+echo "STEP 5 exit=$?"
+
 sep "PHASE 4 SUMMARY"
-for f in "$D"/phase4-*.log; do
+for f in "$D"/phase4-*.log "$D"/phase4b-*.log; do
     printf '%-34s %s\n' "$(basename "$f"):" \
         "$(grep -oE '[0-9]+ (passed|failed|flaky)' "$f" | tail -3 | tr '\n' ' ')"
 done
-echo "renderer evidence (GPU lane):"
-grep -rhoE "renderer[^,]*(RTX|D3D12|NVIDIA|ANGLE|Generic Renderer|llvmpipe|SwiftShader)[^\"]*" "$D"/phase4-4-gpu-run*.log 2>/dev/null | sort -u | head
+echo "renderer evidence (GPU lane + hardware targeted probes):"
+grep -rhoE "renderer[^,]*(RTX|D3D12|NVIDIA|ANGLE|Generic Renderer|llvmpipe|SwiftShader)[^\"]*" \
+    "$D"/phase4-4-gpu-run*.log "$D"/phase4b-*probe*.log 2>/dev/null | sort -u | head

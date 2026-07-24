@@ -3,9 +3,13 @@
 Prove the H1 background-drag fix under volume on **both engines** and **both
 rendering paths** at `retries: 0`. The historical flake reproduced on the
 SwiftShader serial baseline **and** the native-GPU parallel lane, so both paths
-are qualified. All runs verbatim in `evidence/phase4-*.log`; driver:
-`evidence/phase4-qualify.sh` (step 1 gates the rest — a single below-floor drag
-means the fix is incomplete, so we stop rather than mask).
+are qualified. All runs verbatim in `evidence/phase4-*.log` and
+`evidence/phase4b-*.log`. The driver `evidence/phase4-qualify.sh` reproduces the
+entire final matrix end to end: steps 1–4 (targeted SwiftShader, validate, serial
+smoke ×2, GPU-suite ×3) then step 5 invokes the companion
+`evidence/phase4b-gpu-targeted.sh` (targeted `:224` ×60 on the native-GPU
+hardware recipe). Step 1 gates the rest — a single below-floor drag means the fix
+is incomplete, so we stop rather than mask.
 
 ## Results — green throughout, zero failed/flaky
 
