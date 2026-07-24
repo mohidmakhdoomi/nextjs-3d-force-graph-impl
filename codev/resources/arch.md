@@ -24,8 +24,13 @@ found parallel execution destabilizes the timing-sensitive Chromium
 `matrix.spec.ts` camera-settle/drag assertions under SwiftShader CPU contention
 (4–5 of 22 tests fail on every parallel run — the problem is destabilization, not
 slowness), so the **local default is serial too**. Local parallelism is **opt-in**
-via `E2E_WORKERS` (integer or percentage; invalid ⇒ loud `WorkerConfigError`;
-`50%` is ~4× faster and mostly green only on the native-GPU lane). Do not trim the
+via `E2E_WORKERS` (integer or percentage; invalid ⇒ loud `WorkerConfigError`),
+with one lane-scoped exception (spec 56): the native-GPU lane
+(`scripts/e2e-gpu-lane.mjs`) defaults its **verified-hardware** suite runs to
+`E2E_WORKERS=50%` (~4× faster, re-qualified 3/3 green) by injecting the value
+into the suite env unless the operator set one — reusing `resolveWorkers`, so
+the `CI ⇒ 1` pin and fail-loud validation still apply, and the lane's
+software-fallback path keeps the serial default. Do not trim the
 qualified per-test waits. Full and production npm audits are separate evidence: CI validates
 their JSON/original status and uploads them without turning existing advisory
 totals into a zero-findings gate. Contributor commands and artifact names live in

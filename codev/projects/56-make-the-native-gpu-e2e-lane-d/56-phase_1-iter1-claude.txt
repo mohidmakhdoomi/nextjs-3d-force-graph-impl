@@ -1,0 +1,71 @@
+I'll read the key implementation files and the existing source to review Phase 1 properly.Now let me check the git diff to see exactly what changed, and verify the frozen files weren't touched:Good. Let me now verify the frozen files are untouched and run the tests:All 67 tests pass, all frozen files are untouched. Let me also verify the e2e-workers tests still pass:All 24 e2e-workers tests pass unmodified. Here's my review:
+
+---
+
+## Phase 1 Review: Lane hardware-mode worker default (mechanism + unit tests)
+
+### Spec Adherence
+
+**FR1 (Hardware lane runs default to parallel workers)** ✅  
+`suiteEnvFor` injects `E2E_WORKERS = LANE_DEFAULT_WORKERS` ("50%") in the `hardware` branch only, for both Chromium-inclusive and Firefox-only arms. The value flows through the existing `resolveWorkers` path — no second worker-resolution mechanism.
+
+**FR2 (Operator override preserved)** ✅  
+`operatorWorkersSet` returns `true` for any non-whitespace value, so operator values (including `"1"`, `"banana"`) pass through untouched. No pre-validation in the lane — `WorkerConfigError` remains config-load's job.
+
+**FR3 (Fallback/no-run paths untouched)** ✅  
+The `software-fallback` branch has zero changes — `fallbackEnv` is called as before. No `E2E_WORKERS` injection. `skip-empty` and `abort` guards are unchanged.
+
+**FR4 (CI unaffected)** ✅  
+Zero diff in `.github/workflows/validation.yml`. The CI guard (`CI → 1` before `E2E_WORKERS` is read) in `resolveWorkers` is structural and untouched.
+
+**FR5 (Plain-suite defaults unchanged)** ✅  
+Zero diff in `scripts/e2e-workers.mjs`, `tests/e2e-workers.test.mjs`, and `playwright.config.ts`. All 24 e2e-workers tests pass unmodified.
+
+**FR7 (Unit coverage)** ✅  
+All required cases are covered in the new test block:
+- Hardware two-engine injects default ✅
+- Firefox-only hardware injects default ✅
+- Operator `E2E_WORKERS=4` and `E2E_WORKERS=1` pass through verbatim ✅
+- Whitespace-only treated as unset (default injected) ✅
+- Malformed `"banana"` passes through verbatim ✅
+- Software-fallback has no injected `E2E_WORKERS`; operator passthrough preserved ✅
+- Base env object not mutated ✅
+- `LANE_DEFAULT_WORKERS` exported and equal to `"50%"` ✅
+
+### Code Quality
+
+The implementation is clean and minimal:
+
+1. **`LANE_DEFAULT_WORKERS = "50%"`** — a named, exported constant (spec Decision 3). Placed adjacent to `operatorWorkersSet` with a clear doc comment.
+
+2. **`operatorWorkersSet(baseEnv)`** — a pure 2-line function with a clear contract: `undefined` or whitespace-only → unset (spec Decision 4). Mirrors `resolveWorkers`'s own semantics correctly (I verified against the actual `resolveWorkers` code: lines 76-78 show `raw.trim()` → `value.length > 0` for the same unset/whitespace logic).
+
+3. **`suiteEnvFor` changes** — the `laneWorkers` variable is computed once at the top of the `hardware` branch, then applied identically in both the Chromium-inclusive and Firefox-only arms. This avoids code duplication and ensures consistent behavior. The `undefined` sentinel cleanly distinguishes "no injection" from "inject the default."
+
+4. **Doc comment update** on `suiteEnvFor` — the old "workers/retries/timeouts untouched" phrasing is correctly narrowed to "retries/timeouts untouched" with the new worker-default behavior documented.
+
+No bugs spotted. The injection is structurally confined to the `hardware` branch — it's impossible for a software-fallback run to receive the lane default.
+
+### Test Coverage
+
+Excellent. The 8 new tests form a complete FR7 matrix. Test fixtures (`twoEngineHardwarePlan`, `firefoxOnlyHardwarePlan`) are well-structured and reusable. The base-env mutation test covers both the "no E2E_WORKERS" and "whitespace E2E_WORKERS" paths, catching the subtle case where `.trim()` on the original env value could mutate it.
+
+One minor note: there's no explicit `E2E_WORKERS=undefined` test (where `baseEnv` has the key set to `undefined`), but `operatorWorkersSet` handles this correctly since `undefined !== undefined` is `false` — and this path is effectively covered by the `{}` base env tests.
+
+### Plan Alignment
+
+The implementation follows the plan precisely:
+- Two files changed: `scripts/e2e-gpu-lane.mjs` and `tests/gpu-lane.test.mjs` ✅
+- Exported constant `LANE_DEFAULT_WORKERS` ✅
+- Exported pure helper `operatorWorkersSet` ✅
+- Changes confined to `suiteEnvFor`'s hardware branch ✅
+- No `runFullLane` call-site changes (deferred to Phase 2 for log output) ✅
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 1 is a clean, minimal, and correct implementation — the hardware-mode worker default, operator override semantics, and fallback isolation are all structurally sound with complete FR7 unit coverage.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None

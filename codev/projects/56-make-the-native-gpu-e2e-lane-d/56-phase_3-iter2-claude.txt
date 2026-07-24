@@ -1,0 +1,50 @@
+Now let me check the git diff to understand which specific changes belong to Phase 3, and look at the remaining changed files:Good — the changes are unstaged. Let me look at the diffs for the Phase 3 specific files (README and the review 41 doc are the primary Phase 3 deliverables), and also verify the lane script/tests changes from prior phases haven't been touched improperly:Now let me check the lane script changes and the test changes to verify they're only from phases 1 and 2 (Phase 3 should only touch docs and the header comment per the plan):Now let me verify the frozen files are untouched as required:Good — no frozen file touched. Let me now verify one minor detail — the review 41 correction has a slightly odd line break. Let me look at it in context:I've now reviewed all the Phase 3 files in full. Let me provide my assessment.
+
+---
+
+## Phase 3 Review: Docs Reconciliation and Re-qualification Evidence
+
+### Phase 3 Plan Deliverables vs. Actual
+
+| Deliverable | Status | Notes |
+|---|---|---|
+| README "Opt-in native-GPU e2e lane" section | ✅ | States parallel-by-default on verified hardware, tunable/serial via `E2E_WORKERS`, serial on fallback |
+| README "Local test parallelism" note | ✅ | Updated from "parallelism is not the default" to explain the lane exception (issue #56) |
+| README lane env-table `E2E_WORKERS` row | ✅ | Updated to default-50% framing with override semantics |
+| README report-format snippet | ✅ | New `workers:` line added |
+| `codev/reviews/41` follow-up correction | ✅ | Dated correction under "Revisiting the serial default" — lane-scoped default delivered, global stays serial |
+| Lane header comment update | ✅ | Lines 44–47 now note `E2E_WORKERS` consultation by the lane |
+| Re-qualification evidence | ✅ | Thread records serial baseline + 3/3 consecutive green parallel runs; full logs preserved for the Review-phase appendix |
+| Final validate green | ✅ | Thread confirms clean-checkout validate green (the lint errors are the documented untracked builder-harness file) |
+| Scenario 5 diff audit | ✅ | Frozen files confirmed untouched (`validation.yml`, `e2e-workers.mjs`, `e2e-workers.test.mjs`, `playwright.config.ts`) |
+
+### Spec FR Compliance (Phase 3 scope)
+
+- **FR8**: Thread records serial baseline (`E2E_WORKERS=1`, 212s) + 3 consecutive green plain runs (54s/57s/59s, `workers: 50% (lane default)`, 10 workers). Scenario 3 spot-checked (`banana` → `WorkerConfigError`). ✅
+- **FR9**: README updates are thorough — six sections touched, all accurate. The review-41 correction is honest and well-scoped. No stale "serial by default" claims survive about the lane. ✅
+- **FR4/FR5**: Frozen files confirmed zero-diff. ✅
+
+### Code Quality
+
+**README changes** are clean, accurate, and internally consistent. Each of the six touch points correctly describes the split model: lane parallel-by-default on hardware, serial everywhere else. The env-table row (line 280) is particularly well-written — it names the issue, the default, the override mechanism, and the CI behavior in one dense but clear sentence.
+
+**Review 41 correction** (lines 360–370): Content is accurate and properly scoped. One cosmetic nit: the line break between `The` and `**global**` at line 367 creates a very short source line. This doesn't affect rendered markdown (continuous paragraph) but looks slightly odd in the source. Not worth a round-trip.
+
+**Lane script header comment** (lines 44–47): Correctly notes the `E2E_WORKERS` consultation without duplicating the `suiteEnvFor` doc comment from Phase 2.
+
+### What I Verified
+
+1. All six README change hunks match the spec's FR9 requirements
+2. No stale "serial by default" phrasing survives for the lane's hardware path
+3. The report-format snippet now includes the `workers:` line
+4. The review-41 correction correctly frames the lane-scoped delivery and the standing global blocker
+5. Frozen files have zero diff
+6. The lane script + test changes are consistent with Phases 1–2 (no Phase 3 scope creep in those files beyond the header comment)
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 3 docs reconciliation is thorough, accurate, and complete — all FR8/FR9 deliverables met, frozen files untouched, re-qualification evidence recorded (3/3 green under the default path).
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

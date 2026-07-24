@@ -171,3 +171,53 @@ Running 22 tests using 10 workers
   22 passed (46.2s)
 ```
 
+## Spec compliance
+
+All spec FRs delivered: FR1–FR3 (hardware-arm-only injection, operator
+pass-through incl. forcing serial, whitespace-as-unset), FR4/FR5 (frozen files
+untouched — `validation.yml`, `e2e-workers.mjs`, `playwright.config.ts`,
+lockfile; `CI ⇒ 1` guard structurally unreachable by the lane default), FR6
+(provenance log + additive report line), FR7 (unit matrix), FR8 (evidence
+above), FR9 (docs reconciled). No new dependencies; no lockfile movement.
+
+## Architecture documentation updates
+
+- `codev/resources/arch.md` (Validation Baseline): the "local parallelism is
+  opt-in" paragraph now records the lane-scoped exception — the native-GPU
+  lane defaults verified-hardware runs to `E2E_WORKERS=50%` via env injection,
+  reusing `resolveWorkers` (CI pin and fail-loud validation intact).
+- Hot tier (`arch-critical.md` / `lessons-critical.md`): no changes — the
+  facts are lane-scoped reference detail, not behavior-changing cross-cutting
+  contracts; the existing hot entries (validate gate, environment-noise
+  lesson) already cover what matters at decision time.
+
+## Lessons learned updates
+
+- `codev/resources/lessons-learned.md` (Toolchain and Worktree Hygiene): new
+  entry — a pnpm-launched harness leaks `npm_config_*` env vars (notably
+  `npm_config_user_agent`) into builder shells, falsely failing the toolchain
+  user-agent test under a bare `npm test`; prove the gate with the pollution
+  stripped, never by weakening the test.
+
+## Lessons learned (narrative)
+
+- **What went well**: the #41 `resolveWorkers` contract made the change tiny —
+  the lane only decides *whether to set* `E2E_WORKERS`; validation, CI
+  pinning, and scaling all stayed in one place. The pure `suiteEnvFor` /
+  `formatReport` layers made every behavior unit-testable without spawning
+  browsers. Qualification was clean: 3/3 green first attempt (the #55 fix
+  held), ~3.8× speedup confirmed.
+- **What was challenging**: environment noise, twice — pnpm env-var leakage
+  failing the toolchain test, and the known untracked-hooks lint failure —
+  both resolved by proving gates on clean/stripped environments per the
+  established lesson rather than touching committed config. Reviewer iteration
+  (codex, twice) centered on a dangling evidence pointer; resolved by creating
+  the evidence artifact in-tree instead of forward-referencing it.
+- **Do differently**: create the review/evidence document at the moment the
+  evidence is produced (Phase 3), not in the Review phase — reviewers rightly
+  reject references to files that don't exist yet.
+
+## Flaky Tests
+
+None encountered; no tests skipped. All qualification runs were green with
+`retries: 0`.

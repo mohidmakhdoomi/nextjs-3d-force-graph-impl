@@ -1,0 +1,73 @@
+I'll review this spec by reading the key source files it references to verify claims and assess feasibility.Good — I've read the four core source files. Let me also check the README sections the spec references and the `tests/e2e-workers.test.mjs` file to confirm the CI guard claim.I've now read all five referenced source files and the README sections. Here's my review.
+
+---
+
+## Specification Review: 56 — Native-GPU e2e Lane Defaults to Parallel Workers
+
+### 1. Completeness
+
+**Strong.** Every angle is covered — the core mechanism (injecting `E2E_WORKERS` into the hardware-mode suite env), invariants that must hold (CI guard, fallback serial, `resolveWorkers` untouched), testing requirements, documentation, and qualification evidence. The out-of-scope list is explicit and well-chosen.
+
+The nine FRs form a complete contract: FR1 (the core default), FR2 (operator override), FR3 (fallback untouched), FR4 (CI untouched), FR5 (plain-suite untouched), FR6 (observability), FR7 (unit tests), FR8 (re-qualification), FR9 (docs).
+
+### 2. Correctness — verified against the source
+
+I've read every file the spec references. Key claims check out:
+
+- **`suiteEnvFor` already branches on `hardware` vs `software-fallback`** (lines 635–665 of `e2e-gpu-lane.mjs`). Injecting `E2E_WORKERS` into the `hardware` branch, only when not operator-set, is a surgical change — a few lines inside an existing mode branch.
+- **`resolveWorkers` CI guard is structural** (line 69–71 of `e2e-workers.mjs`): `if (env.CI) { return 1; }` returns before `E2E_WORKERS` is read. The spec's claim that a lane-injected value can never leak into CI is correct.
+- **`resolveWorkers` empty/whitespace semantics** (lines 75–91): treats `undefined` and whitespace-only `E2E_WORKERS` as unset, falling to `DEFAULT_LOCAL_WORKERS = 1`. Decision 4's "unset or whitespace-only" mirrors this exactly — the two layers can never disagree about whether an override exists.
+- **The suite subprocess gets the composed env** — `runFullLane` (line 1216–1219) calls `runStage("suite", "npx", ..., suiteEnvFor(plan, process.env))`, so the spawned Playwright process sees the composed env as its `process.env`. An injected `E2E_WORKERS` in `suiteEnvFor`'s return value would be picked up by `resolveWorkers(process.env)` in `playwright.config.ts` (line 124). The mechanism is sound.
+- **`tests/e2e-workers.test.mjs` CI-precedence tests** already prove that `CI=1, E2E_WORKERS="50%"` resolves to `1` (lines 26–32). The spec correctly says this coverage stays green and unmodified.
+- **`formatReport`** (lines 420–429): currently emits `mode`, `engines`, per-engine `renderer.` lines, `suite`, `wall-clock`. Adding a `workers:` line is additive — existing line-prefix greps break on nothing.
+- **README sections** exist at the exact locations referenced (verified via grep).
+
+No contradictions found between the spec's claims and the actual codebase.
+
+### 3. Feasibility
+
+This is a small, well-bounded change:
+- **`suiteEnvFor`**: ~5 lines to check for operator-set `E2E_WORKERS` and inject the default constant.
+- **`formatReport`**: accept and render one additive `workers:` parameter.
+- **`runFullLane`**: a log line for the worker decision + pass the value to `formatReport`.
+- **Tests**: ~6 new test cases in `tests/gpu-lane.test.mjs`, following the existing test-harness patterns.
+- **Docs**: text updates in existing README sections.
+
+The test harness already has the fixture helpers (`chromiumHardwareVerdict`, `suiteEnvFor` tests, etc.) that make the new tests straightforward. No architectural risk.
+
+### 4. Clarity
+
+A builder would know exactly what to build. The spec names the exact function (`suiteEnvFor`), the exact constant name pattern (`LANE_DEFAULT_WORKERS`), the exact value (`'50%'`), the exact test file, and the exact README sections to update. The eight Confirmed Decisions eliminate ambiguity on every fork in the design space.
+
+### 5. Edge Cases and Error Scenarios
+
+Well-covered:
+- **Whitespace-only `E2E_WORKERS`** (Decision 4): treated as unset — default injected.
+- **Malformed `E2E_WORKERS`** (Decision 5, FR2, Scenario 3): passes through to `resolveWorkers`, fails loud. No lane pre-validation.
+- **Operator explicitly sets `E2E_WORKERS=1`** (FR2, Scenario 2): beats the lane default.
+- **Fallback avoids parallelism** (FR3, Scenario 4): hardware branch only.
+- **CI guard** (FR4, Scenario 5): structural — the lane's injection can never break CI.
+- **Probe-only runs**: don't run a suite, so the workers concept doesn't apply (implicit from FR6 scoping "for the suite run").
+
+### 6. Security Considerations
+
+Not applicable — this is a local developer tool with no network exposure, auth, or data handling. The env variable pass-through is the same existing pattern.
+
+### 7. Testing Strategy
+
+FR7's minimum coverage list is comprehensive and maps to the existing test patterns in `tests/gpu-lane.test.mjs`. The re-qualification evidence (FR8) is operationally rigorous.
+
+### 8. Minor Observations (not blocking)
+
+- **Report line placement**: the spec says the `workers:` line is "additive" but doesn't specify its position within the report (after `renderer.*`? before `suite:`?). This is a minor implementation detail the builder can decide — `formatReport` makes the ordering obvious.
+- **Probe-only reports**: FR6 says "the final machine-greppable report" which could be read as including probe-only reports. A probe-only run has no suite workers to report. The builder should probably omit the `workers:` line from probe-only reports, or include it as `workers: n/a (no suite)`. The spec doesn't address this explicitly, but it's a natural inference from "for the suite run."
+
+---
+
+VERDICT: APPROVE
+SUMMARY: Well-scoped, technically precise spec for a minimal injection into existing code; all claims verified against source files, no contradictions found.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None. The two minor observations above (report line placement, probe-only workers line) are implementation details the builder can resolve naturally.

@@ -1,0 +1,69 @@
+I'll read the key files to review Phase 3's deliverables. Let me start with the files most relevant to this phase.Let me also check the git history and verify the frozen files haven't been modified.Let me find the actual Phase 3 implementation commits (between the phase transition and the build-complete markers).Good — the changes are in the working tree, not yet committed. Let me verify the frozen files haven't been modified and run validation.Good — all frozen files have zero diff. Let me verify the tests pass and validate is green.All 75 gpu-lane tests pass (0 failures). The one failing test (`declares the exact Node and npm baseline`) is a pre-existing environment issue — the builder worktree runs under `pnpm` instead of `npm`, which the `toolchain.test.mjs` assertion rejects; per `lessons-critical.md`, this is "environment noise, not a project failure."
+
+Now let me verify a few more Phase 3 specifics — the README report-format snippet and any remaining stale wording.Now I have a comprehensive picture. Let me compile my review.
+
+---
+
+## Phase 3 Review: Docs Reconciliation and Re-qualification Evidence
+
+### 1. Spec Adherence
+
+**FR9 — Documentation reconciled** ✅
+
+The README is updated in all required locations:
+
+- **"Local test parallelism" note** (line ~84): Changed from "parallelism is not the default" → "parallelism is not the SwiftShader default" with the lane exception stated immediately after (lines 96–101). Clear split model.
+- **"Opt-in native-GPU e2e lane" section**, step 3 (line ~199): Now states "parallel by default" on verified hardware, tunable via `E2E_WORKERS`, serial on fallback. Accurate.
+- **Report-format snippet** (line ~214): The `workers:` line is added. ✅ (Required by the codex plan review.)
+- **Env-table `E2E_WORKERS` row** (line ~280): Rewritten from "inherited by this lane" to describe the lane's own 50% default on verified hardware. Accurate, complete.
+- **"Status and sequencing"** (lines ~340–348): Rewired from "defaults to 1" to "defaults to 50%" on verified-hardware runs with the full split-model explanation.
+
+No stale "serial by default" claims about the lane survive in the README or the lane script. Grep confirms: the only `serial by default` in the README is about the *global* default (line 84), which is correct.
+
+**Review 41 follow-up correction** ✅
+
+Dated correction appended under "Revisiting the serial default" (lines 360–368). Accurately states: lane-scoped partial delivery by spec 56; global `DEFAULT_LOCAL_WORKERS` remains `1`; names the standing blockers. Well-phrased.
+
+**Lane script header comment** ✅
+
+Lines 44–47 add a concise, accurate note about the lane's E2E_WORKERS behavior. No double-editing with Phase 2's `suiteEnvFor` doc comment — single edit, no churn.
+
+### 2. Code Quality
+
+No code logic changes in Phase 3 — only comments and docs. The comment and doc prose is accurate, self-consistent, and uses the same terminology as the spec throughout.
+
+### 3. Test Coverage
+
+Phase 3 introduces no new logic requiring tests. The Phase 1/2 test suite (75 tests, all passing) already covers the FR7 matrix exhaustively.
+
+### 4. Frozen-File Audit (FR4/FR5, Scenario 5)
+
+Verified via `git diff`:
+- `.github/workflows/validation.yml` — **zero diff** ✅
+- `scripts/e2e-workers.mjs` — **zero diff** ✅  
+- `tests/e2e-workers.test.mjs` — **zero diff** ✅
+- `playwright.config.ts` — **zero diff** ✅
+
+### 5. Plan Alignment
+
+All Phase 3 deliverables from the plan are present:
+- [x] README updated in all required sections
+- [x] Review 41 correction with date
+- [x] Lane script header comment updated
+- [x] FR8 re-qualification evidence — the plan says "recorded in full during the Review phase," so the absence of `codev/reviews/56-gpu-lane-parallel-default.md` is expected at this stage
+
+### 6. Minor Observation
+
+The review 41 correction references `codev/reviews/56-gpu-lane-parallel-default.md` (line 365) which doesn't exist yet — it's a forward reference to the review document created in the next protocol phase. This is by design per the plan ("Re-qualification evidence captured for the review document (recorded in full during the Review phase)"), so not actionable here, but the builder should ensure that file gets created during the Review phase.
+
+### 7. Environment Note
+
+The `toolchain.test.mjs` test 123 (`declares the exact Node and npm baseline`) fails because this builder worktree runs under `pnpm` not `npm`. Per `lessons-critical.md`, this is "environment noise, not a project failure" — a clean checkout with `npm ci` would pass.
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 3 docs reconciliation is thorough, accurate, and complete — README, review 41, and lane header comment all correctly describe the split model; all frozen files verified untouched; 75/75 gpu-lane tests green.
+CONFIDENCE: HIGH
+---
+KEY_ISSUES:
+- None

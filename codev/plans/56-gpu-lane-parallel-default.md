@@ -50,7 +50,7 @@ plain parallel runs), which gates shipping per spec Decision 8.
 
 ### Phase 1: Lane hardware-mode worker default (mechanism + unit tests)
 **Dependencies**: None
-**Status**: pending
+**Status**: completed
 
 #### Objectives
 - Plain hardware-mode lane runs get `E2E_WORKERS='50%'` by default; operator
@@ -111,7 +111,7 @@ Revert the phase commit — the change is additive and confined to two files.
 
 ### Phase 2: Worker visibility — lane log line and additive report line
 **Dependencies**: Phase 1
-**Status**: pending
+**Status**: completed
 
 #### Objectives
 - The effective worker decision is visible in lane logs and the
@@ -170,7 +170,7 @@ Revert the phase commit; Phase 1 behavior (silent default) still stands.
 
 ### Phase 3: Docs reconciliation and re-qualification evidence
 **Dependencies**: Phase 2
-**Status**: pending
+**Status**: completed
 
 #### Objectives
 - Documentation matches the split model; the default ships only on green

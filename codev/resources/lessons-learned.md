@@ -94,6 +94,15 @@ gotcha, or constraint.
 
 ## Toolchain and Worktree Hygiene
 
+- A builder shell spawned by a pnpm-launched harness inherits pnpm's
+  `npm_config_*` env vars (notably `npm_config_user_agent=pnpm/...`), which npm
+  treats as config overrides — so `tests/toolchain.test.mjs`'s npm user-agent
+  assertion fails under a bare `npm test` even though the pinned npm is first
+  on PATH. This is the same environment-noise class as the untracked-hooks lint
+  failure below: prove the gate with the pollution stripped
+  (`env -u npm_config_user_agent … npm test`, or unset all `npm_*`/`pnpm_*`/
+  `PNPM_*` vars), never by weakening the toolchain test.
+
 - A local gate failure caused **only** by an untracked builder-harness file
   (e.g. `.claude/hooks/worktree-write-guard.cjs`, which `eslint .` lints but which
   is absent from any `git clone`/`actions/checkout`) is environment noise, not a
