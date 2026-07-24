@@ -11,6 +11,7 @@ import {
     CANDIDATES,
     ENGINES,
     FIREFOX_PROBE_RECIPE,
+    LANE_DEFAULT_WORKERS,
     LaneUsageError,
     buildHostView,
     classifyRenderer,
@@ -23,6 +24,7 @@ import {
     formatReport,
     formatWallClock,
     isHeadedRun,
+    operatorWorkersSet,
     parseArgs,
     parseControls,
     partitionCandidates,
@@ -34,6 +36,7 @@ import {
     runSelection,
     suiteEnvFor,
     suiteResultLabel,
+    workerDecisionFor,
 } from "../scripts/e2e-gpu-lane.mjs";
 
 // Host-view fixtures mirroring the shapes the lane must handle.
@@ -1146,6 +1149,192 @@ test("suiteEnvFor: skip-empty / abort never produce a suite env (no empty E2E_EN
         () => suiteEnvFor({mode: "abort", suiteEngines: []}, {}),
         /no suite runs for plan mode "abort"/,
     );
+});
+
+// Spec 56 FR7: lane-scoped parallel default. Hardware-mode suite envs default
+// E2E_WORKERS to LANE_DEFAULT_WORKERS; operator values (valid or not) pass
+// through verbatim; the software-fallback branch never injects.
+const twoEngineHardwarePlan = {
+    mode: "hardware",
+    suiteEngines: ["chromium", "firefox"],
+    chromiumCandidate: candidateById("wsl2-d3d12-angle-gl"),
+    chromiumExtraEnv: {},
+    firefoxRecipe: FIREFOX_PROBE_RECIPE,
+    firefoxExtraEnv: {},
+};
+const firefoxOnlyHardwarePlan = {
+    mode: "hardware",
+    suiteEngines: ["firefox"],
+    firefoxRecipe: FIREFOX_PROBE_RECIPE,
+    firefoxExtraEnv: {},
+};
+
+test("LANE_DEFAULT_WORKERS is the hardware-scaled 50% sentinel", () => {
+    assert.equal(LANE_DEFAULT_WORKERS, "50%");
+});
+
+test("operatorWorkersSet mirrors resolveWorkers unset/empty semantics", () => {
+    assert.equal(operatorWorkersSet({}), false);
+    assert.equal(operatorWorkersSet({E2E_WORKERS: ""}), false);
+    assert.equal(operatorWorkersSet({E2E_WORKERS: "   "}), false);
+    assert.equal(operatorWorkersSet({E2E_WORKERS: "1"}), true);
+    assert.equal(operatorWorkersSet({E2E_WORKERS: "50%"}), true);
+    assert.equal(operatorWorkersSet({E2E_WORKERS: "banana"}), true);
+});
+
+test("suiteEnvFor hardware two-engine: lane defaults E2E_WORKERS to 50%", () => {
+    const env = suiteEnvFor(twoEngineHardwarePlan, {PATH: "/usr/bin"});
+    assert.equal(env.E2E_WORKERS, "50%");
+});
+
+test("suiteEnvFor Firefox-only hardware: lane default injected too", () => {
+    const env = suiteEnvFor(firefoxOnlyHardwarePlan, {PATH: "/usr/bin"});
+    assert.equal(env.E2E_WORKERS, "50%");
+});
+
+test("suiteEnvFor hardware: operator E2E_WORKERS passes through verbatim (incl. forcing serial)", () => {
+    for (const value of ["4", "1"]) {
+        const env = suiteEnvFor(twoEngineHardwarePlan, {
+            PATH: "/usr/bin",
+            E2E_WORKERS: value,
+        });
+        assert.equal(env.E2E_WORKERS, value);
+    }
+});
+
+test("suiteEnvFor hardware: whitespace-only E2E_WORKERS is unset ⇒ default injected", () => {
+    const env = suiteEnvFor(twoEngineHardwarePlan, {
+        PATH: "/usr/bin",
+        E2E_WORKERS: "   ",
+    });
+    assert.equal(env.E2E_WORKERS, "50%");
+});
+
+test("suiteEnvFor hardware: malformed operator value passes through — WorkerConfigError stays config-load's job", () => {
+    const env = suiteEnvFor(twoEngineHardwarePlan, {
+        PATH: "/usr/bin",
+        E2E_WORKERS: "banana",
+    });
+    assert.equal(env.E2E_WORKERS, "banana");
+});
+
+test("suiteEnvFor software-fallback: no lane-injected E2E_WORKERS; operator value still passes through", () => {
+    const fallbackPlan = {mode: "software-fallback", suiteEngines: ["chromium"]};
+    const bare = suiteEnvFor(fallbackPlan, {PATH: "/usr/bin"});
+    assert.equal(Object.hasOwn(bare, "E2E_WORKERS"), false);
+    const withOperator = suiteEnvFor(fallbackPlan, {
+        PATH: "/usr/bin",
+        E2E_WORKERS: "3",
+    });
+    assert.equal(withOperator.E2E_WORKERS, "3");
+});
+
+test("suiteEnvFor hardware: base env object is never mutated by the workers default", () => {
+    const base = {PATH: "/usr/bin"};
+    suiteEnvFor(twoEngineHardwarePlan, base);
+    assert.deepEqual(base, {PATH: "/usr/bin"});
+    const withValue = {PATH: "/usr/bin", E2E_WORKERS: "   "};
+    suiteEnvFor(twoEngineHardwarePlan, withValue);
+    assert.deepEqual(withValue, {PATH: "/usr/bin", E2E_WORKERS: "   "});
+});
+
+// Spec 56 FR6: worker-decision visibility. workerDecisionFor is the single
+// provenance source; formatReport gains one additive trailing `workers:` line.
+test("workerDecisionFor: hardware with no operator value ⇒ lane default", () => {
+    assert.deepEqual(workerDecisionFor(twoEngineHardwarePlan, {PATH: "/usr/bin"}), {
+        value: "50%",
+        provenance: "lane default",
+    });
+    // Whitespace-only is unset (mirrors operatorWorkersSet).
+    assert.deepEqual(
+        workerDecisionFor(twoEngineHardwarePlan, {E2E_WORKERS: "   "}),
+        {value: "50%", provenance: "lane default"},
+    );
+});
+
+test("workerDecisionFor: operator override wins verbatim in any mode", () => {
+    assert.deepEqual(
+        workerDecisionFor(twoEngineHardwarePlan, {E2E_WORKERS: "4"}),
+        {value: "4", provenance: "operator override"},
+    );
+    assert.deepEqual(
+        workerDecisionFor({mode: "software-fallback"}, {E2E_WORKERS: "1"}),
+        {value: "1", provenance: "operator override"},
+    );
+});
+
+test("workerDecisionFor: software-fallback with no operator value ⇒ config serial default", () => {
+    assert.deepEqual(workerDecisionFor({mode: "software-fallback"}, {}), {
+        value: "1",
+        provenance: "config serial default",
+    });
+});
+
+// The five report call paths that now carry a worker decision (per plan
+// phase_2): full-lane success, build-failure, software-fallback, skip-empty,
+// and --probe-only. The first three pass a decision; the last two omit it and
+// read `n/a (no suite run)`.
+test("formatReport full-lane success path: additive trailing workers line, prior lines verbatim", () => {
+    const report = formatReport({
+        mode: "hardware",
+        engines: [{engine: "chromium", renderer: "ANGLE (...)"}],
+        suite: "pass",
+        wallClock: "192s (build 45s, suite 147s)",
+        workers: {value: "50%", provenance: "lane default"},
+    });
+    const lines = report.split("\n");
+    // Existing positions untouched — the workers line is strictly appended.
+    assert.equal(lines[4], "suite: pass");
+    assert.equal(lines[5], "wall-clock: 192s (build 45s, suite 147s)");
+    assert.equal(lines.at(-1), "workers: 50% (lane default)");
+    assert.equal(report.match(/^workers: /gm).length, 1);
+});
+
+test("formatReport build-failure path: workers line states what the suite would have used", () => {
+    const report = formatReport({
+        mode: "hardware",
+        engines: [{engine: "chromium", renderer: "ANGLE (...)"}],
+        suite: "not-run (build failed, exit 1)",
+        wallClock: "50s (build 45s)",
+        workers: {value: "4", provenance: "operator override"},
+    });
+    assert.match(report, /^workers: 4 \(operator override\)$/m);
+});
+
+test("formatReport software-fallback path: config serial default provenance", () => {
+    const report = formatReport({
+        mode: "software-fallback",
+        engines: [{engine: "chromium", renderer: "(software-fallback — SwiftShader)"}],
+        suite: "pass",
+        wallClock: "10s",
+        workers: {value: "1", provenance: "config serial default"},
+    });
+    assert.match(report, /^workers: 1 \(config serial default\)$/m);
+});
+
+test("formatReport skip-empty path: no decision ⇒ workers: n/a (no suite run)", () => {
+    const report = formatReport({
+        mode: "skipped",
+        engines: [{engine: "firefox", renderer: "skipped (unverified — x)"}],
+        suite: "skipped (no verified engine)",
+        wallClock: "3s",
+    });
+    assert.match(report, /^workers: n\/a \(no suite run\)$/m);
+});
+
+test("probeOnlyOutcome report carries workers: n/a (no suite run)", () => {
+    const {report} = probeOnlyOutcome({
+        requestedEngines: ["chromium"],
+        verdicts: {chromium: chromiumHardwareVerdict()},
+        plan: computeRunPlan({
+            requestedEngines: ["chromium"],
+            verdicts: {chromium: chromiumHardwareVerdict()},
+            controls: nonStrict,
+        }),
+        controls: nonStrict,
+        wallClock: "5s",
+    });
+    assert.match(report, /^workers: n\/a \(no suite run\)$/m);
 });
 
 test("playwrightTestArgs: headed reaches Playwright via the CLI flag only", () => {
