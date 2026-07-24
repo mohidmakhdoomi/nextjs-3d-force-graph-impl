@@ -1,7 +1,7 @@
 id: '56'
 title: make-the-native-gpu-e2e-lane-d
 protocol: spir
-phase: implement
+phase: review
 plan_phases:
   - id: phase_1
     title: Lane hardware-mode worker default (mechanism + unit tests)
@@ -11,8 +11,8 @@ plan_phases:
     status: complete
   - id: phase_3
     title: Docs reconciliation and re-qualification evidence
-    status: in_progress
-current_plan_phase: phase_3
+    status: complete
+current_plan_phase: null
 gates:
   spec-approval:
     status: approved
@@ -26,8 +26,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 3
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: phase_3
@@ -62,4 +62,4 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-56/codev/projects/56-make-the-native-gpu-e2e-lane-d/56-phase_3-iter2-claude.txt
 started_at: '2026-07-24T19:05:59.482Z'
-updated_at: '2026-07-24T20:01:25.522Z'
+updated_at: '2026-07-24T20:01:26.907Z'
