@@ -180,10 +180,15 @@ qualification set.**
   software-WebGL timing problem — it survives on hardware (hence hardware
   rendering did not eliminate it), and it passes when repeated alone. This is the
   documented Firefox local-arm input-race family (issue #11 and Review 44's Flaky
-  Tests note for the same test). **Correction (#55, 2026-07-24):** this
-  background-drag flake was labeled "#33" here; that was a misattribution — #33 was
-  a *distinct*, already-closed enable-delay inertness race. It is tracked and now
-  **fixed** by **issue #55** (the genuine #11 reference stands).
+  Tests note for the same test). **Correction (#55, 2026-07-24) — two updates.**
+  (1) This flake was labeled "#33" here — a misattribution; #33 was a *distinct*,
+  already-closed enable-delay inertness race. (2) The "Class" line above records
+  the *then-current hypothesis* (synthetic-input-delivery nondeterminism); #55
+  root-caused the flake as **stray node capture** — a CPU-side three.js
+  DragControls raycast catching a node at the hard-coded start point (which is why
+  it survives on hardware and passes when repeated alone), **not** input-delivery
+  loss. It is tracked and now **fixed** by **issue #55** (the genuine #11 reference
+  stands).
 - **Disposition**: accepted + documented (Decision 10 permits fix/qualify
   separately **or** explicit accept+document). A code fix to the canonical
   `tests/e2e/matrix.spec.ts` is **out of scope** here (spec Decision 10 makes it
@@ -244,10 +249,13 @@ because it blocked the gate.
   ran a Firefox-only `--mode=headed` suite headless — is the general lesson: when a
   decision spans the engine set, carry it at the run level (`plan.effectiveMode` +
   `isHeadedRun`), not on one engine's slice.
-- **Firefox hardware did not fix the synthetic-input flake, and that's fine.** The
-  background-drag flake is input-delivery nondeterminism, not a rendering-speed
-  problem; the honest move was to qualify it (0/4 here) and document it, not to
-  paper over it with retries.
+- **Firefox hardware did not fix the background-drag flake, and that's fine.** The
+  flake is not a rendering-speed problem; the honest move was to qualify it (0/4
+  here) and document it, not to paper over it with retries. *(Correction, #55: this
+  bullet originally called it "input-delivery nondeterminism" — the then-current
+  hypothesis; #55 later root-caused it as **stray node capture** (a CPU-side
+  three.js raycast) and fixed it. The "hardware isn't the fix; don't paper over
+  with retries" lesson stands.)*
 
 ## Architecture Updates
 
@@ -323,8 +331,9 @@ detached clean worktree (`git worktree add --detach <dir> HEAD` at commit
 - **Run 1**: `npm ci` exit 0; **lint ✓, typecheck ✓, build ✓**; local `test:smoke`
   runs BOTH engines in **software** (Chromium SwiftShader + Firefox llvmpipe — no
   GPU env in `validate`) → e2e **21/22**, the single failure being
-  `[firefox] tests/e2e/matrix.spec.ts:224` (the known background-drag flake, here
-  under software llvmpipe where the input-race is most likely). `VALIDATE EXIT: 1`.
+  `[firefox] tests/e2e/matrix.spec.ts:224` (the known background-drag flake #55 —
+  since root-caused as **stray node capture**, not an input-race, and fixed).
+  `VALIDATE EXIT: 1`.
 - **Run 2** (same clean worktree, no changes): **lint ✓, typecheck ✓, build ✓,
   e2e 22/22** (both engines green; `[firefox] tests/e2e/matrix.spec.ts:224` passed
   at 12.9 s). `VALIDATE EXIT: 0`. The flake is intermittent — it passes on re-run,

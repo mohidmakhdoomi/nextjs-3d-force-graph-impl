@@ -650,3 +650,29 @@ Committed 78cd636. porch check ✓. 3-way ran.
   resulting README #33 is in FR8-permitted "was #33, is #55" form; grep audit still
   shows zero bare this-flake→#33. Wrote 55-phase_6-iter1-rebuttals.md. Committing +
   re-consult iter2.
+
+### Phase 6 — iter2 consult: Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES
+Committed the README marked note. iter2 3-way ran.
+- Gemini APPROVE (HIGH), Claude APPROVE (HIGH) — README correction note resolves iter1.
+- Codex REQUEST_CHANGES (HIGH), 1 substantive point ACCEPTED (correct): several
+  passages still asserted the flake's mechanism as "synthetic-input-delivery
+  nondeterminism" in present tense — the ORIGINAL hypothesis (and issue #55's title)
+  that #55 actually REFUTED (H2 ruled out; H1 stray node capture confirmed). Phase_6
+  objective = "wording reflects the actual Phase 2–5 outcome", so leaving the wrong
+  mechanism is materially misleading.
+- Fixed (Decision-7 MARKED corrections, not silent rewrites of the historical
+  hypothesis):
+  - review-41 §A prose: my phase-5 "#55 (synthetic-input-delivery...)" → "#55 ...
+    root-caused as stray node capture, not the synthetic-input-delivery loss
+    hypothesized at #41 time".
+  - review-52 Class note: extended to correct the mechanism (then-current hypothesis
+    = synthetic-input; #55 = stray node capture, CPU-side raycast → hardware survival).
+  - review-52 lessons bullet ("hardware did not fix the synthetic-input flake"):
+    retitled + marked correction (mechanism was the then-hypothesis; lesson stands).
+  - review-52 validate-run annotation (":224 ... where the input-race is most likely")
+    → "#55 ... stray node capture, not an input-race, and fixed".
+  - spec-52 caveat note: added a clause so the scattered "synthetic-input flake"
+    shorthand throughout the spec reads as the background-drag/stray-node-capture flake.
+- Re-audited: zero bare this-flake→#33; every remaining old-mechanism mention is
+  adjacent to a marked correction or covered by the shorthand clause. Wrote iter2
+  rebuttal. Committing + re-consult iter3.

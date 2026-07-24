@@ -576,7 +576,9 @@ used to weaken the canonical assertion.
 > (SwiftShader + native-GPU, serial + parallel). It was never hidden with retries
 > and the canonical assertion was never weakened. Elsewhere this flake was
 > sometimes called the "#33 family"; that was a misattribution — #33 was a
-> distinct, already-closed enable-delay inertness race.
+> distinct, already-closed enable-delay inertness race. (The "synthetic-input
+> flake" shorthand used elsewhere in this spec likewise predates the #55 root
+> cause and should be read as the background-drag / stray-node-capture flake.)
 
 ## Dependencies
 

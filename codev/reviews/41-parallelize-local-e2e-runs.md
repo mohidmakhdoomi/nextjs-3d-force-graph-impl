@@ -87,9 +87,10 @@ parallel runs failed. The failure (verbatim):
     - Timeout 5000ms exceeded while waiting on the predicate
 ```
 
-This is the **background-drag flake #55** (Firefox synthetic-input-delivery
-nondeterminism, documented in the README as "survives on hardware"; labeled "#33"
-here originally — see the correction note above), which issue #41 explicitly
+This is the **background-drag flake #55** (documented in the README as "survives
+on hardware"; labeled "#33" here originally — see the correction note above; #55
+later root-caused it as **stray node capture**, *not* the synthetic-input-delivery
+loss hypothesized at #41 time), which issue #41 explicitly
 warned "parallel contention may amplify." It did — 0 recurrences across 3 serial
 hardware runs (this set's baseline + review 52's set), 1 in 3 parallel hardware
 runs.
