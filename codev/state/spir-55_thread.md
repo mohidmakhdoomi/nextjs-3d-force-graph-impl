@@ -389,3 +389,23 @@ complete. (Note: iter2 codex/claude were re-run once — a shell var-scoping bug
 sent the first attempt's output to / with empty --context; re-ran cleanly WITH
 context. Gemini's first-run file was correct.) Advancing via porch → phase_3.
 Then PAUSE per architect + report back.
+
+## PAUSED after Phase 2 complete (per architect) — 2026-07-24
+Phase_2 (Amplified reproduction & root-cause determination) COMPLETE and
+unanimously approved (iter2: Gemini/Codex/Claude all APPROVE HIGH). Porch
+committed the transition (`97abf43 advance plan phase → phase_3`). phase_2 = ✓;
+phase_3 (Minimal behavior-preserving fix) is now current but NOT started.
+Worktree clean (only untracked builder-harness files).
+
+Per architect instruction ("pause once phase_2 completes after the porch
+transition lands; do not start phase_3 until I give the go"), STOPPING here.
+
+Phase_2 outcome: root cause = **H1 (stray node capture)**, proven with 26
+background-drag reproductions (24 instrumented diagnostic + 2 canonical-suite),
+across SwiftShader + verified RTX-3080 hardware, parallel + serial. Fix direction
+for phase_3 (evidence-selected, per plan/spec): a probe-verified genuinely-
+background start point (inverse of pickNodeScreenPoint, node-free with a PIXEL
+MARGIN — the margin required because the occHit probe showed layout micro-drift
+between measurement and gesture) applied at matrix.spec.ts:224; NOT a
+settleBackgroundDrag delivery helper (H2/H3 ruled out — delivery was perfect).
+Resume point: phase_3 implement (needs architect go).
