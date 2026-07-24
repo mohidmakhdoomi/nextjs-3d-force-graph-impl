@@ -341,3 +341,42 @@ green 22/22 full two-engine run is the pre-fix full-suite baseline.
 Next: commit evidence + diag #55DATA/cameraDistance additions, porch check,
 3-way consult, land phase_2→phase_3 transition, then PAUSE per architect (report
 back; no phase_3 until go).
+
+## Phase 2 — iter1 consultation (3-way): Gemini APPROVE, Claude APPROVE, Codex REQUEST_CHANGES
+- Gemini APPROVE (HIGH): "exemplary… stopping cost-escalation once reproduced is
+  correct and honest… all Phase 2 deliverables perfectly."
+- Claude APPROVE (HIGH): "H1 decisively proven with airtight 24/288 evidence…
+  H2/H3 cleanly ruled out… honest budget recording." (3 non-blocking notes:
+  cameraDistance added between jobs, Firefox "Generic Renderer" expected, status
+  in_progress correct.)
+- Codex REQUEST_CHANGES (HIGH), 2 blocking points — BOTH ACCEPTED:
+  1. Campaign incomplete vs plan: plan lists ≥3 full two-engine + ≥3 parallel
+     GPU-lane tiers; I stopped at the targeted tier. → RUNNING them now (Job 2,
+     bg bt7aw50fb): 3× full two-engine serial (SwiftShader gate env) + 3×
+     E2E_WORKERS=50% GPU-lane. Recorded verbatim (canonical :224 doesn't dump, so
+     a repro shows as the assertion-failure line — corroborates Job-1 dumps).
+  2. Write-up overstated "airtight/perfect" occHit correlation: one passing rep
+     had occHit=true,withinDisk=true,fixedAfter=0,delta=3439. → CORRECTED
+     (phase2-mechanism.md §3/§5): the PERFECT 1:1 correlation is
+     reproduced ⟺ fixedAfter=1 (actual capture) ⟺ mid-drag controls.enabled=false;
+     occHit is a ~94% PREDICTOR (17 hits→16 captures), the 1 false-positive being
+     a probe raycast a few frames before pointerdown while the layout micro-drifts.
+     This reinforces the Phase-3 fix requirement: verify node-free with a pixel
+     margin, not a bare point test.
+Iterating (iter2): after Job 2, update §2 budget note + commit + re-consult.
+
+## Phase 2 — Job 2 (higher tiers, per Codex #1): CANONICAL-SUITE reproduction
+Gold-standard corroboration — the flake reproduces in the UNMODIFIED canonical
+suite, not just the diag replica:
+- Tier 2 (3× full two-engine SERIAL, SwiftShader gate): 3/3 green, [firefox]:224
+  ✓ each (~13.5s). Serial gate stable (consistent with ~10% rate).
+- Tier 3 (3× E2E_WORKERS=50% parallel native-GPU lane, RTX 3080): 2/3 REPRODUCED
+  canonical [firefox]:224 on verified hardware. Received=0.001966449673699226 /
+  0.002458062429124783 — matches the ISSUE's reported 0.001966449662569139
+  digit-for-digit. mode:hardware, renderer.firefox: D3D12 (RTX 3080). Chromium
+  :224 green all 6 runs (hardware, no SwiftShader contention).
+Whole campaign: 26 background-drag reproductions (24 diagnostic + 2 canonical).
+Refined amplification finding: full-suite parallel contention (22 tests × 10
+workers) DOES raise the per-run rate (Tier3 2/3 vs Tier2 serial 0/3 vs isolated
+diag ~10%) — concurrent CPU starvation perturbs the :224 force-layout settling.
+Corrected write-up §2/§3/§4/§5 + rebuttal committed. Re-consult iter2 next.

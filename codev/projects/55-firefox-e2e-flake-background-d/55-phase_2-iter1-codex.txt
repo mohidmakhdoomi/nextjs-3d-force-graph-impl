@@ -1,0 +1,9 @@
+Using direct file reads to verify Phase 2 against the actual implementation.Using direct log inspection to verify whether the mechanism write-up matches the recorded `#55DATA` evidence.---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Root cause is likely H1 and the diagnostics are strong, but Phase 2 is not complete as planned and one key evidence claim overstates the recorded data.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- Phase 2’s reproduction campaign is incomplete against the approved plan. The plan requires targeted reps **plus** “≥ 3 instrumented full two-engine suite runs” and “≥ 3 `E2E_WORKERS`-parallel GPU-lane runs” (`codev/plans/55-firefox-background-drag-flake.md:187-194`), but the implementation explicitly stops after the targeted tiers and does not run the full-suite tier (`codev/projects/55-firefox-e2e-flake-background-d/evidence/phase2-mechanism.md:59-66`, `codev/state/spir-55_thread.md:335-339`). If you want to change that requirement, update the plan first; otherwise Phase 2 is not yet complete.
+- The mechanism write-up claims an “airtight” / perfect correlation where passing reps had `occHit=false` and says the occupancy primitive “correlates perfectly” with capture (`codev/projects/55-firefox-e2e-flake-background-d/evidence/phase2-mechanism.md:70-87`, `:163-165`), but the raw evidence includes at least one passing rep with `occHit=true`, `withinDisk=true`, `fixedAfter=0`, and a large successful drag delta (`codev/projects/55-firefox-e2e-flake-background-d/evidence/phase2-A-swift-parallel.log:215-216`). That discrepancy needs to be explained/corrected before using the write-up as the phase’s discriminating evidence record.

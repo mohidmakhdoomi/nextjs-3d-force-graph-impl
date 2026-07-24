@@ -1,0 +1,16 @@
+=== Phase 2 campaign JOB 2 starting 2026-07-24T07:18:21Z ===
+--- building once for the serial tier ---
+build rc=0 (see phase2-job2-build.log)
+--- [T2-full-serial-run1] START 2026-07-24T07:18:31Z ---
+--- [T2-full-serial-run1] END rc=0 | 22 passed  | :224 ->   ✓   5 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (1.3m)|  ✓  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (13.6s)|
+--- [T2-full-serial-run2] START 2026-07-24T07:30:10Z ---
+--- [T2-full-serial-run2] END rc=0 | 22 passed  | :224 ->   ✓   5 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (1.2m)|  ✓  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (13.4s)|
+--- [T2-full-serial-run3] START 2026-07-24T07:41:42Z ---
+--- [T2-full-serial-run3] END rc=0 | 22 passed  | :224 ->   ✓   5 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (1.3m)|  ✓  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (13.5s)|
+--- [T3-gpu-parallel-run1] START 2026-07-24T07:53:13Z ---
+--- [T3-gpu-parallel-run1] END rc=1 | 21 passed / 1 failed | :224 ->   ✓   4 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (17.5s)|  ✘  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (23.6s)|  1) [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag |
+--- [T3-gpu-parallel-run2] START 2026-07-24T07:54:10Z ---
+--- [T3-gpu-parallel-run2] END rc=1 | 21 passed / 1 failed | :224 ->   ✓   4 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (17.9s)|  ✘  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (23.5s)|  1) [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag |
+--- [T3-gpu-parallel-run3] START 2026-07-24T07:55:07Z ---
+--- [T3-gpu-parallel-run3] END rc=0 | 22 passed  | :224 ->   ✓   2 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (17.9s)|  ✓  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (18.6s)|
+=== Phase 2 campaign JOB 2 done 2026-07-24T07:56:03Z ===

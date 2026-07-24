@@ -1,0 +1,138 @@
+
+> test:e2e:gpu
+> node scripts/e2e-gpu-lane.mjs
+
+[gpu-lane] host: platform=linux dxg=true wslLib=true wslgSocket=true DISPLAY=:0
+[gpu-lane] [chromium] candidate native-linux-angle-vulkan SKIPPED: host is WSL2 (/dev/dxg present) — ANGLE-Vulkan/native-GL is a known llvmpipe dead end under WSL2; the d3d12 recipe covers this host
+[gpu-lane] [chromium] candidate native-linux-angle-gl SKIPPED: host is WSL2 (/dev/dxg present) — ANGLE-Vulkan/native-GL is a known llvmpipe dead end under WSL2; the d3d12 recipe covers this host
+[gpu-lane] probing candidate wsl2-d3d12-angle-gl (WSL2 Mesa d3d12 via ANGLE native-GL (proven: bugfix-22 / PR #43; headless validated by the spec-44 FR5 matrix + full-suite run))
+[gpu-lane] candidate wsl2-d3d12-angle-gl VERIFIED hardware renderer: "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)"
+[gpu-lane] probing candidate wsl2-d3d12-firefox (WSL2 Mesa d3d12 via Firefox (no ANGLE flags; probe-only webgl.sanitize-unmasked-renderer=false to read the raw renderer))
+[gpu-lane] candidate wsl2-d3d12-firefox VERIFIED hardware renderer: "D3D12 (NVIDIA GeForce RTX 3080)"
+[gpu-lane] running build: npm run build
+
+> build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/package-lock.json
+
+▲ Next.js 16.2.10 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.6s
+  Running TypeScript ...
+  Finished TypeScript in 6.0s ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/4) ...
+  Generating static pages using 5 workers (1/4) 
+  Generating static pages using 5 workers (2/4) 
+  Generating static pages using 5 workers (3/4) 
+✓ Generating static pages using 5 workers (4/4) in 301ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+└ ○ /_not-found
+
+
+○  (Static)  prerendered as static content
+
+[gpu-lane] running suite: npx playwright test
+[WebServer] 
+[WebServer] > start
+[WebServer] > next start --hostname 127.0.0.1 --port 3000
+[WebServer] 
+[WebServer] ▲ Next.js 16.2.10
+[WebServer] - Local:         http://127.0.0.1:3000
+[WebServer] - Network:       http://127.0.0.1:3000
+[WebServer] ✓ Ready in 96ms
+[WebServer] ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[WebServer]  We detected multiple lockfiles and selected the directory of /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/package-lock.json as the root directory.
+[WebServer]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[WebServer]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[WebServer]  Detected additional lockfiles: 
+[WebServer]    * /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/package-lock.json
+[WebServer] 
+
+Running 22 tests using 10 workers
+
+  ✓   2 [chromium] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes (4.2s)
+  ✓  10 [chromium] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize (5.0s)
+  ✓   8 [chromium] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation (6.1s)
+  ✓   9 [chromium] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control (6.3s)
+  ✓   7 [chromium] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses (9.6s)
+  ✓   1 [chromium] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes (9.9s)
+  ✓   3 [chromium] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel (12.5s)
+  ✓  12 [firefox] › tests/e2e/matrix.spec.ts:75:5 › settles an initial force layout with positioned nodes (5.6s)
+  ✓  11 [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (12.4s)
+  ✓   4 [chromium] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (17.5s)
+  ✓  14 [firefox] › tests/e2e/matrix.spec.ts:134:5 › keeps pointer navigation inert until the enable delay elapses (11.8s)
+  ✓  17 [firefox] › tests/e2e/matrix.spec.ts:433:5 › toggles AxesHelper visibility through the axes control (11.7s)
+  ✓   6 [chromium] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (24.8s)
+  ✓  13 [firefox] › tests/e2e/matrix.spec.ts:104:5 › rotates the camera automatically until paused, then resumes (17.1s)
+  ✓   5 [chromium] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (26.3s)
+  ✓  15 [firefox] › tests/e2e/matrix.spec.ts:194:5 › zooms out with the wheel (14.9s)
+  ✓  20 [firefox] › tests/e2e/matrix.spec.ts:527:5 › remounts a fresh working canvas on re-navigation (7.2s)
+  ✓  19 [firefox] › tests/e2e/matrix.spec.ts:466:5 › keeps the canvas consistent and interactive across a resize (9.0s)
+  ✓  22 [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls (10.6s)
+  ✘  16 [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag (23.6s)
+  ✓  18 [firefox] › tests/e2e/matrix.spec.ts:269:5 › click-to-focus fixes the node, animates the camera, and reset restores the view (23.8s)
+  ✓  21 [firefox] › tests/e2e/right-click-release.spec.ts:174:5 › right-clicking a fixed node releases its fx/fy/fz (22.3s)
+
+
+  1) [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag 
+
+    Error: a background drag should rotate the camera
+
+    a background drag should rotate the camera
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 1
+    Received:   0.001966449673699226
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      262 |             },
+      263 |         )
+    > 264 |         .toBeGreaterThan(MOTION_FLOOR);
+          |          ^
+      265 |
+      266 |     expectCleanErrorBudget(errors);
+      267 | });
+        at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/tests/e2e/matrix.spec.ts:264:10
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/matrix-zooms-in-with-the-w-d379e-ates-with-a-background-drag-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/matrix-zooms-in-with-the-w-d379e-ates-with-a-background-drag-firefox/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/matrix-zooms-in-with-the-w-d379e-ates-with-a-background-drag-firefox/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/matrix-zooms-in-with-the-w-d379e-ates-with-a-background-drag-firefox/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/matrix-zooms-in-with-the-w-d379e-ates-with-a-background-drag-firefox/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [firefox] › tests/e2e/matrix.spec.ts:224:5 › zooms in with the wheel and rotates with a background drag 
+  21 passed (44.2s)
+=== E2E GPU LANE REPORT ===
+mode: hardware
+engines: chromium,firefox
+renderer.chromium: ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)
+renderer.firefox: D3D12 (NVIDIA GeForce RTX 3080)
+suite: fail (exit 1)
+wall-clock: 57s (build 10s, suite 45s)
