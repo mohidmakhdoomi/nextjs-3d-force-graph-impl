@@ -180,7 +180,7 @@ lockfile; `CI ⇒ 1` guard structurally unreachable by the lane default), FR6
 (provenance log + additive report line), FR7 (unit matrix), FR8 (evidence
 above), FR9 (docs reconciled). No new dependencies; no lockfile movement.
 
-## Architecture documentation updates
+## Architecture Updates
 
 - `codev/resources/arch.md` (Validation Baseline): the "local parallelism is
   opt-in" paragraph now records the lane-scoped exception — the native-GPU
@@ -191,7 +191,7 @@ above), FR9 (docs reconciled). No new dependencies; no lockfile movement.
   contracts; the existing hot entries (validate gate, environment-noise
   lesson) already cover what matters at decision time.
 
-## Lessons learned updates
+## Lessons Learned Updates
 
 - `codev/resources/lessons-learned.md` (Toolchain and Worktree Hygiene): new
   entry — a pnpm-launched harness leaks `npm_config_*` env vars (notably
@@ -199,7 +199,7 @@ above), FR9 (docs reconciled). No new dependencies; no lockfile movement.
   user-agent test under a bare `npm test`; prove the gate with the pollution
   stripped, never by weakening the test.
 
-## Lessons learned (narrative)
+## Lessons Learned
 
 - **What went well**: the #41 `resolveWorkers` contract made the change tiny —
   the lane only decides *whether to set* `E2E_WORKERS`; validation, CI
