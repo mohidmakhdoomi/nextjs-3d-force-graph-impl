@@ -1,7 +1,7 @@
 id: '56'
 title: make-the-native-gpu-e2e-lane-d
 protocol: spir
-phase: verify
+phase: verified
 plan_phases:
   - id: phase_1
     title: Lane hardware-mode worker default (mechanism + unit tests)
@@ -27,12 +27,14 @@ gates:
     requested_at: '2026-07-24T20:06:45.326Z'
     approved_at: '2026-07-24T20:10:48.159Z'
   verify-approval:
-    status: pending
+    status: approved
+    requested_at: '2026-07-24T20:19:43.624Z'
+    approved_at: '2026-07-24T20:19:57.155Z'
 iteration: 1
-build_complete: false
+build_complete: true
 history: []
 started_at: '2026-07-24T19:05:59.482Z'
-updated_at: '2026-07-24T20:11:04.430Z'
+updated_at: '2026-07-24T20:19:58.352Z'
 pr_history:
   - phase: review
     pr_number: 59
