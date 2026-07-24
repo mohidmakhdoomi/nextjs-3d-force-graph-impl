@@ -550,3 +550,37 @@ Architect instruction: finish phase_4 completely + porch check/done through the
 transition to phase_5, then PAUSE before starting any phase_5 work + notify.
 Transition done; phase_5 build-complete recorded. NOT running the phase_5
 consults or any #41 re-qualification work. Awaiting architect's phase_5 go.
+
+## RESUMED — Phase 5 (#41 GPU-lane parallel re-qual & caveat) — 2026-07-24
+Architect go: "phase_5 (E2E_WORKERS=50% x3 at retries:0, caveat disposition per
+outcome); no extra phase_4 verification (bc93a0c reviewed, both Codex iter-3
+points substantively fixed, force-advance accepted). Continue autonomously
+through phase_5, phase_6, review, PR; stop only at porch gates / context monitor
+/ blockers. env -u npm_config_user_agent for porch checks approved." Context
+monitor (~/code/scripts/context_used_threshold.sh) armed at session start.
+
+### Phase 5 qualification — GREEN 3/3
+Driver evidence/phase5-gpu-parallel-requal.sh: `E2E_WORKERS=50% npm run
+test:e2e:gpu` x3 at retries:0 — the EXACT regime that reproduced the flake 2/3 on
+the UNFIXED tree (Phase-2 T3, received 0.001966… digit-for-digit the issue). On
+the fixed tree: **3/3 green**, 22/22 each, `Running 22 tests using 10 workers`
+(genuine parallel), `[firefox] matrix.spec.ts:225` background-drag ✓ every run
+(19.0/18.3/18.8s), zero failed/retried/flaky. Renderer bracketed by lane
+--probe-only before+after: chromium ANGLE D3D12 RTX 3080 / firefox D3D12 RTX 3080,
+mode:hardware. Chromium green throughout. Evidence: phase5-*.log + phase5-summary.md.
+
+### FR6 disposition — caveat RETIRED (green 3/3 branch)
+- README.md: opt-in-parallel paragraph + "Known Firefox flake" block rewritten to
+  FIXED state (root cause = stray node capture; probe-verified background start
+  point; MOTION_FLOOR/retries:0/real gesture unchanged), citing #55. Also made the
+  whole README parallel-caveat surface coherent per DoD ("table row + parallel-
+  default caution — updated per FR6"): E2E_WORKERS table row + Status-and-sequencing
+  note now cite the now-fixed #55 flake and attribute the opt-in reason SOLELY to
+  the deterministic SwiftShader Chromium contention. README has ZERO residual #33.
+- review-41: dated "#55 re-qualification addendum (2026-07-24) — opt-in parallel now
+  green 3/3" appended under Qualification Evidence; records the green 3/3 re-run,
+  retires the caveat, explicitly does NOT flip the serial default (FR7, phase_6).
+- Deferred to phase_6 (FR8): remaining #33 reference-mentions in playwright.config.ts
+  :114 (comment-only), review-52, spec-52, and review-41's historical #33 mentions
+  (marked correction notes citing #55); plus FR7 follow-up correction.
+- Committing phase_5, then porch check/done + 3-way consult.

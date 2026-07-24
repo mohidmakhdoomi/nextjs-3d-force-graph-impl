@@ -129,6 +129,27 @@ flags no non-hooks file, so the lint gate is clean on a pristine tree. `npm run
 typecheck` is clean; #41 touches no `package.json`/lockfile, so `npm ci`
 reproducibility is unaffected. The noise was **not** suppressed in committed config.
 
+### #55 re-qualification addendum (2026-07-24) — opt-in parallel now green 3/3
+
+**Update (issue #55, 2026-07-24):** the lone Firefox failure in this
+qualification set (section A's parallel run, and the disposition below) is the
+background-drag flake `[firefox] matrix.spec.ts` — root-caused and **fixed by
+issue #55** (stray node capture at the hard-coded drag start point; a
+behavior-preserving harness fix that verifies a genuinely-background start point).
+With the fix in place, #55 re-ran **this exact opt-in-parallel regime**
+(`E2E_WORKERS=50% npm run test:e2e:gpu`, `retries: 0`, native-GPU hardware lane),
+**3 runs → green 3/3**: `22/22` each, `Running 22 tests using 10 workers`, with
+`renderer.firefox: D3D12 (NVIDIA GeForce RTX 3080)` and `renderer.chromium: ANGLE
+(… D3D12 (NVIDIA GeForce RTX 3080) …)` verified by `--probe-only` before and after
+the set; the background-drag test passed every run (~18–19 s). Evidence:
+`codev/projects/55-firefox-e2e-flake-background-d/evidence/phase5-summary.md`
+(+ `phase5-*.log`).
+
+This **retires** the README opt-in-parallel "Known Firefox flake" caveat. It does
+**not** change the serial default: the SwiftShader parallel-contention failures
+(section B — 4–5/22 Chromium on every parallel run) are deterministic, distinct
+from #55, and untouched (see the corrected Follow-up below).
+
 ## Decision & Deviation (FR8 vs. Decision 4)
 
 Spec **FR8** literally asserts "default (no `CI`, no `E2E_WORKERS`) ⇒ the scaled
