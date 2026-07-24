@@ -138,6 +138,10 @@ Revert the phase commit — the change is additive and confined to two files.
 - [ ] `tests/gpu-lane.test.mjs`: unit tests for `workerDecisionFor`
   (default / override / fallback / whitespace-unset) and for `formatReport`
   emitting the `workers:` line while preserving existing line phrasing.
+  Coverage MUST name every report call path that now supplies a worker
+  decision: full-lane success, build-failure, software-fallback,
+  `skip-empty`, and `--probe-only` (`workers: n/a (no suite run)`) — per
+  codex plan review.
 
 #### Implementation Details
 - Files: `scripts/e2e-gpu-lane.mjs`, `tests/gpu-lane.test.mjs` (2 files).
@@ -176,13 +180,17 @@ Revert the phase commit; Phase 1 behavior (silent default) still stands.
 - [ ] `README.md`: "Opt-in native-GPU e2e lane" section states
       parallel-by-default on verified hardware (`50%`), tunable/serial via
       `E2E_WORKERS`, serial on software fallback; "Local test parallelism"
-      note and the lane env-table `E2E_WORKERS` row updated to match.
+      note and the lane env-table `E2E_WORKERS` row updated to match; the
+      section's sample report-format snippet updated to include the new
+      `workers:` line (codex plan review).
 - [ ] `codev/reviews/41-parallelize-local-e2e-runs.md`: dated correction
       under "Revisiting the serial default" — lane-scoped parallel default
       shipped by spec 56; global default remains serial (SwiftShader
       contention unsolved, CI GPU-less, lane never the gate).
-- [ ] `scripts/e2e-gpu-lane.mjs` top-of-file header comment updated if it
-      describes worker behavior.
+- [ ] `scripts/e2e-gpu-lane.mjs` top-of-file header comment: worker-behavior
+      wording is handled once — the `suiteEnvFor` doc comment lands in
+      Phase 2; this phase only covers the top-of-file header if it still
+      mentions workers (single edit, no churn — codex plan review).
 - [ ] Re-qualification evidence captured for the review document (recorded
       in full during the Review phase):
       (a) serial baseline `E2E_WORKERS=1 npm run test:e2e:gpu` — per-test
@@ -262,8 +270,11 @@ Phase 1 ──→ Phase 2 ──→ Phase 3
 - [ ] Arch/lessons doc routing check (hot/cold tiers) during Review phase
 
 ## Expert Review
-Porch runs 3-way consultation on this plan; feedback and adjustments will be
-recorded here.
+**Date**: 2026-07-24 (iter1)
+**Verdicts**: gemini APPROVE, codex COMMENT, claude APPROVE.
+**Codex comments folded in**: Phase 2 test coverage now names every report
+call path receiving a worker decision; Phase 3 explicitly includes the README
+sample report snippet; header-comment edit deduplicated between Phases 2–3.
 
 ## Change Log
 | Date | Change | Reason | Author |
