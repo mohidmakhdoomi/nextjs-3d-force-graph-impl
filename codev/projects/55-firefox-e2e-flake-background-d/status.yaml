@@ -17,11 +17,11 @@ plan_phases:
     status: complete
   - id: phase_5
     title: '#41 GPU-lane parallel re-qualification & caveat'
-    status: in_progress
+    status: complete
   - id: phase_6
     title: Record corrections (FR7 + FR8)
-    status: pending
-current_plan_phase: phase_5
+    status: in_progress
+current_plan_phase: phase_6
 gates:
   spec-approval:
     status: approved
@@ -35,8 +35,8 @@ gates:
     status: pending
   verify-approval:
     status: pending
-iteration: 2
-build_complete: true
+iteration: 1
+build_complete: false
 history:
   - iteration: 1
     plan_phase: phase_1
@@ -151,7 +151,7 @@ history:
         file: >-
           /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/spir-55/codev/projects/55-firefox-e2e-flake-background-d/55-phase_5-iter1-claude.txt
 started_at: '2026-07-24T03:23:21.257Z'
-updated_at: '2026-07-24T11:14:06.844Z'
+updated_at: '2026-07-24T11:16:47.427Z'
 force_advanced:
   phase: phase_4
   iteration: 3
