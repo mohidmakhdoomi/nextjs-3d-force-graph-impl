@@ -179,16 +179,22 @@ qualification set.**
 - **Class**: Firefox synthetic-input-delivery nondeterminism, **not** a
   software-WebGL timing problem — it survives on hardware (hence hardware
   rendering did not eliminate it), and it passes when repeated alone. This is the
-  documented Firefox local-arm input-race family (issues #11/#33, and Review 44's
-  Flaky Tests note for the same test).
+  documented Firefox local-arm input-race family (issue #11 and Review 44's Flaky
+  Tests note for the same test). **Correction (#55, 2026-07-24):** this
+  background-drag flake was labeled "#33" here; that was a misattribution — #33 was
+  a *distinct*, already-closed enable-delay inertness race. It is tracked and now
+  **fixed** by **issue #55** (the genuine #11 reference stands).
 - **Disposition**: accepted + documented (Decision 10 permits fix/qualify
   separately **or** explicit accept+document). A code fix to the canonical
   `tests/e2e/matrix.spec.ts` is **out of scope** here (spec Decision 10 makes it
   optional; the spec forbids weakening the canonical assertion as part of this
   lane work). It is **not masked**: the lane runs `retries: 0`, the canonical
-  assertion (camera azimuth delta > 1) is unchanged, and no test is skipped. If it
-  recurs on future local qualification runs, file a dedicated issue in the #33
-  family rather than retuning inside unrelated work.
+  assertion (camera azimuth delta > 1) is unchanged, and no test is skipped. The
+  "file a dedicated issue rather than retuning inside unrelated work" follow-up
+  named here was fulfilled by **issue #55** (originally referred to as the "#33
+  family" — a misattribution), which root-caused the flake (stray node capture)
+  and **fixed** it with a behavior-preserving harness change, re-qualified green on
+  both engines and both rendering paths.
 
 The FR8 two-branch merge gate is satisfied by branch (a) (fully green); this
 disposition documents the known flake for completeness and future triage, not

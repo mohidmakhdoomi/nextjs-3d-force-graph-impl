@@ -598,3 +598,38 @@ Committed 5a173b4. porch check ✓ (build+tests, env -u prefix). 3-way ran.
   (mostly green|known flake|amplif|recur|survives on hardware|open flake|#33) →
   zero residual stale framing. Wrote 55-phase_5-iter1-rebuttals.md. Committing +
   re-consult iter2.
+
+### Phase 5 — iter2 consult: UNANIMOUS APPROVE → phase_6
+Gemini/Codex/Claude all APPROVE (HIGH, no key issues). Codex confirms its iter1
+"mostly green" point resolved. porch recorded verdicts + advanced → phase_6
+(2205b02). Committed iter2 artifacts (457c243).
+
+## Phase 6 — Record corrections (FR7 + FR8) — 2026-07-24
+Doc/comment-only corrections; wording reflects the actual Phase 2–5 outcome
+(#55 root-caused = stray node capture, fixed, re-qualified green incl. 3/3 parallel).
+
+- **FR7** (review-41 Follow-up "revisit the default"): rewritten to
+  necessary-but-not-sufficient — fixing #55 does NOT justify flipping
+  DEFAULT_LOCAL_WORKERS; the standing blocker is the deterministic Chromium
+  SwiftShader parallel-contention (4–5/22 every parallel run — section B, a
+  contention artifact not a flake, untouched by #55). Flip needs BOTH (flake fixed
+  ✓ AND contention solved — not attempted here). Cannot be misread as "flake fixed
+  ⇒ parallel default".
+- **FR8** (#33 → #55 misattribution, Decision-7 MARKED correction notes, not silent
+  rewrites):
+  - review-41: added a correction banner atop Qualification Evidence + corrected
+    every inline this-flake "#33" (section A prose, serial-baseline table, serial-
+    gate-note heading+prose, Flaky Tests/Disposition, Technical Debt). All remaining
+    "#33" tokens are in "was #33, is #55" note form.
+  - review-52: corrected "#11/#33" → keep #11, cite #55 (fixed); the "file a
+    dedicated issue in the #33 family" follow-up now records it was fulfilled by #55.
+  - spec-52: added a correction note to the Known Stability Caveat — Decision-10
+    "fixed/qualified separately" path taken; mechanism is stray node capture (NOT
+    synthetic-input delivery as the caveat hypothesized), fixed by #55; "#33 family"
+    was a misattribution.
+  - playwright.config.ts:114: COMMENT-ONLY correction (#33 → #55, since fixed;
+    standing serial reason = SwiftShader contention). git diff = only `//` lines,
+    zero executable change; typecheck clean; canonical --list still 22 tests.
+  - README: already zero #33 (phase_5).
+- Acceptance grep: no bare this-flake→#33 remains; genuine #34 (click-to-focus) and
+  #11 references intact. Committing phase_6, then porch check/done + 3-way consult.

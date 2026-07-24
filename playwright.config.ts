@@ -111,9 +111,11 @@ export default defineConfig({
     //     found they DESTABILIZE these timing-sensitive matrix.spec.ts
     //     camera-settle/drag assertions under SwiftShader CPU contention (4-5 of
     //     22 Chromium tests fail on every parallel run — even though parallel is
-    //     faster) and amplify the known Firefox flake #33 even on hardware — so
-    //     the `retries: 0` local gate stays serial, matching the environment
-    //     these assertions were qualified against.
+    //     faster). At #41 time it also amplified the Firefox background-drag flake
+    //     (issue #55 — miscalled "#33" then, since FIXED) even on hardware; the
+    //     SwiftShader Chromium contention is the standing reason the `retries: 0`
+    //     local gate stays serial, matching the environment these assertions were
+    //     qualified against.
     //   - Local opt-in parallel: E2E_WORKERS=<int|percent> (e.g. 50%) — for fast
     //     local iteration, most useful on the native-GPU lane (~4x faster). An
     //     invalid value is a loud WorkerConfigError, never a silent fallback.

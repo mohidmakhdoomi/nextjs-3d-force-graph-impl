@@ -50,6 +50,16 @@ native-GPU lane. CI is byte-for-byte unchanged.
 Host: WSL2, 20 cores (`nproc=20`), NVIDIA RTX 3080 via Mesa d3d12. `retries: 0`
 throughout. Full two-engine suite = 22 tests (11 Chromium + 11 Firefox).
 
+> **Correction (issue #55, 2026-07-24):** this section and "Flaky Tests /
+> Disposition" below originally labeled the Firefox background-drag flake
+> (`[firefox] matrix.spec.ts:224`) as "**#33**" — a **misattribution**. #33 was a
+> *distinct*, already-closed enable-delay inertness race (`matrix.spec.ts:134`).
+> The background-drag flake is tracked and — per the #55 re-qualification addendum
+> below — **root-caused, fixed, and re-qualified green 3/3 parallel** by **issue
+> #55**; the "#33" labels below have been corrected to **#55** accordingly. (The
+> genuine, still-open click-to-focus flake **#34** is a different test and is
+> unaffected.)
+
 ### A. Native-GPU lane — contention-free hardware (primary vehicle, `E2E_GPU_REQUIRE=1`)
 
 Renderers verified every run — `renderer.chromium: ANGLE (Microsoft Corporation,
@@ -77,17 +87,18 @@ parallel runs failed. The failure (verbatim):
     - Timeout 5000ms exceeded while waiting on the predicate
 ```
 
-This is the **known open flake #33** (Firefox synthetic-input-delivery
-nondeterminism, documented in the README as "survives on hardware"), which issue
-#41 explicitly warned "parallel contention may amplify." It did — 0 recurrences
-across 3 serial hardware runs (this set's baseline + review 52's set), 1 in 3
-parallel hardware runs.
+This is the **background-drag flake #55** (Firefox synthetic-input-delivery
+nondeterminism, documented in the README as "survives on hardware"; labeled "#33"
+here originally — see the correction note above), which issue #41 explicitly
+warned "parallel contention may amplify." It did — 0 recurrences across 3 serial
+hardware runs (this set's baseline + review 52's set), 1 in 3 parallel hardware
+runs.
 
 ### B. SwiftShader — the path `npm run validate` actually gates on
 
 | Run | Banner | Result | Wall-clock |
 |-----|--------|--------|-----------|
-| **Serial baseline** | `Running 22 tests using 1 worker` | **`1 failed`** (flake #33), `21 passed` | `11.7m` |
+| **Serial baseline** | `Running 22 tests using 1 worker` | **`1 failed`** (flake #55, then open), `21 passed` | `11.7m` |
 | Parallel 1/3 | `Running 22 tests using 10 workers` | **`4 failed`**, `18 passed` | `3.2m` |
 | Parallel 2/3 | `Running 22 tests using 10 workers` | **`4 failed`**, `18 passed` | `3.3m` |
 | Parallel 3/3 | `Running 22 tests using 10 workers` | **`5 failed`**, `17 passed` | `3.3m` |
@@ -109,17 +120,18 @@ timing-sensitive camera-settle/wheel/drag assertions miss their deadlines — 4�
 22 Chromium tests fail on **every** parallel run (0/3 green). A gate that fails
 4–5/22 every run is not a gate, however fast.
 
-### Serial gate note — pre-existing flake floor (#33 / #34)
+### Serial gate note — pre-existing flake floor (#55 / #34)
 
 The serial default is the **pre-existing** local gate contract; `resolveWorkers({})
 === 1` routes the default there, and issue #41 does not change it. It is honest to
 record that this pre-existing path is **not flawlessly green at `retries: 0`**: the
-serial SwiftShader baseline above hit the **same known open flake #33** once
-(`[firefox] matrix.spec.ts:224`, motion `0.0038` < `MOTION_FLOOR` 1). #33 and the
-click-to-focus flake #34 are pre-existing, open, and surface even serially at
-`retries: 0` — which is exactly why they are tracked and why CI runs `retries: 2`.
-Issue #41 neither introduces nor fixes them; it preserves the serial contract and
-adds opt-in parallel that **amplifies** them (hence opt-in, not default).
+serial SwiftShader baseline above hit the **same background-drag flake #55** once
+(`[firefox] matrix.spec.ts:224`, motion `0.0038` < `MOTION_FLOOR` 1). #55 (then
+open; since **fixed** — see the correction note above) and the click-to-focus
+flake #34 were pre-existing and surfaced even serially at `retries: 0` — which is
+exactly why they are tracked and why CI runs `retries: 2`. Issue #41 neither
+introduces nor fixes them; it preserves the serial contract and adds opt-in
+parallel that **amplifies** them (hence opt-in, not default).
 
 **Gate cleanliness (lessons-critical):** local `eslint .` reports 21 errors, all in
 the **untracked** `.claude/hooks/worktree-write-guard.cjs` builder-harness file
@@ -165,11 +177,13 @@ Architect endorsed this disposition (2026-07-22).
 
 ## Flaky Tests / Disposition
 
-- **#33** (`[firefox] matrix.spec.ts:224`): pre-existing, open, amplified by
-  parallel contention. **Disposition:** accepted + documented, **not masked with
-  retries**, the canonical `MOTION_FLOOR` assertion **not weakened**. It is a
-  primary reason parallel is opt-in, not default. `retries: 0` keeps any
-  recurrence visible.
+- **#55** (`[firefox] matrix.spec.ts:224`; recorded here originally as "#33" —
+  see the correction note above): pre-existing, amplified by parallel contention.
+  **Disposition at #41 time:** accepted + documented, **not masked with retries**,
+  the canonical `MOTION_FLOOR` assertion **not weakened**. It was a primary reason
+  parallel is opt-in, not default. `retries: 0` kept any recurrence visible.
+  **Since fixed** by #55 (root-caused as stray node capture; re-qualified green
+  3/3 parallel — see the re-qualification addendum above).
 - The SwiftShader-parallel Chromium failures are **contention artifacts of a
   configuration we are not shipping as default**, not defects in shipped behavior;
   the shipped serial default does not exhibit them.
@@ -318,16 +332,30 @@ pressure.
 
 ## Technical Debt
 
-- **Open flakes #33 (Firefox drag-rotate) and #34 (click-to-focus)** remain open —
-  pre-existing, not in #41's scope. #41 documents that parallelism amplifies them
-  and keeps them unmasked. Fixing them is follow-up work that would make opt-in
-  parallel more reliable.
+- **Click-to-focus flake #34** remains open — pre-existing, not in #41's scope.
+  #41 documents that parallelism amplifies it and keeps it unmasked. Fixing it is
+  follow-up work that would make opt-in parallel more reliable. *(Correction, #55:
+  the Firefox drag-rotate flake formerly listed here as "#33" is now tracked and
+  **fixed** by #55 — see the re-qualification addendum above; #33 was a distinct,
+  already-closed enable-delay race.)*
 
 ## Follow-up Items
 
-- If #33/#34 are fixed, re-run the parallel qualification — a green parallel path
-  could justify revisiting the default (the machinery is already in place; only the
-  `DEFAULT_LOCAL_WORKERS` constant would change).
+- **Revisiting the serial default (corrected per #55, 2026-07-24).** Fixing the
+  Firefox background-drag flake (#55, formerly miscalled "#33") is
+  **necessary-but-not-sufficient** for flipping `DEFAULT_LOCAL_WORKERS` to
+  parallel — it must **not** be read as "flake fixed ⇒ parallel default." Even now
+  that #55 is fixed and re-qualified **green 3/3 parallel** (see the addendum
+  above), the standing blocker is the **deterministic Chromium SwiftShader
+  parallel-contention** failures (4–5 of 22 on **every** parallel run — section B;
+  a contention artifact, not a flake, and untouched by #55). Flipping the global
+  default **additionally** requires solving that contention — e.g. fewer workers on
+  the SwiftShader path, or moving the local gate off SwiftShader — **neither
+  attempted here**. Only once BOTH hold (Firefox flake fixed — done — **and** the
+  SwiftShader Chromium contention solved) could a green parallel path justify
+  revisiting the default; the machinery is already in place, only
+  `DEFAULT_LOCAL_WORKERS` would change. (The click-to-focus flake **#34** remains a
+  separate open item.)
 - Consider a convenience script (e.g. `test:smoke:parallel`) if opt-in parallel on
   the GPU lane becomes a common local workflow.
 
