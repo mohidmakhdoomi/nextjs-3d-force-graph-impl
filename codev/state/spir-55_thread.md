@@ -380,3 +380,12 @@ Refined amplification finding: full-suite parallel contention (22 tests × 10
 workers) DOES raise the per-run rate (Tier3 2/3 vs Tier2 serial 0/3 vs isolated
 diag ~10%) — concurrent CPU starvation perturbs the :224 force-layout settling.
 Corrected write-up §2/§3/§4/§5 + rebuttal committed. Re-consult iter2 next.
+
+## Phase 2 — iter2 consultation: UNANIMOUS APPROVE (HIGH)
+Gemini APPROVE, Codex APPROVE, Claude APPROVE — all "no key issues". Codex
+confirms both iter1 concerns resolved ("reproduction campaign covers all planned
+tiers… occHit overstatement correctly narrowed"). Phase_2 root-cause verified
+complete. (Note: iter2 codex/claude were re-run once — a shell var-scoping bug
+sent the first attempt's output to / with empty --context; re-ran cleanly WITH
+context. Gemini's first-run file was correct.) Advancing via porch → phase_3.
+Then PAUSE per architect + report back.

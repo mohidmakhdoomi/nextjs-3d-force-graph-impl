@@ -1,0 +1,61 @@
+I'll read the key Phase 2 deliverables to verify the implementation against the plan. Let me start with the mechanism write-up, the campaign scripts/logs, and the iteration 1 rebuttal.Now let me read the summary logs and a few key evidence logs to verify the claims.Let me verify some key claims by spot-checking the raw evidence logs, particularly the Tier 3 failures and a sample of the diagnostic data.Let me check the remaining raw reproduction data and verify the aggregate numbers line up.Let me verify the Firefox-dominance evidence and the status tracking.Let me spot-check the Firefox data from the F1 log for the cameraDistance claim.Let me verify the renderer evidence brackets and check a few more data points.I've now thoroughly reviewed all the Phase 2 deliverables. Let me provide my assessment.
+
+---
+
+## Phase 2 Review: Amplified Reproduction & Root-Cause Determination
+
+### Spec Adherence
+
+**FR1 (Amplified, instrumented reproduction)**: ✅ Complete. The campaign executed all three plan tiers in increasing cost order:
+- **Tier 1 (Job 1)**: 160 targeted Firefox reps across 4 segments (SwiftShader parallel/serial × GPU parallel/serial) — 16 reproductions (10% rate)
+- **Tier 1b**: 128 both-engine serial reps — 8 Firefox reproductions, 0 Chromium (Firefox-dominance evidence)
+- **Tier 2 (Job 2)**: 3 full two-engine serial runs — 3/3 green (as expected from ~10% per-run rate on serial)
+- **Tier 3 (Job 2)**: 3 `E2E_WORKERS=50%` parallel GPU-lane runs — **2/3 reproduced** on verified RTX 3080 hardware, with the verbatim historical signature (`Received: 0.001966449673699226` matches the issue's `0.001966449662569139`)
+
+All runs recorded verbatim with environment/renderer evidence. Budget honestly recorded.
+
+**FR3 (Root cause documented with evidence)**: ✅ Complete. H1 (stray node capture) decisively proven with:
+- **Ground truth 1:1 correlation**: `reproduced ⟺ fixedAfter=1 ⟺ controls.enabled=false` (16 ⟺ 16, zero exceptions)
+- **H2 ruled out**: `movesBetweenDownUp=12`, `dropped=0` in every single rep (288/288)
+- **H3 ruled out**: `ctrlBefore=true` in every rep — controls were ready before every drag
+- **Full historical signature explained**: ~zero deltas (Trackball disabled entire drag), hardware survival (CPU-side raycast geometry), Firefox dominance (cameraDistance ~1752 vs Chromium ~2234 — verified in F1 logs), repeat-alone greens (~10% coin flip), parallel amplification (contention-driven layout density shift)
+
+**Decision 5 budget met**: ≥60 targeted reps (288 instrumented), ≥3 full serial (3), ≥3 parallel GPU (3). All three tiers executed.
+
+### Code Quality
+
+The evidence artifacts are well-organized:
+- Campaign scripts (`phase2-campaign-job1.sh`, `job1b.sh`, `job2.sh`) are clean, reproducible bash with `set -u`, proper error capture (`set +e` so reproduced failures don't abort), and structured summary logging
+- The aggregation script (`aggregate-55data.mjs`) is a clean analytics utility that extracts `#55DATA` JSON records and computes quantiles per segment
+- The mechanism write-up (`phase2-mechanism.md`) is precise, well-structured, and distinguishes ground-truth correlations from probe predictions (the `occHit` ~94% precision correction)
+
+### Iter-1 Codex Concerns — Verified Addressed
+
+1. **Campaign incomplete (higher tiers not run)**: ✅ Job 2 executed both Tier 2 and Tier 3 with recorded evidence. The Tier 3 canonical reproductions are particularly strong — the unmodified `matrix.spec.ts:224` failed with the verbatim historical signature on verified hardware.
+
+2. **Overstated "airtight/perfect" correlation**: ✅ Write-up §3 now precisely distinguishes (a) the ground-truth 1:1 `fixedAfter ⟺ reproduced` from (b) the `occHit` probe as a strong predictor at ~94% precision (17→16), with the one false-positive explained (layout micro-drift between probe raycast and actual pointerdown). This correction directly constrains the Phase-3 fix design (pixel margin needed).
+
+### Numerical Verification
+
+I spot-checked the claimed numbers against the raw evidence:
+- **Job 1 summary**: A=50reps/6repro, B=30/3, D=50/5, E=30/2 → 160/16 ✓
+- **Job 1b summary**: F1=80reps/6repro, F2=48reps/2repro → 128/8 ✓ (64 Firefox/8 repro + 64 Chromium/0 repro)
+- **Job 2 summary**: T2 3/3 green ✓, T3 runs 1&2 failed (firefox :224), run 3 green ✓
+- **cameraDistance**: Firefox ~1752 vs Chromium ~2127-2234 ✓ (verified in F1 raw logs)
+- **Renderer brackets**: pre & post both confirm `D3D12 (NVIDIA GeForce RTX 3080)` for Firefox, `ANGLE (... D3D12 (NVIDIA GeForce RTX 3080) ...)` for Chromium ✓
+- **Total campaign**: 288 instrumented + 6 canonical = 294 total test executions; 24 instrumented + 2 canonical = 26 reproductions ✓
+
+### Minor Observations (Non-Blocking)
+
+1. **status.yaml still shows `in_progress`** for phase_2 — correct; it awaits approval before transition.
+
+2. The F2 Chromium-fell-to-SwiftShader footnote is honestly recorded and doesn't affect the conclusion (F1 is the clean same-path comparison, and Chromium's cameraDistance/radius are consistent across both).
+
+---
+VERDICT: APPROVE
+SUMMARY: Phase 2 is complete and decisive — H1 (stray node capture) proven with airtight 24/288 instrumented evidence plus 2 canonical-suite reproductions, all three plan tiers executed, both iter-1 Codex concerns fully addressed with additional evidence and corrected precision.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- None
