@@ -696,3 +696,21 @@ resolved. porch advanced past phase_6 → **Review** phase (all 6 implement phas
   open PR (all phase commits, single PR per issue PR Strategy); porch check/done
   (review checks: pr_exists, arch/lessons updates, e2e_tests) → PR gate → notify
   architect + STOP (porch gate).
+
+## PAUSED — context monitor crossed 30% (31%), mid-Review — 2026-07-24
+Context monitor (~/code/scripts/context_used_threshold.sh) fired at 31% > 30%.
+Architect designated the context-monitor threshold an explicit STOP condition.
+Clean pause point: ALL work committed + pushed (HEAD b634080, origin in sync,
+worktree clean apart from untracked builder-harness files).
+
+Done so far this session: phase_5 (FR6, green 3/3 caveat retired) + phase_6 (FR7+FR8
+corrections) both UNANIMOUS-approved and transitioned; Review doc
+(codev/reviews/55-firefox-background-drag-flake.md) + cold lessons-learned entry
+written and committed. porch phase = **review** (iteration 1).
+
+REMAINING (needs resume, ideally after /compact): (1) final clean-checkout
+`npm run validate` on HEAD as authoritative final-tree green proof (~12m e2e);
+(2) open the PR (single PR, all phase commits); (3) porch check/done for review
+(checks: pr_exists, review_has_arch_updates, review_has_lessons_updates, e2e_tests);
+(4) STOP at the SPIR `pr` gate for human approval. Paused BEFORE these (each is
+substantial; the e2e runs are ~11m) per the monitor instruction. Notified architect.
