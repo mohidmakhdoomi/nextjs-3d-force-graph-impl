@@ -518,3 +518,14 @@ Context crossed 30% mid-phase (architect monitor). Architect instruction: finish
 phase_4 completely (validate proof + evidence commit + consult + porch transition
 to phase_5), then PAUSE before phase_5 and notify; no /compact. Proceeding to
 commit evidence + phase_4 consult.
+
+## Phase 4 — iter1 consult: Claude APPROVE, Gemini+Codex REQUEST_CHANGES
+Both want the ≥60 targeted [firefox] :224 repeat on the NATIVE-GPU (hardware)
+lane (I'd only done 3 full GPU runs for the hardware arm). Addressing: the
+gpu-lane wrapper rejects unknown Playwright args, so running the targeted repeat
+under the lane's OWN firefox recipe (GALLIUM_DRIVER=d3d12 + LD_LIBRARY_PATH=
+/usr/lib/wsl/lib, from FIREFOX_PROBE_RECIPE; committed firefox project already
+has webgl.force-enabled), bracketed by lane --probe-only runs that verify D3D12
+RTX 3080 hardware before+after (the suite reads a sanitized renderer, so the
+probe is the hardware evidence — exactly how the lane works internally).
+evidence/phase4b-gpu-targeted.sh (btn02ol4v). No code change to the lane.

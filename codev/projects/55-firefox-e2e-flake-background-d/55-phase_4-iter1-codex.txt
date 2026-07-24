@@ -1,0 +1,9 @@
+---
+VERDICT: REQUEST_CHANGES
+SUMMARY: Phase 4 has strong serial/GPU evidence, but it does not complete the planned Firefox targeted-repeat qualification on the native-GPU lane.
+CONFIDENCE: HIGH
+---
+
+KEY_ISSUES:
+- Phase 4’s plan explicitly requires targeted repetition of the fixed Firefox `:224` test at `--repeat-each >= 60` on **both** SwiftShader and the **native-GPU lane** (`codev/plans/55-firefox-background-drag-flake.md:317-319,329-331`). The implementation only does the targeted x60 run on SwiftShader (`codev/projects/55-firefox-e2e-flake-background-d/evidence/phase4-qualify.sh:7-18,26-34`) and then substitutes three full GPU-lane suite runs instead (`codev/projects/55-firefox-e2e-flake-background-d/evidence/phase4-summary.md:22-27`). That substitution is not what this phase’s deliverable says, so FR5 is only partially satisfied for this phase.
+- `npm run validate` is not green in the actual builder worktree (`codev/projects/55-firefox-e2e-flake-background-d/evidence/phase4-2-validate.log:1-35`); the phase summary relies on a separate clean detached worktree run instead (`codev/projects/55-firefox-e2e-flake-background-d/evidence/phase4-summary.md:41-55`). I would treat this as secondary because the failure is from an untracked local harness file, but the phase plan’s acceptance text still says "`npm run validate` green" on the final tree (`codev/plans/55-firefox-background-drag-flake.md:324-335`), so the evidence should either be brought into conformance in-worktree or the phase requirement clarified before approval.

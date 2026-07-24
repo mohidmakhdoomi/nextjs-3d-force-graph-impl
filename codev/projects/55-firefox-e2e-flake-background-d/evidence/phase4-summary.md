@@ -12,6 +12,7 @@ means the fix is incomplete, so we stop rather than mask).
 | Run | Path | Engine(s) | Result | Log |
 |---|---|---|---|---|
 | Targeted `:224` ×60 | SwiftShader, serial | firefox | **60/60 passed** (16.4m) | `phase4-1-ff224-swift-x60.log` |
+| Targeted `:224` ×60 | native-GPU (hardware) | firefox | **60/60 passed** | `phase4b-2-ff224-gpu-x60.log` |
 | Full suite serial #1 | SwiftShader (clean-checkout `validate`) | chromium+firefox | **22/22 passed** (11.5m) | `phase4-5-clean-validate.log` |
 | Full suite serial #2 | SwiftShader (`test:smoke`) | chromium+firefox | **22/22 passed** (11.5m) | `phase4-3-smoke-run2.log` |
 | Full suite serial #3 | SwiftShader (`test:smoke`) | chromium+firefox | **22/22 passed** (11.7m) | `phase4-3-smoke-run3.log` |
@@ -19,12 +20,19 @@ means the fix is incomplete, so we stop rather than mask).
 | Full GPU lane #2 | native-GPU (hardware) | chromium+firefox | **22/22 passed** (3.3m) | `phase4-4-gpu-run2.log` |
 | Full GPU lane #3 | native-GPU (hardware) | chromium+firefox | **22/22 passed** (3.3m) | `phase4-4-gpu-run3.log` |
 
-- Targeted repetition ≥60 (Decision-5 budget) on the Firefox arm: **60/60** on the
-  SwiftShader path. The GPU-lane wrapper runs the full suite (no per-test
-  `--repeat-each` passthrough), so the **hardware `:224` arm is qualified via the
-  3 full GPU-lane runs** — the historical highest-flake-rate regime — each
-  exercising `:224` on verified hardware. Combined `:224` executions this phase:
-  60 (targeted) + 3 serial-suite + 3 GPU-suite = **66 green, 0 below floor**.
+- Targeted repetition ≥60 (Decision-5 budget) on the Firefox arm on **both**
+  paths: **60/60** on the SwiftShader path (`phase4-1-…`) and **60/60** on the
+  **native-GPU hardware** path (`phase4b-2-…`). The `gpu-lane` wrapper rejects
+  unknown Playwright args, so the hardware targeted repeat runs the fixed test
+  under the lane's own Firefox recipe read straight from `scripts/e2e-gpu-lane.mjs`
+  `FIREFOX_PROBE_RECIPE` (`GALLIUM_DRIVER=d3d12`, `LD_LIBRARY_PATH=/usr/lib/wsl/lib`,
+  committed `firefox` pref `webgl.force-enabled=true`), **bracketed by lane
+  `--probe-only` runs that verified `D3D12 (NVIDIA GeForce RTX 3080)` before and
+  after** the 60 executions (`phase4b-1-…`, `phase4b-3-…`). The suite reads a
+  privacy-sanitized renderer, so the probe — not the suite — is the hardware
+  evidence, exactly as the lane operates internally (probe → suite). No lane code
+  changed. Combined `:224` executions this phase: 60 (SwiftShader targeted) + 60
+  (hardware targeted) + 3 serial-suite + 3 GPU-suite = **126 green, 0 below floor**.
 - **Chromium green throughout** (no regression from the shared harness change).
 
 ## Renderer evidence (native-GPU lane — verified hardware)
