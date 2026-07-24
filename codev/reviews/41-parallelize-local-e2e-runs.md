@@ -357,6 +357,16 @@ pressure.
   revisiting the default; the machinery is already in place, only
   `DEFAULT_LOCAL_WORKERS` would change. (The click-to-focus flake **#34** remains a
   separate open item.)
+  *(Correction, spec 56, 2026-07-24: this follow-up is now **partially
+  delivered, lane-scoped**. Issue #56 shipped a parallel default for the
+  native-GPU lane only — `scripts/e2e-gpu-lane.mjs` injects
+  `E2E_WORKERS=50%` on verified-hardware runs unless the operator sets it,
+  reusing `resolveWorkers` — see issue #56; its qualification evidence
+  (serial baseline + 3/3 consecutive green parallel runs) is recorded in
+  `codev/reviews/56-gpu-lane-parallel-default.md`. The **global**
+  `DEFAULT_LOCAL_WORKERS` remains `1`, exactly for the reasons above: the
+  deterministic Chromium SwiftShader parallel contention is unsolved, CI is
+  GPU-less and hard-pinned to `workers: 1`, and the lane is never the gate.)*
 - Consider a convenience script (e.g. `test:smoke:parallel`) if opt-in parallel on
   the GPU lane becomes a common local workflow.
 
