@@ -1,7 +1,7 @@
 id: '61'
 title: e2e-instability-at-e2e-workers
 protocol: research
-phase: scope
+phase: investigate
 plan_phases: []
 current_plan_phase: null
 gates:
@@ -15,4 +15,4 @@ iteration: 1
 build_complete: false
 history: []
 started_at: '2026-07-25T19:50:34.432Z'
-updated_at: '2026-07-25T20:01:22.598Z'
+updated_at: '2026-07-25T20:01:31.188Z'
