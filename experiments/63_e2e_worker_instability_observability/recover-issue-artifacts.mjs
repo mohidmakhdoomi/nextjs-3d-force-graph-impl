@@ -1,8 +1,11 @@
+import {Buffer} from "node:buffer";
 import {createHash} from "node:crypto";
 import {mkdir, readFile, writeFile} from "node:fs/promises";
 import path from "node:path";
+import process from "node:process";
+import {fileURLToPath} from "node:url";
 
-const experimentDir = path.dirname(new URL(import.meta.url).pathname);
+const experimentDir = path.dirname(fileURLToPath(import.meta.url));
 const issuePath = process.argv[2] ?? path.join(experimentDir, "data/input/issue-61.json");
 const outputDir = process.argv[3] ?? path.join(experimentDir, "data/input/canonical");
 const expectedFiles = [

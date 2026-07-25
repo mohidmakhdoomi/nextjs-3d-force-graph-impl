@@ -2,6 +2,8 @@ import {execFile} from "node:child_process";
 import {appendFile, mkdir, readFile, readdir} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import process from "node:process";
+import {clearInterval, setInterval, setTimeout} from "node:timers";
 import {promisify} from "node:util";
 
 const execFileAsync = promisify(execFile);

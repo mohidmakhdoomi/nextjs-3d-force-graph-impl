@@ -1,8 +1,11 @@
+import {spawnSync} from "node:child_process";
 import {readdir, readFile, stat, writeFile} from "node:fs/promises";
 import path from "node:path";
+import process from "node:process";
 import {fileURLToPath} from "node:url";
 
 const experimentDir = path.dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = path.resolve(experimentDir, "../..");
 const runsDir = process.argv[2] ?? path.join(experimentDir, "data/output/runs");
 const outputDir = process.argv[3] ?? path.join(experimentDir, "data/output");
 
@@ -24,6 +27,117 @@ async function readJsonLines(filePath) {
         .split("\n")
         .filter(Boolean)
         .map((line) => JSON.parse(line));
+}
+
+async function materializeBlobReport(runDir) {
+    const blobDir = path.join(runDir, "blob-report");
+    if (!(await exists(blobDir))) {
+        return {report: null, error: null};
+    }
+
+    const mergedPath = path.join(runDir, "merged-report.json");
+    if (await exists(mergedPath)) {
+        return {report: JSON.parse(await readFile(mergedPath, "utf8")), error: null};
+    }
+
+    const result = spawnSync(
+        "npx",
+        ["playwright", "merge-reports", "--reporter=json", blobDir],
+        {
+            cwd: repositoryRoot,
+            encoding: "utf8",
+            maxBuffer: 64 * 1024 * 1024,
+            env: process.env,
+        },
+    );
+    if (result.status !== 0) {
+        return {
+            report: null,
+            error: result.error?.message ?? result.stderr ?? `merge exit ${result.status}`,
+        };
+    }
+
+    const jsonStart = result.stdout.indexOf("{");
+    if (jsonStart === -1) {
+        return {report: null, error: "merge-reports produced no JSON object"};
+    }
+    const report = JSON.parse(result.stdout.slice(jsonStart));
+    await writeFile(mergedPath, `${JSON.stringify(report)}\n`);
+    return {report, error: null};
+}
+
+function flattenBlobResults(report) {
+    const rows = [];
+    const visitSuite = (suite) => {
+        for (const spec of suite.specs ?? []) {
+            for (const test of spec.tests ?? []) {
+                for (const result of test.results ?? []) {
+                    rows.push({
+                        project: test.projectName,
+                        file: spec.file,
+                        line: spec.line,
+                        title: spec.title,
+                        expectedStatus: test.expectedStatus,
+                        result,
+                    });
+                }
+            }
+        }
+        for (const child of suite.suites ?? []) {
+            visitSuite(child);
+        }
+    };
+    for (const suite of report?.suites ?? []) {
+        visitSuite(suite);
+    }
+    return rows;
+}
+
+function maxActiveBlobTests(rows) {
+    const points = rows
+        .filter((row) => row.result.startTime && Number.isFinite(row.result.duration))
+        .flatMap((row) => {
+            const start = new Date(row.result.startTime).getTime();
+            return [
+                {time: start, delta: 1},
+                {time: start + row.result.duration, delta: -1},
+            ];
+        })
+        .sort((left, right) => left.time - right.time || left.delta - right.delta);
+    let active = 0;
+    let maximum = 0;
+    for (const point of points) {
+        active += point.delta;
+        maximum = Math.max(maximum, active);
+    }
+    return points.length === 0 ? null : maximum;
+}
+
+function failuresFromBlob(rows) {
+    return rows
+        .filter((row) => ["failed", "timedOut", "interrupted"].includes(row.result.status))
+        .map((row) => {
+            const detail = JSON.stringify({
+                error: row.result.error,
+                errors: row.result.errors,
+            });
+            const classification = classifyFailure(
+                row.project ?? "unknown",
+                row.file ?? "unknown",
+                row.line ?? 0,
+                detail,
+            );
+            return {
+                ...classification,
+                project: row.project ?? "unknown",
+                file: path.basename(row.file ?? "unknown"),
+                line: row.line ?? 0,
+                title: row.title ?? "unknown",
+                status: row.result.status,
+                detail,
+                source: "blob-report",
+            };
+        });
 }
 
 function classifyFailure(project, file, line, detail) {
@@ -176,6 +290,59 @@ function summarizeTelemetry(hostEvents, processEvents, gpuEvents) {
     };
 }
 
+async function readRendererEvidence(runDir, manifest) {
+    const probePath = path.join(runDir, manifest.rendererProbeArchive ?? "renderer-probe.json");
+    if (manifest.rendererProbeArchive !== null && (await exists(probePath))) {
+        const report = JSON.parse(await readFile(probePath, "utf8"));
+        return {
+            source: manifest.rendererProbeArchive,
+            verified: Boolean(
+                report.verification?.chromiumSwiftShaderVerified &&
+                    report.verification?.firefoxRendererObserved,
+            ),
+            engines: Object.fromEntries(
+                (report.results ?? []).map((result) => [
+                    result.engine,
+                    {
+                        renderer: result.renderer,
+                        vendor: result.vendor,
+                        class: result.class,
+                    },
+                ]),
+            ),
+        };
+    }
+
+    const gpuLogDir = path.join(runDir, "gpu-lane-logs");
+    if (!(await exists(gpuLogDir))) {
+        return {source: null, verified: false, engines: {}};
+    }
+
+    const engines = {};
+    for (const entry of await readdir(gpuLogDir, {withFileTypes: true})) {
+        if (!entry.isFile() || !entry.name.startsWith("probe-")) {
+            continue;
+        }
+        const text = await readFile(path.join(gpuLogDir, entry.name), "utf8");
+        const engine = text.match(/engine:\s+(chromium|firefox)/)?.[1];
+        if (engine === undefined) {
+            continue;
+        }
+        engines[engine] = {
+            renderer: text.match(/renderer:\s+"([^"]+)"/)?.[1] ?? null,
+            vendor: text.match(/vendor:\s+"([^"]+)"/)?.[1] ?? null,
+            class: text.match(/class:\s+(\S+)/)?.[1] ?? null,
+            transcript: `gpu-lane-logs/${entry.name}`,
+        };
+    }
+    return {
+        source: "gpu-lane-logs",
+        verified:
+            engines.chromium?.class === "hardware" && engines.firefox?.class === "hardware",
+        engines,
+    };
+}
+
 async function countArtifacts(root) {
     if (!(await exists(root))) {
         return {traces: 0, videos: 0, screenshots: 0};
@@ -215,6 +382,8 @@ for (const runId of runEntries) {
     }
 
     const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    const blobOutcome = await materializeBlobReport(runDir);
+    const blobRows = flattenBlobResults(blobOutcome.report);
     const [stdout, stderr, events, hostEvents, processEvents, gpuEvents] = await Promise.all([
         readFile(path.join(runDir, "stdout.log"), "utf8").catch(() => ""),
         readFile(path.join(runDir, "stderr.log"), "utf8").catch(() => ""),
@@ -225,7 +394,12 @@ for (const runId of runEntries) {
     ]);
     const combined = `${stdout}\n${stderr}`;
     const reporterFailures = failuresFromEvents(events);
-    const failures = reporterFailures.length > 0 ? reporterFailures : failuresFromText(combined);
+    const failures =
+        blobOutcome.report !== null
+            ? failuresFromBlob(blobRows)
+            : reporterFailures.length > 0
+              ? reporterFailures
+              : failuresFromText(combined);
 
     runs.push({
         runId,
@@ -240,11 +414,25 @@ for (const runId of runEntries) {
         red: manifest.outcome.exitCode !== 0,
         configuredWorkers: Number(manifest.environment.E2E_WORKERS),
         reportedWorkers: parseWorkerCount(combined),
-        maxActiveTests: manifest.reporterSummary?.maxActiveTests ?? null,
-        failures: failures.map(({detail, ...failure}) => failure),
+        maxActiveTests:
+            blobOutcome.report === null
+                ? manifest.reporterSummary?.maxActiveTests ?? null
+                : maxActiveBlobTests(blobRows),
+        blobReportError: blobOutcome.error,
+        failures: failures.map((failure) => ({
+            combination: failure.combination,
+            signature: failure.signature,
+            project: failure.project,
+            file: failure.file,
+            line: failure.line,
+            title: failure.title,
+            status: failure.status,
+            source: failure.source,
+        })),
         failureCount: failures.length,
         combinations: failures.map((failure) => failure.combination),
         signatures: failures.map((failure) => failure.signature),
+        rendererEvidence: await readRendererEvidence(runDir, manifest),
         telemetry: summarizeTelemetry(hostEvents, processEvents, gpuEvents),
         artifacts: await countArtifacts(path.join(runDir, "test-results")),
     });
@@ -305,11 +493,71 @@ const observerQualification =
                   ),
           };
 
+const swiftShader = arms["renderer-swiftshader"];
+const nativeGpu = arms["renderer-native"];
+const rendererRuns = runs.filter((run) =>
+    ["renderer-swiftshader", "renderer-native"].includes(run.arm),
+);
+const rendererControl =
+    swiftShader === undefined || nativeGpu === undefined
+        ? null
+        : {
+              requiredRunsPresent: swiftShader.runs === 5 && nativeGpu.runs === 5,
+              everyRunRendererVerified: rendererRuns.every(
+                  (run) => run.rendererEvidence.verified,
+              ),
+              targetCounts: Object.fromEntries(
+                  observerTargets.map((target) => [
+                      target,
+                      {
+                          swiftShader: swiftShader.combinationCounts[target] ?? 0,
+                          nativeGpu: nativeGpu.combinationCounts[target] ?? 0,
+                      },
+                  ]),
+              ),
+              swiftShaderCoreRecurrent: observerTargets.every(
+                  (target) => (swiftShader.combinationCounts[target] ?? 0) >= 4,
+              ),
+              nativeGpuCoreClean: observerTargets.every(
+                  (target) => (nativeGpu.combinationCounts[target] ?? 0) === 0,
+              ),
+              comparableWithinOneRun: observerTargets.every(
+                  (target) =>
+                      Math.abs(
+                          (swiftShader.combinationCounts[target] ?? 0) -
+                              (nativeGpu.combinationCounts[target] ?? 0),
+                      ) <= 1,
+              ),
+              decision:
+                  swiftShader.runs !== 5 || nativeGpu.runs !== 5
+                      ? "incomplete"
+                      : !rendererRuns.every((run) => run.rendererEvidence.verified)
+                        ? "inconclusive-unverified-renderer"
+                        : observerTargets.every(
+                                (target) =>
+                                    (swiftShader.combinationCounts[target] ?? 0) >= 4,
+                            ) &&
+                            observerTargets.every(
+                                (target) => (nativeGpu.combinationCounts[target] ?? 0) === 0,
+                            )
+                          ? "strong-support-swiftshader-amplifier"
+                          : observerTargets.every(
+                                  (target) =>
+                                      Math.abs(
+                                          (swiftShader.combinationCounts[target] ?? 0) -
+                                              (nativeGpu.combinationCounts[target] ?? 0),
+                                      ) <= 1,
+                              )
+                            ? "refute-swiftshader-decisive-amplifier"
+                            : "mixed-needs-follow-up",
+          };
+
 const summary = {
     generatedAt: new Date().toISOString(),
     runs,
     arms,
     observerQualification,
+    rendererControl,
 };
 await writeFile(path.join(outputDir, "run-summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
 
@@ -323,6 +571,9 @@ const csvHeader = [
     "reportedWorkers",
     "maxActiveTests",
     "failureCount",
+    "rendererVerified",
+    "chromiumRenderer",
+    "firefoxRenderer",
     "combinations",
     "signatures",
     "traceCount",
@@ -340,6 +591,9 @@ const csvRows = runs.map((run) =>
         run.reportedWorkers,
         run.maxActiveTests,
         run.failureCount,
+        run.rendererEvidence.verified,
+        run.rendererEvidence.engines.chromium?.renderer,
+        run.rendererEvidence.engines.firefox?.renderer,
         run.combinations.join(";"),
         run.signatures.join(";"),
         run.artifacts.traces,

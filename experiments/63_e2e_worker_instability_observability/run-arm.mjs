@@ -3,6 +3,8 @@ import {createWriteStream} from "node:fs";
 import {cp, mkdir, readFile, rename, rm, stat, writeFile} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import process from "node:process";
+import {clearTimeout, setTimeout} from "node:timers";
 import {fileURLToPath} from "node:url";
 
 const experimentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -26,11 +28,15 @@ if (!/^[A-Za-z0-9._-]+$/.test(runId) || !["0", "1"].includes(instrumentedValue))
 const outputRoot = path.join(experimentDir, "data/output/runs");
 const runDir = path.join(outputRoot, runId);
 const samplerPath = path.join(experimentDir, "passive-sampler.mjs");
-const eventPath = path.join(runDir, "events.jsonl");
 const telemetryDir = path.join(runDir, "telemetry");
 const stdoutPath = path.join(runDir, "stdout.log");
 const stderrPath = path.join(runDir, "stderr.log");
-const rootArtifactDirs = ["test-results", "playwright-report", "blob-report"];
+const rootArtifactDirs = [
+    "test-results",
+    "playwright-report",
+    "blob-report",
+    "gpu-lane-logs",
+];
 
 async function exists(filePath) {
     try {
@@ -115,13 +121,29 @@ if (preexistingArtifacts.length > 0) {
 }
 await mkdir(runDir, {recursive: false});
 
+let rendererProbeArchive = null;
+const rendererProbeSource = process.env.E2E_RENDERER_PROBE_PATH;
+if (
+    rendererProbeSource !== undefined &&
+    rendererProbeSource !== "gpu-lane-self-probe" &&
+    (await exists(rendererProbeSource))
+) {
+    rendererProbeArchive = "renderer-probe.json";
+    await cp(rendererProbeSource, path.join(runDir, rendererProbeArchive));
+}
+
 const startedAt = new Date();
+const childEnvironment = {...process.env};
+if (instrumented) {
+    childEnvironment.PLAYWRIGHT_BLOB_REPORT = "1";
+}
 const commonMetadata = {
     runId,
     arm,
     rendererIntent,
     instrumented,
     command,
+    rendererProbeArchive,
     cwd: repositoryRoot,
     startedAt: startedAt.toISOString(),
     revision: runCapture("git", ["rev-parse", "HEAD"]).stdout.trim(),
@@ -135,22 +157,25 @@ const commonMetadata = {
         [
             "CI",
             "DISPLAY",
-            "E2E_EXPERIMENT_EVENTS",
             "E2E_WORKERS",
             "E2E_GPU",
+            "E2E_GPU_REQUIRE",
+            "E2E_RENDERER_PROBE_PATH",
             "NODE_ENV",
+            "PLAYWRIGHT_BLOB_REPORT",
             "PLAYWRIGHT_BROWSERS_PATH",
             "WAYLAND_DISPLAY",
-        ].map((key) => [key, process.env[key] ?? null]),
+        ].map((key) => [key, childEnvironment[key] ?? null]),
     ),
     before: await hostSnapshot(),
 };
 await writeFile(path.join(runDir, "manifest-start.json"), `${JSON.stringify(commonMetadata, null, 2)}\n`);
 
-const childEnvironment = {...process.env};
 let sampler = null;
 if (instrumented) {
-    childEnvironment.E2E_EXPERIMENT_EVENTS = eventPath;
+    // Reuse the repository's existing blob reporter path rather than adding a
+    // second Playwright integration. The report is materialized only after the
+    // run, so analysis cannot perturb the canonical deadlines.
     sampler = spawn(process.execPath, [samplerPath, telemetryDir, "1000"], {
         cwd: repositoryRoot,
         env: {...process.env, E2E_EXPERIMENT_SAMPLE_GPU: "1"},
@@ -213,28 +238,15 @@ for (const artifactDir of rootArtifactDirs) {
 }
 
 const finishedAt = new Date();
-let reporterSummary = null;
-if (await exists(eventPath)) {
-    const events = (await readFile(eventPath, "utf8"))
-        .trim()
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => JSON.parse(line));
-    const runEnd = events.findLast((event) => event.type === "run-end");
-    reporterSummary = {
-        eventCount: events.length,
-        maxActiveTests: runEnd?.maxActiveTests ?? null,
-        status: runEnd?.status ?? null,
-        testEnds: events.filter((event) => event.type === "test-end").length,
-    };
-}
-
 const finalManifest = {
     ...commonMetadata,
     finishedAt: finishedAt.toISOString(),
     durationMs: finishedAt.getTime() - startedAt.getTime(),
     outcome,
-    reporterSummary,
+    instrumentation: {
+        blobReporter: instrumented,
+        continuousHostProcessGpuSampler: instrumented,
+    },
     archivedArtifacts,
     after: await hostSnapshot(),
 };

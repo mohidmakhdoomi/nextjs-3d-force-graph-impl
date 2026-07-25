@@ -1,0 +1,10 @@
+2026-07-25T22:41:32.978Z engine: firefox
+2026-07-25T22:41:32.978Z candidate: wsl2-d3d12-firefox (WSL2 Mesa d3d12 via Firefox (no ANGLE flags; probe-only webgl.sanitize-unmasked-renderer=false to read the raw renderer))
+2026-07-25T22:41:32.978Z prefs: {"webgl.force-enabled":true,"webgl.sanitize-unmasked-renderer":false}
+2026-07-25T22:41:32.978Z env injected: {"GALLIUM_DRIVER":"d3d12","LD_LIBRARY_PATH":"/usr/lib/wsl/lib"}
+2026-07-25T22:41:32.978Z mode: headless
+2026-07-25T22:41:32.978Z binary: playwright firefox
+2026-07-25T22:41:34.042Z renderer: "D3D12 (NVIDIA GeForce RTX 3080)"
+2026-07-25T22:41:34.042Z vendor: "Microsoft Corporation"
+2026-07-25T22:41:34.042Z class: hardware
+2026-07-25T22:41:34.323Z duration: 1345ms

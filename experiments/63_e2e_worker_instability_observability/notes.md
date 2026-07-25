@@ -54,7 +54,7 @@ Run the canonical command in strict `U-I-U-I-U-I-U-I-U-I` order:
 E2E_WORKERS=22 npm run test:smoke
 ```
 
-The instrumented arm may add only low-overhead observation around the unchanged test command: a test lifecycle/concurrency reporter, one-second `/proc` host-pressure samples, two-second relevant-process snapshots, GPU utilization samples, and retained Playwright artifacts. Focused per-frame/DOM/actionability probes are excluded until passive qualification succeeds.
+The instrumented arm may add only low-overhead observation around the unchanged test command: the repository's existing Playwright blob reporter, one-second `/proc` host-pressure samples, two-second relevant-process snapshots, GPU utilization samples, and retained Playwright artifacts. Focused per-frame/DOM/actionability probes are excluded until passive qualification succeeds. Blob reports are converted to JSON only after each run, so analysis cannot consume the canonical deadline budget.
 
 Both arms receive the same minimal outer bookkeeping: stdout/stderr capture, start/end host snapshots, artifact archival, and browser-renderer preflight evidence. The observer-effect comparison therefore measures the incremental continuous sampler/reporter, not the unavoidable act of recording command outcome. This limitation will be retained in the analysis.
 
@@ -77,12 +77,23 @@ If hardware WebGL can be strictly verified on this host, run five alternating Sw
 - Use lockfile v3 and `npm ci`; do not regenerate dependencies under another toolchain.
 - Record `git rev-parse HEAD`, OS/kernel/WSL details, CPU count, memory/swap, renderer strings, and relevant environment variables in the manifest.
 
-**Planned commands**:
+**Commands**:
 
 ```bash
-# Artifact recovery and harness commands will be recorded after repository discovery.
-# Canonical arm:
+npm ci
+npm run browser:install
+
+# Canonical command inside each matched control run:
 E2E_WORKERS=22 npm run test:smoke
+
+# Strict current native-renderer feasibility probe:
+E2E_GPU_REQUIRE=1 npm run test:e2e:gpu -- --probe-only
+
+# Fixed U-I alternation, then matched renderer alternation:
+node experiments/63_e2e_worker_instability_observability/run-series.mjs passive
+node experiments/63_e2e_worker_instability_observability/analyze-runs.mjs
+node experiments/63_e2e_worker_instability_observability/run-series.mjs renderer
+node experiments/63_e2e_worker_instability_observability/analyze-runs.mjs
 ```
 
 **Dependencies**: No experiment-only third-party packages planned.
@@ -95,7 +106,9 @@ E2E_WORKERS=22 npm run test:smoke
 - `/proc/pressure/{cpu,memory}` available; `vmstat` available; `pidstat`/`mpstat` absent
 - NVIDIA GeForce RTX 3080 visible through WSL (`nvidia-smi` driver `581.29`)
 - Accelerated host GLX renderer: `D3D12 (NVIDIA GeForce RTX 3080)` via Mesa 26.0.3
-- Browser-level renderer verification remains mandatory; host GPU visibility alone is not evidence that a Playwright page used hardware rendering.
+- Browser-level probe at experiment start verified the default mixed path: Chromium = `ANGLE (... SwiftShader Device (Subzero) ..., SwiftShader driver)` (**software**); Firefox = `D3D12 (NVIDIA GeForce RTX 3080)` (**hardware**).
+- Strict native probe (`E2E_GPU_REQUIRE=1 ... --probe-only`) verified both engines on the RTX 3080: Chromium = `ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)`; Firefox = `D3D12 (NVIDIA GeForce RTX 3080)`.
+- Every experimental run still records fresh renderer evidence; the initial probes establish feasibility, not per-run transfer.
 
 ## Code
 
@@ -104,10 +117,11 @@ Planned experiment-only artifacts:
 - [`notes.md`](notes.md) — hypothesis, design, results, and conclusions
 - [`recover-issue-artifacts.mjs`](recover-issue-artifacts.mjs) — deterministic extraction of issue #61's verbatim text attachments
 - [`recover-workspace-artifacts.mjs`](recover-workspace-artifacts.mjs) — byte-exact recovery and provenance comparison for surviving originals
-- [`passive-reporter.mjs`](passive-reporter.mjs) — low-volume test lifecycle and active-test timeline
 - [`passive-sampler.mjs`](passive-sampler.mjs) — host pressure, relevant process, thermal, and GPU sampling
-- [`run-arm.mjs`](run-arm.mjs) — per-arm command capture, telemetry lifecycle, and Playwright artifact archival
-- [`analyze-runs.mjs`](analyze-runs.mjs) — failure/signature, observer-effect, concurrency, host-pressure, and artifact summary
+- [`probe-swiftshader-renderers.mjs`](probe-swiftshader-renderers.mjs) — strict per-run Chromium SwiftShader verification plus raw Firefox renderer observation
+- [`run-arm.mjs`](run-arm.mjs) — per-arm command capture, blob/telemetry lifecycle, renderer evidence, and artifact archival
+- [`run-series.mjs`](run-series.mjs) — fixed five-pair U-I and SwiftShader-GPU sequencing with resumable manifests
+- [`analyze-runs.mjs`](analyze-runs.mjs) — post-run blob materialization, failure/signature, observer-effect, renderer, concurrency, host-pressure, and artifact summary
 - `data/input/` — recovered canonical evidence
 - `data/output/` — compact manifests, summaries, and logs
 

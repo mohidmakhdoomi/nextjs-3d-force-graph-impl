@@ -1,6 +1,8 @@
+import {Buffer} from "node:buffer";
 import {createHash} from "node:crypto";
 import {copyFile, mkdir, readFile, stat, writeFile} from "node:fs/promises";
 import path from "node:path";
+import process from "node:process";
 import {fileURLToPath} from "node:url";
 
 const experimentDir = path.dirname(fileURLToPath(import.meta.url));
