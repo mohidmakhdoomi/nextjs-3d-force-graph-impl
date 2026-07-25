@@ -106,6 +106,7 @@ Planned experiment-only artifacts:
 - [`passive-reporter.mjs`](passive-reporter.mjs) — low-volume test lifecycle and active-test timeline
 - [`passive-sampler.mjs`](passive-sampler.mjs) — host pressure, relevant process, thermal, and GPU sampling
 - [`run-arm.mjs`](run-arm.mjs) — per-arm command capture, telemetry lifecycle, and Playwright artifact archival
+- [`analyze-runs.mjs`](analyze-runs.mjs) — failure/signature, observer-effect, concurrency, host-pressure, and artifact summary
 - `data/input/` — recovered canonical evidence
 - `data/output/` — compact manifests, summaries, and logs
 
