@@ -400,18 +400,33 @@ for (const runId of runEntries) {
             : reporterFailures.length > 0
               ? reporterFailures
               : failuresFromText(combined);
+    const rendererEvidence = await readRendererEvidence(runDir, manifest);
+    const artifactDirectory = path.relative(experimentDir, runDir);
 
     runs.push({
         runId,
         arm: manifest.arm,
         rendererIntent: manifest.rendererIntent,
         instrumented: manifest.instrumented,
+        command: manifest.command,
         revision: manifest.revision,
+        gitStatusAtStart: manifest.gitStatus?.stdout?.trim() ?? null,
         startedAt: manifest.startedAt,
+        finishedAt: manifest.finishedAt,
         durationMs: manifest.durationMs,
         exitCode: manifest.outcome.exitCode,
         signal: manifest.outcome.signal,
         red: manifest.outcome.exitCode !== 0,
+        toolchain: {
+            node: manifest.node?.stdout?.trim() ?? null,
+            npm: manifest.npm?.stdout?.trim() ?? null,
+        },
+        host: {
+            uname: manifest.uname?.stdout?.trim() ?? null,
+            cpuCount: manifest.cpuCount,
+            totalMemory: manifest.totalMemory,
+        },
+        environment: manifest.environment,
         configuredWorkers: Number(manifest.environment.E2E_WORKERS),
         reportedWorkers: parseWorkerCount(combined),
         maxActiveTests:
@@ -432,10 +447,39 @@ for (const runId of runEntries) {
         failureCount: failures.length,
         combinations: failures.map((failure) => failure.combination),
         signatures: failures.map((failure) => failure.signature),
-        rendererEvidence: await readRendererEvidence(runDir, manifest),
+        engineMix: Object.keys(rendererEvidence.engines),
+        rendererEvidence,
         telemetry: summarizeTelemetry(hostEvents, processEvents, gpuEvents),
+        artifactDirectory,
+        artifactPaths: [
+            `${artifactDirectory}/manifest.json`,
+            `${artifactDirectory}/stdout.log`,
+            `${artifactDirectory}/stderr.log`,
+            ...manifest.archivedArtifacts.map(
+                (artifact) => `${artifactDirectory}/${artifact}`,
+            ),
+        ],
         artifacts: await countArtifacts(path.join(runDir, "test-results")),
     });
+}
+
+function numberSummary(values) {
+    const finite = values.filter(Number.isFinite).sort((left, right) => left - right);
+    if (finite.length === 0) {
+        return null;
+    }
+    const middle = Math.floor(finite.length / 2);
+    const median =
+        finite.length % 2 === 0
+            ? (finite[middle - 1] + finite[middle]) / 2
+            : finite[middle];
+    return {
+        count: finite.length,
+        min: finite[0],
+        median,
+        mean: finite.reduce((sum, value) => sum + value, 0) / finite.length,
+        max: finite.at(-1),
+    };
 }
 
 function armSummary(arm) {
@@ -454,6 +498,9 @@ function armSummary(arm) {
         runs: armRuns.length,
         redRuns: armRuns.filter((run) => run.red).length,
         totalFailures: armRuns.reduce((sum, run) => sum + run.failureCount, 0),
+        durationMs: numberSummary(armRuns.map((run) => run.durationMs)),
+        reportedWorkers: numberSummary(armRuns.map((run) => run.reportedWorkers)),
+        maxActiveTests: numberSummary(armRuns.map((run) => run.maxActiveTests)),
         combinationCounts,
         signatureCounts,
     };
@@ -473,6 +520,21 @@ const observerQualification =
         : {
               requiredRunsPresent: control.runs === 5 && observed.runs === 5,
               observedAllRed: observed.redRuns === 5,
+              runtimeComparison: {
+                  control: control.durationMs,
+                  observed: observed.durationMs,
+                  medianDeltaMs:
+                      observed.durationMs?.median - control.durationMs?.median,
+                  medianRatio:
+                      observed.durationMs?.median / control.durationMs?.median,
+              },
+              activeConcurrencyComparison: {
+                  control: control.maxActiveTests,
+                  observed: observed.maxActiveTests,
+                  medianDelta:
+                      observed.maxActiveTests?.median -
+                      control.maxActiveTests?.median,
+              },
               targetDifferences: Object.fromEntries(
                   observerTargets.map((target) => [
                       target,
