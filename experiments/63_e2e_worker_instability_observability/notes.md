@@ -54,7 +54,9 @@ Run the canonical command in strict `U-I-U-I-U-I-U-I-U-I` order:
 E2E_WORKERS=22 npm run test:smoke
 ```
 
-The instrumented arm may add only low-overhead observation around the unchanged test command: renderer/lifecycle events, heartbeat, active worker/process and host-pressure samples, server timing, WebGL context loss, and retained Playwright artifacts. Focused per-frame/DOM/actionability probes are excluded until passive qualification succeeds.
+The instrumented arm may add only low-overhead observation around the unchanged test command: a test lifecycle/concurrency reporter, one-second `/proc` host-pressure samples, two-second relevant-process snapshots, GPU utilization samples, and retained Playwright artifacts. Focused per-frame/DOM/actionability probes are excluded until passive qualification succeeds.
+
+Both arms receive the same minimal outer bookkeeping: stdout/stderr capture, start/end host snapshots, artifact archival, and browser-renderer preflight evidence. The observer-effect comparison therefore measures the incremental continuous sampler/reporter, not the unavoidable act of recording command outcome. This limitation will be retained in the analysis.
 
 ### Phase 2 — Same-host renderer control
 
@@ -85,13 +87,25 @@ E2E_WORKERS=22 npm run test:smoke
 
 **Dependencies**: No experiment-only third-party packages planned.
 
+**Initial host qualification**:
+
+- Node `v22.23.1`; npm `10.9.8`; `.nvmrc` `22.23.1`
+- Linux `6.6.87.2-microsoft-standard-WSL2`, 24 online logical CPUs
+- 27.4 GiB guest memory and 16 GiB swap
+- `/proc/pressure/{cpu,memory}` available; `vmstat` available; `pidstat`/`mpstat` absent
+- NVIDIA GeForce RTX 3080 visible through WSL (`nvidia-smi` driver `581.29`)
+- Accelerated host GLX renderer: `D3D12 (NVIDIA GeForce RTX 3080)` via Mesa 26.0.3
+- Browser-level renderer verification remains mandatory; host GPU visibility alone is not evidence that a Playwright page used hardware rendering.
+
 ## Code
 
 Planned experiment-only artifacts:
 
 - [`notes.md`](notes.md) — hypothesis, design, results, and conclusions
-- `recover-artifacts.mjs` — deterministic extraction/inventory of canonical evidence if needed
-- `run-experiment.mjs` — interleaved arm orchestration and manifest capture
+- [`recover-issue-artifacts.mjs`](recover-issue-artifacts.mjs) — deterministic extraction of issue #61's verbatim text attachments
+- [`passive-reporter.mjs`](passive-reporter.mjs) — low-volume test lifecycle and active-test timeline
+- [`passive-sampler.mjs`](passive-sampler.mjs) — host pressure, relevant process, thermal, and GPU sampling
+- [`run-arm.mjs`](run-arm.mjs) — per-arm command capture, telemetry lifecycle, and Playwright artifact archival
 - `data/input/` — recovered canonical evidence
 - `data/output/` — compact manifests, summaries, and logs
 
