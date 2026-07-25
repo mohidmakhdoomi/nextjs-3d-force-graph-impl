@@ -1,0 +1,110 @@
+{
+  "recoveredAt": "2026-07-25T22:31:46.114Z",
+  "sourceRoot": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl",
+  "originals": [
+    {
+      "path": "data/input/original/22_worker_testing.txt",
+      "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/22_worker_testing.txt",
+      "bytes": 5551,
+      "sha256": "547389df6a5fac1b6c3f9c74f84a18282e0ba4d81586f9af34c918b42a87df53",
+      "modifiedAt": "2026-07-24T22:09:47.053Z",
+      "lineEndings": "CRLF",
+      "normalizedMatchesIssueReconstruction": true
+    },
+    {
+      "path": "data/input/original/run_6.txt",
+      "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/run_6.txt",
+      "bytes": 3226,
+      "sha256": "3c5615f7147db242b3d29ad3bdb566f527a2b373ae4db45819757f3cd76e061e",
+      "modifiedAt": "2026-07-24T22:21:34.780Z",
+      "lineEndings": "CRLF",
+      "normalizedMatchesIssueReconstruction": true
+    },
+    {
+      "path": "data/input/original/run_7.txt",
+      "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/run_7.txt",
+      "bytes": 4260,
+      "sha256": "cf3e1f5b3ba30c45d160b0b013d37ae06b5293c8ed9bcf5055c6bb00618ca0b1",
+      "modifiedAt": "2026-07-24T22:22:34.377Z",
+      "lineEndings": "CRLF",
+      "normalizedMatchesIssueReconstruction": true
+    },
+    {
+      "path": "data/input/original/run_8.txt",
+      "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/run_8.txt",
+      "bytes": 2566,
+      "sha256": "57d55c0da8ed2f08f02c29ca4a17e71aed3a9194aca5735d4e48b16243e05815",
+      "modifiedAt": "2026-07-24T22:23:15.564Z",
+      "lineEndings": "CRLF",
+      "normalizedMatchesIssueReconstruction": true
+    },
+    {
+      "path": "data/input/original/run_9.txt",
+      "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/run_9.txt",
+      "bytes": 3496,
+      "sha256": "f14d60f5cbec77f0f1e57b13c5c50ea3559ddd98b5c15aebf3c9874f082c0e5e",
+      "modifiedAt": "2026-07-24T22:24:24.011Z",
+      "lineEndings": "CRLF",
+      "normalizedMatchesIssueReconstruction": true
+    },
+    {
+      "path": "data/input/original/run_10.txt",
+      "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/run_10.txt",
+      "bytes": 4640,
+      "sha256": "53ef61840c164ce2cdb666987c9c7c0a735da05cb133d19dbcdd9bfa0a27333a",
+      "modifiedAt": "2026-07-24T22:25:21.946Z",
+      "lineEndings": "CRLF",
+      "normalizedMatchesIssueReconstruction": true
+    }
+  ],
+  "retainedFailureArtifactSearch": {
+    "scope": "main workspace plus builder worktrees, excluding .git, node_modules, and .next",
+    "patterns": [
+      "trace.zip",
+      "*.webm",
+      "*.mp4",
+      "test-failed-*.png",
+      "*.dmp",
+      "chrome_debug.log"
+    ],
+    "matches": [],
+    "conclusion": "No issue-61 trace, video, screenshot, browser stderr, or crash dump survived in the searched workspace."
+  },
+  "unrelatedSurvivors": {
+    "lastRun": {
+      "path": "data/input/workspace-survivors/test-results-last-run.json",
+      "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/test-results/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903",
+      "parsed": {
+        "status": "passed",
+        "failedTests": []
+      },
+      "conclusion": "The surviving test-results marker is a later passing run, not issue-61 failure evidence."
+    },
+    "playwrightReport": {
+      "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/playwright-report/index.html",
+      "bytes": 586210,
+      "sha256": "46b7176e91e39023100a1a194e3f8f4b357f3e7f059db683cabfde9266e30949",
+      "copied": false,
+      "conclusion": "The lone surviving HTML report accompanies a later passing result and was inventoried but not copied."
+    },
+    "rendererLogs": {
+      "files": [
+        {
+          "path": "data/input/workspace-survivors/gpu-lane-logs/probe-chromium-wsl2-d3d12-angle-gl-headless.log",
+          "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/gpu-lane-logs/probe-chromium-wsl2-d3d12-angle-gl-headless.log",
+          "bytes": 831,
+          "sha256": "cbc26494584372b3c0481c5f290224350281af3d1f1492b618aec624278a0586"
+        },
+        {
+          "path": "data/input/workspace-survivors/gpu-lane-logs/probe-firefox-wsl2-d3d12-firefox-headless.log",
+          "sourcePath": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/gpu-lane-logs/probe-firefox-wsl2-d3d12-firefox-headless.log",
+          "bytes": 725,
+          "sha256": "360202b2ef0cb2fbe6cc8f499cdfb7b6e355538c193d33e888373e3ccedbe816"
+        }
+      ],
+      "conclusion": "These 2026-07-24 logs prove prior same-host hardware-renderer viability but do not replace current per-run verification."
+    }
+  }
+}

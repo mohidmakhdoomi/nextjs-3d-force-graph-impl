@@ -13,3 +13,7 @@ Artifact recovery is in progress. Issue #61 preserves the ten-run tally and verb
 Recovered issue #61's six verbatim text attachments into a provenance/hash manifest. Added an experiment-only passive harness: a low-volume Playwright reporter, `/proc`/process/GPU sampler, and per-run artifact archiver. The control arm still requires minimal common outcome capture and pre/post host snapshots; the incremental observer being qualified is the continuous sampler plus reporter.
 
 The current host matches the canonical 24-CPU/27 GiB WSL2 shape and exposes an RTX 3080 with accelerated D3D12/Mesa GLX. That makes a same-host native arm plausible, but browser-level strict renderer verification is still required before any renderer comparison is accepted.
+
+## 2026-07-25 — Artifact recovery complete
+
+Found the six original #61 text files untracked in the canonical workspace root and recovered them byte-for-byte. Their CRLF bytes and hashes are now preserved; normalized content matches the issue reconstruction. No retained traces, videos, failure screenshots, browser stderr/crash dumps, or issue-61 `test-results` survived across the main checkout/builders. A later passing HTML/result marker is explicitly excluded. Prior RTX 3080 Chromium/Firefox probe logs survive as feasibility evidence only, not current control evidence.

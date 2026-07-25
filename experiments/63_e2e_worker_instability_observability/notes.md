@@ -103,6 +103,7 @@ Planned experiment-only artifacts:
 
 - [`notes.md`](notes.md) — hypothesis, design, results, and conclusions
 - [`recover-issue-artifacts.mjs`](recover-issue-artifacts.mjs) — deterministic extraction of issue #61's verbatim text attachments
+- [`recover-workspace-artifacts.mjs`](recover-workspace-artifacts.mjs) — byte-exact recovery and provenance comparison for surviving originals
 - [`passive-reporter.mjs`](passive-reporter.mjs) — low-volume test lifecycle and active-test timeline
 - [`passive-sampler.mjs`](passive-sampler.mjs) — host pressure, relevant process, thermal, and GPU sampling
 - [`run-arm.mjs`](run-arm.mjs) — per-arm command capture, telemetry lifecycle, and Playwright artifact archival
@@ -120,7 +121,13 @@ Pending execution.
 
 ### Artifact Recovery
 
-Pending inventory.
+**Recovered**: all six original issue #61 text files survived untracked in the canonical workspace root. They were copied byte-for-byte (including CRLF and the original no-final-newline state for Runs 6–10) into `data/input/original/` with SHA-256, size, and mtime provenance. After line-ending/final-newline normalization, every original matches the issue-body reconstruction.
+
+**Not recovered**: a workspace-wide search of the main checkout and builder worktrees (excluding `.git`, `node_modules`, and `.next`) found no `trace.zip`, video, failure screenshot, browser crash dump, or `chrome_debug.log`. Thus the issue #61 binary Playwright/browser evidence is irrecoverable from the searched workspace.
+
+**Unrelated survivors**: the only `test-results` marker says `status: passed` with no failed tests, and the lone HTML report is a later passing report; neither is issue #61 evidence. Two 2026-07-24 GPU-lane probe logs verify that the RTX 3080 hardware path previously worked for Chromium and Firefox on this host, but current strict probes remain required for Experiment 2.
+
+See [`data/input/artifact-recovery.json`](data/input/artifact-recovery.json) for byte hashes and inventory details.
 
 ### Passive Observer Qualification
 

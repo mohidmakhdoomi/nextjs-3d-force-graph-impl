@@ -1,0 +1,88 @@
+1) [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel ────────────────────────
+
+Error: wheel up should zoom the camera out
+
+wheel up should zoom the camera out
+
+expect(received).toBeGreaterThan(expected)
+
+Expected: > 2377.6053243146093
+Received:   2377.1053243146093
+
+Call Log:
+- Timeout 5000ms exceeded while waiting on the predicate
+
+  218 |             {message: "wheel up should zoom the camera out", timeout: SETTLE_TIMEOUT_MS},
+  219 |         )
+> 220 |         .toBeGreaterThan(start.cameraDistance + ZOOM_EPSILON);
+	  |          ^
+  221 |
+  222 |     expectCleanErrorBudget(errors);
+  223 | });
+	at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/tests/e2e/matrix.spec.ts:220:10
+
+2) [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Test timeout of 120000ms exceeded.
+
+3) [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls ─
+
+Test timeout of 120000ms exceeded.
+
+Error: locator.click: Test timeout of 120000ms exceeded.
+Call log:
+  - waiting for getByRole('button', { name: 'Resume Auto Rotation', exact: true })
+	- locator resolved to <button id="rotationToggle" class="m-[8px] h-[25px] w-[200px]">Resume Auto Rotation</button>
+  - attempting click action
+	- waiting for element to be visible, enabled and stable
+
+
+  170 |     );
+  171 |
+> 172 |     await resumeRotationButton.click();
+	  |                                ^
+  173 |     await expect(rotationButton).toBeVisible();
+  174 |     await rotationButton.click();
+  175 |     await expect(resumeRotationButton).toBeVisible();
+	at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/tests/e2e/smoke.spec.ts:172:32
+
+4) [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+
+Error: navigation controls should start disabled
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: false
+Received: true
+
+  147 |         early.controlsEnabled,
+  148 |         "navigation controls should start disabled",
+> 149 |     ).toBe(false);
+	  |       ^
+  150 |
+  151 |     // Real input cannot be *delivered* inside the pre-enablement window in
+  152 |     // this environment: SwiftShader plus force-engine warmup saturates the
+	at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/tests/e2e/matrix.spec.ts:149:7
+
+5) [firefox] › tests/e2e/matrix.spec.ts:314:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+
+Error: click-to-focus should move the camera toward the node
+
+click-to-focus should move the camera toward the node
+
+expect(received).toBeGreaterThan(expected)
+
+Expected: > 1
+Received:   0
+
+Call Log:
+- Timeout 10000ms exceeded while waiting on the predicate
+
+  445 |             },
+  446 |         )
+> 447 |         .toBeGreaterThan(MOTION_FLOOR);
+	  |          ^
+  448 |
+  449 |     // Reset: resume rotation first so the post-reset resume window applies.
+  450 |     await page
+	at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/tests/e2e/matrix.spec.ts:447:10
