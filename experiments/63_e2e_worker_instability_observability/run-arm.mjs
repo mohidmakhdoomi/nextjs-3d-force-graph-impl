@@ -20,9 +20,19 @@ if (separator === -1 || separator < 5 || separator === process.argv.length - 1) 
 const [runId, arm, rendererIntent, instrumentedValue] = process.argv.slice(2, separator);
 const command = process.argv.slice(separator + 1);
 const instrumented = instrumentedValue === "1";
+const samplerIntervalMs = Number(
+    process.env.E2E_EXPERIMENT_SAMPLE_INTERVAL_MS ?? "1000",
+);
+const sampleGpu = process.env.E2E_EXPERIMENT_SAMPLE_GPU ?? "1";
 
 if (!/^[A-Za-z0-9._-]+$/.test(runId) || !["0", "1"].includes(instrumentedValue)) {
     throw new Error("RUN_ID or INSTRUMENTED value is invalid");
+}
+if (!Number.isFinite(samplerIntervalMs) || samplerIntervalMs < 250) {
+    throw new Error("E2E_EXPERIMENT_SAMPLE_INTERVAL_MS must be at least 250");
+}
+if (!["0", "1"].includes(sampleGpu)) {
+    throw new Error("E2E_EXPERIMENT_SAMPLE_GPU must be 0 or 1");
 }
 
 const outputRoot = path.join(experimentDir, "data/output/runs");
@@ -160,6 +170,8 @@ const commonMetadata = {
             "E2E_WORKERS",
             "E2E_GPU",
             "E2E_GPU_REQUIRE",
+            "E2E_EXPERIMENT_SAMPLE_GPU",
+            "E2E_EXPERIMENT_SAMPLE_INTERVAL_MS",
             "E2E_RENDERER_PROBE_PATH",
             "NODE_ENV",
             "PLAYWRIGHT_BLOB_REPORT",
@@ -176,11 +188,15 @@ if (instrumented) {
     // Reuse the repository's existing blob reporter path rather than adding a
     // second Playwright integration. The report is materialized only after the
     // run, so analysis cannot perturb the canonical deadlines.
-    sampler = spawn(process.execPath, [samplerPath, telemetryDir, "1000"], {
-        cwd: repositoryRoot,
-        env: {...process.env, E2E_EXPERIMENT_SAMPLE_GPU: "1"},
-        stdio: ["ignore", "pipe", "pipe"],
-    });
+    sampler = spawn(
+        process.execPath,
+        [samplerPath, telemetryDir, String(samplerIntervalMs)],
+        {
+            cwd: repositoryRoot,
+            env: {...process.env, E2E_EXPERIMENT_SAMPLE_GPU: sampleGpu},
+            stdio: ["ignore", "pipe", "pipe"],
+        },
+    );
     sampler.stdout.pipe(createWriteStream(path.join(runDir, "sampler-stdout.log")));
     sampler.stderr.pipe(createWriteStream(path.join(runDir, "sampler-stderr.log")));
 }
@@ -245,7 +261,9 @@ const finalManifest = {
     outcome,
     instrumentation: {
         blobReporter: instrumented,
-        continuousHostProcessGpuSampler: instrumented,
+        continuousHostProcessSampler: instrumented,
+        samplerIntervalMs: instrumented ? samplerIntervalMs : null,
+        continuousGpuSampler: instrumented && sampleGpu === "1",
     },
     archivedArtifacts,
     after: await hostSnapshot(),

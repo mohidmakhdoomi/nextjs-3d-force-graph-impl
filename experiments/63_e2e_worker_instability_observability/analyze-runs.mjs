@@ -512,48 +512,68 @@ const observerTargets = [
     "chromium:matrix.spec.ts:225",
     "chromium:matrix.spec.ts:572",
 ];
-const control = arms["passive-control"];
-const observed = arms["passive-observed"];
+function buildObserverQualification(profile, controlArm, observedArm) {
+    const control = arms[controlArm];
+    const observed = arms[observedArm];
+    if (control === undefined || observed === undefined) {
+        return null;
+    }
+    return {
+        profile,
+        controlArm,
+        observedArm,
+        requiredRunsPresent: control.runs === 5 && observed.runs === 5,
+        controlAllRed: control.redRuns === 5,
+        observedAllRed: observed.redRuns === 5,
+        runtimeComparison: {
+            control: control.durationMs,
+            observed: observed.durationMs,
+            medianDeltaMs: observed.durationMs.median - control.durationMs.median,
+            medianRatio: observed.durationMs.median / control.durationMs.median,
+        },
+        activeConcurrencyComparison: {
+            control: control.maxActiveTests,
+            observed: observed.maxActiveTests,
+            medianDelta:
+                control.maxActiveTests === null || observed.maxActiveTests === null
+                    ? null
+                    : observed.maxActiveTests.median - control.maxActiveTests.median,
+        },
+        targetDifferences: Object.fromEntries(
+            observerTargets.map((target) => [
+                target,
+                (observed.combinationCounts[target] ?? 0) -
+                    (control.combinationCounts[target] ?? 0),
+            ]),
+        ),
+        observerEffectAcceptable:
+            control.runs === 5 &&
+            observed.runs === 5 &&
+            observed.redRuns === 5 &&
+            observerTargets.every(
+                (target) =>
+                    Math.abs(
+                        (observed.combinationCounts[target] ?? 0) -
+                            (control.combinationCounts[target] ?? 0),
+                    ) <= 1,
+            ),
+    };
+}
+
+const observerQualificationAttempts = {
+    original: buildObserverQualification(
+        "1s-host-2s-process-gpu-plus-blob",
+        "passive-control",
+        "passive-observed",
+    ),
+    reduced: buildObserverQualification(
+        "5s-host-10s-process-no-continuous-gpu-plus-blob",
+        "passive-lite-control",
+        "passive-lite-observed",
+    ),
+};
 const observerQualification =
-    control === undefined || observed === undefined
-        ? null
-        : {
-              requiredRunsPresent: control.runs === 5 && observed.runs === 5,
-              observedAllRed: observed.redRuns === 5,
-              runtimeComparison: {
-                  control: control.durationMs,
-                  observed: observed.durationMs,
-                  medianDeltaMs:
-                      observed.durationMs?.median - control.durationMs?.median,
-                  medianRatio:
-                      observed.durationMs?.median / control.durationMs?.median,
-              },
-              activeConcurrencyComparison: {
-                  control: control.maxActiveTests,
-                  observed: observed.maxActiveTests,
-                  medianDelta:
-                      observed.maxActiveTests?.median -
-                      control.maxActiveTests?.median,
-              },
-              targetDifferences: Object.fromEntries(
-                  observerTargets.map((target) => [
-                      target,
-                      (observed.combinationCounts[target] ?? 0) -
-                          (control.combinationCounts[target] ?? 0),
-                  ]),
-              ),
-              observerEffectAcceptable:
-                  control.runs === 5 &&
-                  observed.runs === 5 &&
-                  observed.redRuns === 5 &&
-                  observerTargets.every(
-                      (target) =>
-                          Math.abs(
-                              (observed.combinationCounts[target] ?? 0) -
-                                  (control.combinationCounts[target] ?? 0),
-                          ) <= 1,
-                  ),
-          };
+    observerQualificationAttempts.reduced ?? observerQualificationAttempts.original;
 
 const swiftShader = arms["renderer-swiftshader"];
 const nativeGpu = arms["renderer-native"];
@@ -618,6 +638,7 @@ const summary = {
     generatedAt: new Date().toISOString(),
     runs,
     arms,
+    observerQualificationAttempts,
     observerQualification,
     rendererControl,
 };

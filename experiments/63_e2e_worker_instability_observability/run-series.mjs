@@ -14,8 +14,8 @@ const seriesName = process.argv[2];
 const planOnly = process.argv.includes("--plan-only");
 const cooldownMs = Number(process.env.E2E_EXPERIMENT_COOLDOWN_MS ?? "5000");
 
-if (!["passive", "renderer"].includes(seriesName)) {
-    throw new Error("Usage: node run-series.mjs passive|renderer");
+if (!["passive", "passive-lite", "renderer"].includes(seriesName)) {
+    throw new Error("Usage: node run-series.mjs passive|passive-lite|renderer");
 }
 if (process.env.CI) {
     throw new Error("CI must be unset: CI would force the suite to one worker");
@@ -30,6 +30,11 @@ function pairSequence(prefix, controlFactory, treatmentFactory) {
         treatmentFactory(pair, `${prefix}-${pair}-treatment`),
     ]);
 }
+
+const reducedObservationEnv = {
+    E2E_EXPERIMENT_SAMPLE_INTERVAL_MS: "5000",
+    E2E_EXPERIMENT_SAMPLE_GPU: "0",
+};
 
 const passiveRuns = pairSequence(
     "passive",
@@ -54,6 +59,29 @@ const passiveRuns = pairSequence(
         extraEnv: {},
     }),
 );
+const passiveLiteRuns = pairSequence(
+    "passive-lite",
+    (pair) => ({
+        runId: `passive-lite-u${pair}`,
+        pair,
+        arm: "passive-lite-control",
+        renderer: "swiftshader",
+        instrumented: false,
+        command: ["npm", "run", "test:smoke"],
+        swiftShaderProbe: true,
+        extraEnv: reducedObservationEnv,
+    }),
+    (pair) => ({
+        runId: `passive-lite-i${pair}`,
+        pair,
+        arm: "passive-lite-observed",
+        renderer: "swiftshader",
+        instrumented: true,
+        command: ["npm", "run", "test:smoke"],
+        swiftShaderProbe: true,
+        extraEnv: reducedObservationEnv,
+    }),
+);
 const rendererRuns = pairSequence(
     "renderer",
     (pair) => ({
@@ -64,7 +92,7 @@ const rendererRuns = pairSequence(
         instrumented: true,
         command: ["npm", "run", "test:smoke"],
         swiftShaderProbe: true,
-        extraEnv: {},
+        extraEnv: reducedObservationEnv,
     }),
     (pair) => ({
         runId: `renderer-g${pair}`,
@@ -74,10 +102,15 @@ const rendererRuns = pairSequence(
         instrumented: true,
         command: ["npm", "run", "test:e2e:gpu"],
         swiftShaderProbe: false,
-        extraEnv: {E2E_GPU_REQUIRE: "1"},
+        extraEnv: {...reducedObservationEnv, E2E_GPU_REQUIRE: "1"},
     }),
 );
-const runs = seriesName === "passive" ? passiveRuns : rendererRuns;
+const runsBySeries = {
+    passive: passiveRuns,
+    "passive-lite": passiveLiteRuns,
+    renderer: rendererRuns,
+};
+const runs = runsBySeries[seriesName];
 const runsRoot = path.join(experimentDir, "data/output/runs");
 const rawSeriesDir = path.join(experimentDir, "data/output/series/raw");
 const rawProbeDir = path.join(experimentDir, "data/output/probes/swiftshader-runs");

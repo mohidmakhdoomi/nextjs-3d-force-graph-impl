@@ -54,7 +54,9 @@ Run the canonical command in strict `U-I-U-I-U-I-U-I-U-I` order:
 E2E_WORKERS=22 npm run test:smoke
 ```
 
-The instrumented arm may add only low-overhead observation around the unchanged test command: the repository's existing Playwright blob reporter, one-second `/proc` host-pressure samples, two-second relevant-process snapshots, GPU utilization samples, and retained Playwright artifacts. Focused per-frame/DOM/actionability probes are excluded until passive qualification succeeds. Blob reports are converted to JSON only after each run, so analysis cannot consume the canonical deadline budget.
+The initial instrumented arm may add only low-overhead observation around the unchanged test command: the repository's existing Playwright blob reporter, one-second `/proc` host-pressure samples, two-second relevant-process/GPU snapshots, and retained Playwright artifacts. Focused per-frame/DOM/actionability probes are excluded until passive qualification succeeds. Blob reports are converted to JSON only after each run, so analysis cannot consume the canonical deadline budget.
+
+If that profile fails H1, repeat a fresh 5+5 qualification with a reduced profile: five-second `/proc` samples, ten-second relevant-process snapshots, no continuous `nvidia-smi`, and the same blob reporter. Renderer preflight plus before/after host/GPU snapshots remain. Do not use the original profile's causal telemetry or begin the renderer control unless one passive profile satisfies the predeclared all-red/±1 recurrence rule.
 
 Both arms receive the same minimal outer bookkeeping: stdout/stderr capture, start/end host snapshots, artifact archival, and browser-renderer preflight evidence. The observer-effect comparison therefore measures the incremental continuous sampler/reporter, not the unavoidable act of recording command outcome. This limitation will be retained in the analysis.
 
@@ -91,6 +93,9 @@ E2E_GPU_REQUIRE=1 npm run test:e2e:gpu -- --probe-only
 
 # Fixed U-I alternation, then matched renderer alternation:
 node experiments/63_e2e_worker_instability_observability/run-series.mjs passive
+node experiments/63_e2e_worker_instability_observability/analyze-runs.mjs
+# Only when the original profile fails H1:
+node experiments/63_e2e_worker_instability_observability/run-series.mjs passive-lite
 node experiments/63_e2e_worker_instability_observability/analyze-runs.mjs
 node experiments/63_e2e_worker_instability_observability/run-series.mjs renderer
 node experiments/63_e2e_worker_instability_observability/analyze-runs.mjs
@@ -145,11 +150,13 @@ See [`data/input/artifact-recovery.json`](data/input/artifact-recovery.json) for
 
 ### Passive Observer Qualification
 
-Pending five matched uninstrumented/instrumented pairs.
+**Original profile rejected by the predeclared rule.** All five control and five observed runs were red. Median duration was effectively unchanged (207.129 s control vs 207.448 s observed; +0.319 s / +0.15%), and the observed runs reached 22 simultaneously active tests. However, core recurrence moved as follows: Chromium `smoke:78` 5/5→4/5, `matrix:225` 5/5→3/5, and `matrix:572` 5/5→5/5. The `matrix:225` difference of -2 exceeds the allowed ±1, so the one-second host/two-second process+GPU profile is not qualified for causal interpretation.
+
+A reduced profile (five-second host, ten-second process, no continuous GPU polling, same blob reporter) is pending a fresh five-pair qualification. The original profile's telemetry is descriptive only until the reduced profile passes H1.
 
 ### Same-Host Renderer Control
 
-Pending passive qualification and strict native-GPU verification.
+Pending reduced passive qualification. Initial strict native-GPU feasibility remains verified, but the renderer series will not begin until a passive profile qualifies.
 
 ### Key Findings
 
@@ -160,25 +167,32 @@ Pending.
 | Metric | Value | Notes |
 |---|---:|---|
 | Canonical baseline | 10/10 red | Issue #61, 50 failures total |
-| Uninstrumented runs | 0/5 | Pending |
-| Passive-instrumented runs | 0/5 | Pending |
-| SwiftShader/native-GPU pairs | 0/5 | Pending verification |
+| Original-profile controls | 5/5 red | 31 failures; median 207.129 s |
+| Original-profile observed | 5/5 red | 23 failures; median 207.448 s; H1 rejected (`matrix:225` 5→3) |
+| Reduced-profile pairs | 0/5 | Pending requalification |
+| SwiftShader/native-GPU pairs | 0/5 | Blocked on reduced-profile H1 |
 
 ### Output Files
 
-Pending.
+- `data/output/run-summary.json` — compact per-run manifest, arm totals, and qualification decisions
+- `data/output/run-summary.csv` — one-row-per-run comparison surface
+- `data/output/probes/` — strict renderer evidence
+- `data/output/runs/` — ignored raw manifests, logs, blob reports, traces, videos, screenshots, and telemetry
 
 ## What Worked
 
-Pending.
+- The fixed U-I order completed without harness failure, and every run preserved the canonical red condition.
+- Blob reports materialized after each run and classified each failure without consuming the test deadline.
+- The original profile measured 22 active tests and sustained high-load context while preserving traces/videos/screenshots.
 
 ## What Didn't Work
 
-Pending.
+- The original passive profile failed its own observer-effect limit despite negligible runtime change: Chromium `matrix:225` recurred two fewer times in the observed arm.
+- A preflight pilot was invalidated because unrelated foreground validation continued after launch; it is preserved separately and excluded from all metrics.
 
 ## Next Steps
 
-Pending evidence. Any production fix is explicitly deferred to a mechanism-specific follow-up.
+Run the reduced passive 5+5 qualification. Proceed to the renderer control only if that profile passes the unchanged H1 rule. Any production fix remains explicitly deferred to a mechanism-specific follow-up.
 
 ## References
 

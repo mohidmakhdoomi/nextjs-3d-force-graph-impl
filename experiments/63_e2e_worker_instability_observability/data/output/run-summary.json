@@ -1,0 +1,1796 @@
+{
+  "generatedAt": "2026-07-26T00:20:29.498Z",
+  "runs": [
+    {
+      "runId": "passive-i1",
+      "arm": "passive-observed",
+      "rendererIntent": "swiftshader",
+      "instrumented": true,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-25T23:42:32.033Z",
+      "finishedAt": "2026-07-25T23:46:03.906Z",
+      "durationMs": 211873,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-i1.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": "1",
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": 22,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:225",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut",
+          "source": "blob-report"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls",
+          "status": "timedOut",
+          "source": "blob-report"
+        }
+      ],
+      "failureCount": 4,
+      "combinations": [
+        "chromium:matrix.spec.ts:225",
+        "chromium:matrix.spec.ts:572",
+        "firefox:matrix.spec.ts:135",
+        "chromium:smoke.spec.ts:78"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "C-navigation-timeout-unresolved",
+        "D-controls-enabled-before-probe",
+        "B-actionability-hang"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 212,
+        "processSamples": 106,
+        "gpuSamples": 106,
+        "maxLoadOneMinute": 158.28,
+        "maxRunnableProcesses": 246,
+        "minMemAvailableKiB": 15398348,
+        "minSwapFreeKiB": 16777216,
+        "maxCpuPressureSomeAvg10": 97.5,
+        "maxMemoryPressureSomeAvg10": 0,
+        "maxRelevantProcessRows": 198,
+        "maxGpuUtilizationPercent": 10
+      },
+      "artifactDirectory": "data/output/runs/passive-i1",
+      "artifactPaths": [
+        "data/output/runs/passive-i1/manifest.json",
+        "data/output/runs/passive-i1/stdout.log",
+        "data/output/runs/passive-i1/stderr.log",
+        "data/output/runs/passive-i1/test-results",
+        "data/output/runs/passive-i1/blob-report"
+      ],
+      "artifacts": {
+        "traces": 4,
+        "videos": 4,
+        "screenshots": 1
+      }
+    },
+    {
+      "runId": "passive-i2",
+      "arm": "passive-observed",
+      "rendererIntent": "swiftshader",
+      "instrumented": true,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-25T23:49:45.354Z",
+      "finishedAt": "2026-07-25T23:53:12.063Z",
+      "durationMs": 206709,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-i2.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": "1",
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": 22,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut",
+          "source": "blob-report"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls",
+          "status": "timedOut",
+          "source": "blob-report"
+        }
+      ],
+      "failureCount": 3,
+      "combinations": [
+        "chromium:matrix.spec.ts:572",
+        "firefox:matrix.spec.ts:135",
+        "chromium:smoke.spec.ts:78"
+      ],
+      "signatures": [
+        "C-navigation-timeout-unresolved",
+        "D-controls-enabled-before-probe",
+        "B-actionability-hang"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 206,
+        "processSamples": 103,
+        "gpuSamples": 103,
+        "maxLoadOneMinute": 158.31,
+        "maxRunnableProcesses": 225,
+        "minMemAvailableKiB": 15893480,
+        "minSwapFreeKiB": 16777216,
+        "maxCpuPressureSomeAvg10": 97.55,
+        "maxMemoryPressureSomeAvg10": 0,
+        "maxRelevantProcessRows": 198,
+        "maxGpuUtilizationPercent": 10
+      },
+      "artifactDirectory": "data/output/runs/passive-i2",
+      "artifactPaths": [
+        "data/output/runs/passive-i2/manifest.json",
+        "data/output/runs/passive-i2/stdout.log",
+        "data/output/runs/passive-i2/stderr.log",
+        "data/output/runs/passive-i2/test-results",
+        "data/output/runs/passive-i2/blob-report"
+      ],
+      "artifacts": {
+        "traces": 3,
+        "videos": 3,
+        "screenshots": 1
+      }
+    },
+    {
+      "runId": "passive-i3",
+      "arm": "passive-observed",
+      "rendererIntent": "swiftshader",
+      "instrumented": true,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-25T23:56:53.796Z",
+      "finishedAt": "2026-07-26T00:00:11.365Z",
+      "durationMs": 197569,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-i3.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": "1",
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": 22,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:135",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:195",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 195,
+          "title": "zooms out with the wheel",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:225",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut",
+          "source": "blob-report"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls",
+          "status": "timedOut",
+          "source": "blob-report"
+        },
+        {
+          "combination": "firefox:smoke.spec.ts:78",
+          "signature": "F-ui-visibility-or-unresolved",
+          "project": "firefox",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls",
+          "status": "failed",
+          "source": "blob-report"
+        }
+      ],
+      "failureCount": 7,
+      "combinations": [
+        "chromium:matrix.spec.ts:135",
+        "chromium:matrix.spec.ts:195",
+        "chromium:matrix.spec.ts:225",
+        "chromium:matrix.spec.ts:572",
+        "firefox:matrix.spec.ts:135",
+        "chromium:smoke.spec.ts:78",
+        "firefox:smoke.spec.ts:78"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "C-navigation-timeout-unresolved",
+        "D-controls-enabled-before-probe",
+        "B-actionability-hang",
+        "F-ui-visibility-or-unresolved"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 197,
+        "processSamples": 99,
+        "gpuSamples": 99,
+        "maxLoadOneMinute": 149.3,
+        "maxRunnableProcesses": 227,
+        "minMemAvailableKiB": 15792904,
+        "minSwapFreeKiB": 16777216,
+        "maxCpuPressureSomeAvg10": 97.32,
+        "maxMemoryPressureSomeAvg10": 0,
+        "maxRelevantProcessRows": 198,
+        "maxGpuUtilizationPercent": 9
+      },
+      "artifactDirectory": "data/output/runs/passive-i3",
+      "artifactPaths": [
+        "data/output/runs/passive-i3/manifest.json",
+        "data/output/runs/passive-i3/stdout.log",
+        "data/output/runs/passive-i3/stderr.log",
+        "data/output/runs/passive-i3/test-results",
+        "data/output/runs/passive-i3/blob-report"
+      ],
+      "artifacts": {
+        "traces": 7,
+        "videos": 7,
+        "screenshots": 2
+      }
+    },
+    {
+      "runId": "passive-i4",
+      "arm": "passive-observed",
+      "rendererIntent": "swiftshader",
+      "instrumented": true,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-26T00:03:45.726Z",
+      "finishedAt": "2026-07-26T00:07:28.200Z",
+      "durationMs": 222474,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-i4.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": "1",
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": 22,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:135",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:195",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 195,
+          "title": "zooms out with the wheel",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut",
+          "source": "blob-report"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls",
+          "status": "timedOut",
+          "source": "blob-report"
+        }
+      ],
+      "failureCount": 5,
+      "combinations": [
+        "chromium:matrix.spec.ts:135",
+        "chromium:matrix.spec.ts:195",
+        "chromium:matrix.spec.ts:572",
+        "firefox:matrix.spec.ts:135",
+        "chromium:smoke.spec.ts:78"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "C-navigation-timeout-unresolved",
+        "D-controls-enabled-before-probe",
+        "B-actionability-hang"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 222,
+        "processSamples": 111,
+        "gpuSamples": 111,
+        "maxLoadOneMinute": 158.91,
+        "maxRunnableProcesses": 233,
+        "minMemAvailableKiB": 15714148,
+        "minSwapFreeKiB": 16777216,
+        "maxCpuPressureSomeAvg10": 97.81,
+        "maxMemoryPressureSomeAvg10": 0,
+        "maxRelevantProcessRows": 198,
+        "maxGpuUtilizationPercent": 12
+      },
+      "artifactDirectory": "data/output/runs/passive-i4",
+      "artifactPaths": [
+        "data/output/runs/passive-i4/manifest.json",
+        "data/output/runs/passive-i4/stdout.log",
+        "data/output/runs/passive-i4/stderr.log",
+        "data/output/runs/passive-i4/test-results",
+        "data/output/runs/passive-i4/blob-report"
+      ],
+      "artifacts": {
+        "traces": 5,
+        "videos": 5,
+        "screenshots": 1
+      }
+    },
+    {
+      "runId": "passive-i5",
+      "arm": "passive-observed",
+      "rendererIntent": "swiftshader",
+      "instrumented": true,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-26T00:11:13.474Z",
+      "finishedAt": "2026-07-26T00:14:40.922Z",
+      "durationMs": 207448,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-i5.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": "1",
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": 22,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:135",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:225",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "blob-report"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut",
+          "source": "blob-report"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "blob-report"
+        }
+      ],
+      "failureCount": 4,
+      "combinations": [
+        "chromium:matrix.spec.ts:135",
+        "chromium:matrix.spec.ts:225",
+        "chromium:matrix.spec.ts:572",
+        "firefox:matrix.spec.ts:135"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "C-navigation-timeout-unresolved",
+        "D-controls-enabled-before-probe"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 207,
+        "processSamples": 104,
+        "gpuSamples": 104,
+        "maxLoadOneMinute": 155.45,
+        "maxRunnableProcesses": 224,
+        "minMemAvailableKiB": 15710416,
+        "minSwapFreeKiB": 16777216,
+        "maxCpuPressureSomeAvg10": 97.32,
+        "maxMemoryPressureSomeAvg10": 0,
+        "maxRelevantProcessRows": 198,
+        "maxGpuUtilizationPercent": 14
+      },
+      "artifactDirectory": "data/output/runs/passive-i5",
+      "artifactPaths": [
+        "data/output/runs/passive-i5/manifest.json",
+        "data/output/runs/passive-i5/stdout.log",
+        "data/output/runs/passive-i5/stderr.log",
+        "data/output/runs/passive-i5/test-results",
+        "data/output/runs/passive-i5/blob-report"
+      ],
+      "artifacts": {
+        "traces": 4,
+        "videos": 4,
+        "screenshots": 0
+      }
+    },
+    {
+      "runId": "passive-u1",
+      "arm": "passive-control",
+      "rendererIntent": "swiftshader",
+      "instrumented": false,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-25T23:39:01.934Z",
+      "finishedAt": "2026-07-25T23:42:24.868Z",
+      "durationMs": 202934,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-u1.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": null,
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": null,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:135",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:195",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 195,
+          "title": "zooms out with the wheel ────────────────────────",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:225",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls ─",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:smoke.spec.ts:78",
+          "signature": "F-ui-visibility-or-unresolved",
+          "project": "firefox",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls ──",
+          "status": "failed",
+          "source": "console"
+        }
+      ],
+      "failureCount": 7,
+      "combinations": [
+        "chromium:matrix.spec.ts:135",
+        "chromium:matrix.spec.ts:195",
+        "chromium:matrix.spec.ts:225",
+        "chromium:matrix.spec.ts:572",
+        "chromium:smoke.spec.ts:78",
+        "firefox:matrix.spec.ts:135",
+        "firefox:smoke.spec.ts:78"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "C-navigation-timeout-unresolved",
+        "B-actionability-hang",
+        "D-controls-enabled-before-probe",
+        "F-ui-visibility-or-unresolved"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 0,
+        "processSamples": 0,
+        "gpuSamples": 0,
+        "maxLoadOneMinute": null,
+        "maxRunnableProcesses": null,
+        "minMemAvailableKiB": null,
+        "minSwapFreeKiB": null,
+        "maxCpuPressureSomeAvg10": null,
+        "maxMemoryPressureSomeAvg10": null,
+        "maxRelevantProcessRows": null,
+        "maxGpuUtilizationPercent": null
+      },
+      "artifactDirectory": "data/output/runs/passive-u1",
+      "artifactPaths": [
+        "data/output/runs/passive-u1/manifest.json",
+        "data/output/runs/passive-u1/stdout.log",
+        "data/output/runs/passive-u1/stderr.log",
+        "data/output/runs/passive-u1/test-results",
+        "data/output/runs/passive-u1/playwright-report"
+      ],
+      "artifacts": {
+        "traces": 7,
+        "videos": 7,
+        "screenshots": 2
+      }
+    },
+    {
+      "runId": "passive-u2",
+      "arm": "passive-control",
+      "rendererIntent": "swiftshader",
+      "instrumented": false,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-25T23:46:11.064Z",
+      "finishedAt": "2026-07-25T23:49:38.193Z",
+      "durationMs": 207129,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-u2.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": null,
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": null,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:135",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:195",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 195,
+          "title": "zooms out with the wheel ────────────────────────",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:225",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls ─",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:225",
+          "signature": "E2-camera-settle-or-unresolved",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:smoke.spec.ts:78",
+          "signature": "F-ui-visibility-or-unresolved",
+          "project": "firefox",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls ──",
+          "status": "failed",
+          "source": "console"
+        }
+      ],
+      "failureCount": 7,
+      "combinations": [
+        "chromium:matrix.spec.ts:135",
+        "chromium:matrix.spec.ts:195",
+        "chromium:matrix.spec.ts:225",
+        "chromium:matrix.spec.ts:572",
+        "chromium:smoke.spec.ts:78",
+        "firefox:matrix.spec.ts:225",
+        "firefox:smoke.spec.ts:78"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "C-navigation-timeout-unresolved",
+        "B-actionability-hang",
+        "E2-camera-settle-or-unresolved",
+        "F-ui-visibility-or-unresolved"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 0,
+        "processSamples": 0,
+        "gpuSamples": 0,
+        "maxLoadOneMinute": null,
+        "maxRunnableProcesses": null,
+        "minMemAvailableKiB": null,
+        "minSwapFreeKiB": null,
+        "maxCpuPressureSomeAvg10": null,
+        "maxMemoryPressureSomeAvg10": null,
+        "maxRelevantProcessRows": null,
+        "maxGpuUtilizationPercent": null
+      },
+      "artifactDirectory": "data/output/runs/passive-u2",
+      "artifactPaths": [
+        "data/output/runs/passive-u2/manifest.json",
+        "data/output/runs/passive-u2/stdout.log",
+        "data/output/runs/passive-u2/stderr.log",
+        "data/output/runs/passive-u2/test-results",
+        "data/output/runs/passive-u2/playwright-report"
+      ],
+      "artifacts": {
+        "traces": 7,
+        "videos": 7,
+        "screenshots": 2
+      }
+    },
+    {
+      "runId": "passive-u3",
+      "arm": "passive-control",
+      "rendererIntent": "swiftshader",
+      "instrumented": false,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-25T23:53:19.291Z",
+      "finishedAt": "2026-07-25T23:56:46.573Z",
+      "durationMs": 207282,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-u3.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": null,
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": null,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:225",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls ─",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "console"
+        }
+      ],
+      "failureCount": 4,
+      "combinations": [
+        "chromium:matrix.spec.ts:225",
+        "chromium:matrix.spec.ts:572",
+        "chromium:smoke.spec.ts:78",
+        "firefox:matrix.spec.ts:135"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "C-navigation-timeout-unresolved",
+        "B-actionability-hang",
+        "D-controls-enabled-before-probe"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 0,
+        "processSamples": 0,
+        "gpuSamples": 0,
+        "maxLoadOneMinute": null,
+        "maxRunnableProcesses": null,
+        "minMemAvailableKiB": null,
+        "minSwapFreeKiB": null,
+        "maxCpuPressureSomeAvg10": null,
+        "maxMemoryPressureSomeAvg10": null,
+        "maxRelevantProcessRows": null,
+        "maxGpuUtilizationPercent": null
+      },
+      "artifactDirectory": "data/output/runs/passive-u3",
+      "artifactPaths": [
+        "data/output/runs/passive-u3/manifest.json",
+        "data/output/runs/passive-u3/stdout.log",
+        "data/output/runs/passive-u3/stderr.log",
+        "data/output/runs/passive-u3/test-results",
+        "data/output/runs/passive-u3/playwright-report"
+      ],
+      "artifacts": {
+        "traces": 4,
+        "videos": 4,
+        "screenshots": 1
+      }
+    },
+    {
+      "runId": "passive-u4",
+      "arm": "passive-control",
+      "rendererIntent": "swiftshader",
+      "instrumented": false,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-26T00:00:18.588Z",
+      "finishedAt": "2026-07-26T00:03:38.460Z",
+      "durationMs": 199872,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-u4.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": null,
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": null,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:195",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 195,
+          "title": "zooms out with the wheel ────────────────────────",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:225",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls ─",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:smoke.spec.ts:78",
+          "signature": "F-ui-visibility-or-unresolved",
+          "project": "firefox",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls ──",
+          "status": "failed",
+          "source": "console"
+        }
+      ],
+      "failureCount": 6,
+      "combinations": [
+        "chromium:matrix.spec.ts:195",
+        "chromium:matrix.spec.ts:225",
+        "chromium:matrix.spec.ts:572",
+        "chromium:smoke.spec.ts:78",
+        "firefox:matrix.spec.ts:135",
+        "firefox:smoke.spec.ts:78"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "C-navigation-timeout-unresolved",
+        "B-actionability-hang",
+        "D-controls-enabled-before-probe",
+        "F-ui-visibility-or-unresolved"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 0,
+        "processSamples": 0,
+        "gpuSamples": 0,
+        "maxLoadOneMinute": null,
+        "maxRunnableProcesses": null,
+        "minMemAvailableKiB": null,
+        "minSwapFreeKiB": null,
+        "maxCpuPressureSomeAvg10": null,
+        "maxMemoryPressureSomeAvg10": null,
+        "maxRelevantProcessRows": null,
+        "maxGpuUtilizationPercent": null
+      },
+      "artifactDirectory": "data/output/runs/passive-u4",
+      "artifactPaths": [
+        "data/output/runs/passive-u4/manifest.json",
+        "data/output/runs/passive-u4/stdout.log",
+        "data/output/runs/passive-u4/stderr.log",
+        "data/output/runs/passive-u4/test-results",
+        "data/output/runs/passive-u4/playwright-report"
+      ],
+      "artifacts": {
+        "traces": 6,
+        "videos": 6,
+        "screenshots": 1
+      }
+    },
+    {
+      "runId": "passive-u5",
+      "arm": "passive-control",
+      "rendererIntent": "swiftshader",
+      "instrumented": false,
+      "command": [
+        "npm",
+        "run",
+        "test:smoke"
+      ],
+      "revision": "1ed29525d2c0d55c9a9476691f065a224a4f05a3",
+      "gitStatusAtStart": "?? .builder-prompt.txt\n?? .builder-role.md\n?? .builder-start.sh\n?? .claude/hooks/\n?? experiments/63_e2e_worker_instability_observability/data/output/pilots/\n?? experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/",
+      "startedAt": "2026-07-26T00:07:35.474Z",
+      "finishedAt": "2026-07-26T00:11:06.135Z",
+      "durationMs": 210661,
+      "exitCode": 1,
+      "signal": null,
+      "red": true,
+      "toolchain": {
+        "node": "v22.23.1",
+        "npm": "10.9.8"
+      },
+      "host": {
+        "uname": "Linux 6.6.87.2-microsoft-standard-WSL2 x86_64 GNU/Linux",
+        "cpuCount": 24,
+        "totalMemory": 29425299456
+      },
+      "environment": {
+        "CI": null,
+        "DISPLAY": ":0",
+        "E2E_WORKERS": "22",
+        "E2E_GPU": null,
+        "E2E_GPU_REQUIRE": null,
+        "E2E_RENDERER_PROBE_PATH": "/home/user/code/graph-site_root/nextjs-3d-force-graph-impl/.builders/experiment-63/experiments/63_e2e_worker_instability_observability/data/output/probes/swiftshader-runs/passive-u5.json",
+        "NODE_ENV": null,
+        "PLAYWRIGHT_BLOB_REPORT": null,
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "WAYLAND_DISPLAY": "wayland-0"
+      },
+      "configuredWorkers": 22,
+      "reportedWorkers": 22,
+      "maxActiveTests": null,
+      "blobReportError": null,
+      "failures": [
+        {
+          "combination": "chromium:matrix.spec.ts:135",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:195",
+          "signature": "A-wheel-zero-delta",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 195,
+          "title": "zooms out with the wheel ────────────────────────",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:225",
+          "signature": "other",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:matrix.spec.ts:572",
+          "signature": "C-navigation-timeout-unresolved",
+          "project": "chromium",
+          "file": "matrix.spec.ts",
+          "line": 572,
+          "title": "remounts a fresh working canvas on re-navigation",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "chromium:smoke.spec.ts:78",
+          "signature": "B-actionability-hang",
+          "project": "chromium",
+          "file": "smoke.spec.ts",
+          "line": 78,
+          "title": "renders the graph and exercises its core controls ─",
+          "status": "timedOut-or-failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:135",
+          "signature": "D-controls-enabled-before-probe",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 135,
+          "title": "keeps pointer navigation inert until the enable delay elapses",
+          "status": "failed",
+          "source": "console"
+        },
+        {
+          "combination": "firefox:matrix.spec.ts:225",
+          "signature": "E2-camera-settle-or-unresolved",
+          "project": "firefox",
+          "file": "matrix.spec.ts",
+          "line": 225,
+          "title": "zooms in with the wheel and rotates with a background drag",
+          "status": "failed",
+          "source": "console"
+        }
+      ],
+      "failureCount": 7,
+      "combinations": [
+        "chromium:matrix.spec.ts:135",
+        "chromium:matrix.spec.ts:195",
+        "chromium:matrix.spec.ts:225",
+        "chromium:matrix.spec.ts:572",
+        "chromium:smoke.spec.ts:78",
+        "firefox:matrix.spec.ts:135",
+        "firefox:matrix.spec.ts:225"
+      ],
+      "signatures": [
+        "A-wheel-zero-delta",
+        "A-wheel-zero-delta",
+        "other",
+        "C-navigation-timeout-unresolved",
+        "B-actionability-hang",
+        "D-controls-enabled-before-probe",
+        "E2-camera-settle-or-unresolved"
+      ],
+      "engineMix": [
+        "chromium",
+        "firefox"
+      ],
+      "rendererEvidence": {
+        "source": "renderer-probe.json",
+        "verified": true,
+        "engines": {
+          "chromium": {
+            "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+            "vendor": "Google Inc. (Google)",
+            "class": "software"
+          },
+          "firefox": {
+            "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+            "vendor": "Microsoft Corporation",
+            "class": "hardware"
+          }
+        }
+      },
+      "telemetry": {
+        "hostSamples": 0,
+        "processSamples": 0,
+        "gpuSamples": 0,
+        "maxLoadOneMinute": null,
+        "maxRunnableProcesses": null,
+        "minMemAvailableKiB": null,
+        "minSwapFreeKiB": null,
+        "maxCpuPressureSomeAvg10": null,
+        "maxMemoryPressureSomeAvg10": null,
+        "maxRelevantProcessRows": null,
+        "maxGpuUtilizationPercent": null
+      },
+      "artifactDirectory": "data/output/runs/passive-u5",
+      "artifactPaths": [
+        "data/output/runs/passive-u5/manifest.json",
+        "data/output/runs/passive-u5/stdout.log",
+        "data/output/runs/passive-u5/stderr.log",
+        "data/output/runs/passive-u5/test-results",
+        "data/output/runs/passive-u5/playwright-report"
+      ],
+      "artifacts": {
+        "traces": 7,
+        "videos": 7,
+        "screenshots": 2
+      }
+    }
+  ],
+  "arms": {
+    "passive-observed": {
+      "runs": 5,
+      "redRuns": 5,
+      "totalFailures": 23,
+      "durationMs": {
+        "count": 5,
+        "min": 197569,
+        "median": 207448,
+        "mean": 209214.6,
+        "max": 222474
+      },
+      "reportedWorkers": {
+        "count": 5,
+        "min": 22,
+        "median": 22,
+        "mean": 22,
+        "max": 22
+      },
+      "maxActiveTests": {
+        "count": 5,
+        "min": 22,
+        "median": 22,
+        "mean": 22,
+        "max": 22
+      },
+      "combinationCounts": {
+        "chromium:matrix.spec.ts:225": 3,
+        "chromium:matrix.spec.ts:572": 5,
+        "firefox:matrix.spec.ts:135": 5,
+        "chromium:smoke.spec.ts:78": 4,
+        "chromium:matrix.spec.ts:135": 3,
+        "chromium:matrix.spec.ts:195": 2,
+        "firefox:smoke.spec.ts:78": 1
+      },
+      "signatureCounts": {
+        "A-wheel-zero-delta": 8,
+        "C-navigation-timeout-unresolved": 5,
+        "D-controls-enabled-before-probe": 5,
+        "B-actionability-hang": 4,
+        "F-ui-visibility-or-unresolved": 1
+      }
+    },
+    "passive-control": {
+      "runs": 5,
+      "redRuns": 5,
+      "totalFailures": 31,
+      "durationMs": {
+        "count": 5,
+        "min": 199872,
+        "median": 207129,
+        "mean": 205575.6,
+        "max": 210661
+      },
+      "reportedWorkers": {
+        "count": 5,
+        "min": 22,
+        "median": 22,
+        "mean": 22,
+        "max": 22
+      },
+      "maxActiveTests": null,
+      "combinationCounts": {
+        "chromium:matrix.spec.ts:135": 3,
+        "chromium:matrix.spec.ts:195": 4,
+        "chromium:matrix.spec.ts:225": 5,
+        "chromium:matrix.spec.ts:572": 5,
+        "chromium:smoke.spec.ts:78": 5,
+        "firefox:matrix.spec.ts:135": 4,
+        "firefox:smoke.spec.ts:78": 3,
+        "firefox:matrix.spec.ts:225": 2
+      },
+      "signatureCounts": {
+        "A-wheel-zero-delta": 11,
+        "C-navigation-timeout-unresolved": 5,
+        "B-actionability-hang": 5,
+        "D-controls-enabled-before-probe": 4,
+        "F-ui-visibility-or-unresolved": 3,
+        "E2-camera-settle-or-unresolved": 2,
+        "other": 1
+      }
+    }
+  },
+  "observerQualificationAttempts": {
+    "original": {
+      "profile": "1s-host-2s-process-gpu-plus-blob",
+      "controlArm": "passive-control",
+      "observedArm": "passive-observed",
+      "requiredRunsPresent": true,
+      "controlAllRed": true,
+      "observedAllRed": true,
+      "runtimeComparison": {
+        "control": {
+          "count": 5,
+          "min": 199872,
+          "median": 207129,
+          "mean": 205575.6,
+          "max": 210661
+        },
+        "observed": {
+          "count": 5,
+          "min": 197569,
+          "median": 207448,
+          "mean": 209214.6,
+          "max": 222474
+        },
+        "medianDeltaMs": 319,
+        "medianRatio": 1.001540103027582
+      },
+      "activeConcurrencyComparison": {
+        "control": null,
+        "observed": {
+          "count": 5,
+          "min": 22,
+          "median": 22,
+          "mean": 22,
+          "max": 22
+        },
+        "medianDelta": null
+      },
+      "targetDifferences": {
+        "chromium:smoke.spec.ts:78": -1,
+        "chromium:matrix.spec.ts:225": -2,
+        "chromium:matrix.spec.ts:572": 0
+      },
+      "observerEffectAcceptable": false
+    },
+    "reduced": null
+  },
+  "observerQualification": {
+    "profile": "1s-host-2s-process-gpu-plus-blob",
+    "controlArm": "passive-control",
+    "observedArm": "passive-observed",
+    "requiredRunsPresent": true,
+    "controlAllRed": true,
+    "observedAllRed": true,
+    "runtimeComparison": {
+      "control": {
+        "count": 5,
+        "min": 199872,
+        "median": 207129,
+        "mean": 205575.6,
+        "max": 210661
+      },
+      "observed": {
+        "count": 5,
+        "min": 197569,
+        "median": 207448,
+        "mean": 209214.6,
+        "max": 222474
+      },
+      "medianDeltaMs": 319,
+      "medianRatio": 1.001540103027582
+    },
+    "activeConcurrencyComparison": {
+      "control": null,
+      "observed": {
+        "count": 5,
+        "min": 22,
+        "median": 22,
+        "mean": 22,
+        "max": 22
+      },
+      "medianDelta": null
+    },
+    "targetDifferences": {
+      "chromium:smoke.spec.ts:78": -1,
+      "chromium:matrix.spec.ts:225": -2,
+      "chromium:matrix.spec.ts:572": 0
+    },
+    "observerEffectAcceptable": false
+  },
+  "rendererControl": null
+}
