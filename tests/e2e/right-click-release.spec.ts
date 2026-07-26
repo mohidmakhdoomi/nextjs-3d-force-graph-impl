@@ -1,5 +1,4 @@
-import {expect, test} from "@playwright/test";
-import process from "node:process";
+import {expect, test} from "./fixtures";
 import {
     expectCleanErrorBudget,
     ensureRotationPaused,
@@ -13,6 +12,11 @@ import {
     waitForStableCameraDistance,
 } from "./graph-handle";
 import {settleHoverThenClick} from "./pointer";
+import {
+    LONG_TEST_TIMEOUT_MS,
+    POINTER_ENABLE_TIMEOUT_MS,
+    SETTLE_TIMEOUT_MS,
+} from "./timing";
 
 // Issue #22: right-clicking a visibly hovered FIXED node must release its
 // fx/fy/fz. This is the real-application-handler guard for that contract under
@@ -29,8 +33,6 @@ import {settleHoverThenClick} from "./pointer";
 // throttled raycast commits the node as `hoverObj` before the rAF-deferred
 // onRightClick resolves — the same technique the click-to-focus test uses, and
 // the exact reason a bare right-click "did not release" under SwiftShader.
-
-const SETTLE_TIMEOUT_MS = process.env.CI ? 20_000 : 5_000;
 
 // A projected point must sit this far inside the viewport to be a reliable
 // hover target. Matches the on-screen margin `bestOnScreenNode` uses when it
@@ -63,7 +65,7 @@ async function waitForPointerEnablement(
             {
                 message:
                     "expected navigation controls to enable after the configured delay",
-                timeout: 20_000,
+                timeout: POINTER_ENABLE_TIMEOUT_MS,
             },
         )
         .toBe(true);
@@ -106,7 +108,7 @@ async function zoomIntoClickRange(
 async function reloadGraph(
     page: Parameters<typeof readGraphSnapshot>[0],
 ): Promise<void> {
-    const reload = await page.goto("/");
+    const reload = await page.goto("/", {waitUntil: "commit"});
     expect(reload?.ok(), "recovery navigation should succeed").toBe(true);
     await waitForSizedCanvas(page);
     await waitForGraphHandle(page);
@@ -172,7 +174,7 @@ async function establishFixedOnScreenNode(
 }
 
 test("right-clicking a fixed node releases its fx/fy/fz", async ({page}) => {
-    test.setTimeout(240_000);
+    test.setTimeout(LONG_TEST_TIMEOUT_MS);
     const errors = await openGraphPage(page);
     await waitForSizedCanvas(page);
     await waitForGraphHandle(page);
@@ -214,7 +216,7 @@ test("right-clicking a fixed node releases its fx/fy/fz", async ({page}) => {
                 .poll(
                     async () =>
                         (await readGraphSnapshot(page))?.fixedNodeCount ?? 1,
-                    {timeout: 5_000},
+                    {timeout: SETTLE_TIMEOUT_MS},
                 )
                 .toBe(0);
             released = true;

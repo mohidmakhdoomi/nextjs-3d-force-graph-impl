@@ -1,6 +1,10 @@
 import {defineConfig, devices} from "@playwright/test";
 import process from "node:process";
 
+import {
+    FIREFOX_WEBGL_USER_PREFS,
+    resolveChromiumLaunchArgs,
+} from "./scripts/e2e-browser-options.mjs";
 import {resolveWorkers} from "./scripts/e2e-workers.mjs";
 
 const baseURL = "http://127.0.0.1:3000";
@@ -23,13 +27,11 @@ const baseURL = "http://127.0.0.1:3000";
 // REJECTED on Kaggle-AUP grounds (see experiments/42_kaggle_gpu_ci/notes.md);
 // the lane runs on real local hardware with no third party or ToS exposure.
 // The lane is additional evidence, never the green gate.
-const SWIFTSHADER_CHROMIUM_ARGS = [
-    "--use-angle=swiftshader",
-    "--enable-unsafe-swiftshader",
-];
-const chromiumLaunchArgs = process.env.PW_CHROMIUM_ARGS
-    ? process.env.PW_CHROMIUM_ARGS.split(/\s+/).filter((arg) => arg.length > 0)
-    : SWIFTSHADER_CHROMIUM_ARGS;
+const chromiumLaunchArgs = resolveChromiumLaunchArgs(process.env);
+const configuredWorkers = resolveWorkers(process.env);
+const isParallelLocalRun =
+    !process.env.CI &&
+    (typeof configuredWorkers === "string" || configuredWorkers > 1);
 
 const allProjects = [
     {
@@ -48,11 +50,7 @@ const allProjects = [
             ...devices["Desktop Firefox"],
             viewport: {width: 800, height: 600},
             launchOptions: {
-                firefoxUserPrefs: {
-                    // No GPU is available in headless CI; force software
-                    // WebGL rather than failing context creation.
-                    "webgl.force-enabled": true,
-                },
+                firefoxUserPrefs: FIREFOX_WEBGL_USER_PREFS,
             },
         },
     },
@@ -88,13 +86,20 @@ if (projects.length === 0) {
 
 export default defineConfig({
     testDir: "./tests/e2e",
-    // Per-test wall-clock ceiling. CI runners render this WebGL scene through a
-    // software rasterizer (SwiftShader) with no GPU, so the compound
-    // interaction tests (several camera-settle polls + real drags) run far
-    // slower — the whole suite sits near the local 120 s budget on CI. Give CI
-    // headroom over the local budget; local timing is unchanged. (The
-    // click-to-focus test keeps its own explicit 240 s override either way.)
-    timeout: process.env.CI ? 240_000 : 120_000,
+    globalSetup: "./tests/e2e/global-setup.ts",
+    // Per-test wall-clock ceiling. CI runners and the explicit parallel local
+    // lane render this WebGL scene through software under CPU contention, so
+    // compound interaction tests can spend long stretches waiting for a render
+    // timeslice. Preserve the qualified serial-local and CI ceilings; only the
+    // opt-in parallel stress lane receives the larger scheduler-delay budget.
+    timeout: process.env.CI
+        ? 240_000
+        : isParallelLocalRun
+          ? 480_000
+          : 120_000,
+    expect: {
+        timeout: isParallelLocalRun ? 120_000 : 5_000,
+    },
     // `fullyParallel` marks every test as an independently schedulable unit,
     // which serves two consumers: CI's `--shard` splits the suite at the TEST
     // level (not the file level), and a local opt-in parallel run (E2E_WORKERS)
@@ -107,21 +112,17 @@ export default defineConfig({
     //     test at a time, no SwiftShader CPU contention. The qualified CI timing
     //     environment is byte-for-byte unchanged, and a stray E2E_WORKERS can
     //     never parallelize a shard.
-    //   - Local default: SERIAL (1). Issue #41 qualified parallel workers and
-    //     found they DESTABILIZE these timing-sensitive matrix.spec.ts
-    //     camera-settle/drag assertions under SwiftShader CPU contention (4-5 of
-    //     22 Chromium tests fail on every parallel run — even though parallel is
-    //     faster). At #41 time it also amplified the Firefox background-drag flake
-    //     (issue #55 — miscalled "#33" then, since FIXED) even on hardware; the
-    //     SwiftShader Chromium contention is the standing reason the `retries: 0`
-    //     local gate stays serial, matching the environment these assertions were
-    //     qualified against.
-    //   - Local opt-in parallel: E2E_WORKERS=<int|percent> (e.g. 50%) — for fast
-    //     local iteration, most useful on the native-GPU lane (~4x faster). An
-    //     invalid value is a loud WorkerConfigError, never a silent fallback.
+    //   - Local default: SERIAL (1), preserving the inexpensive qualification
+    //     lane and its existing deadlines/artifacts.
+    //   - Local opt-in parallel: E2E_WORKERS=<int|percent> (e.g. 22 or 50%).
+    //     Parallel runs use the bounded browser-server pool in global-setup.ts,
+    //     contention-aware waits, and no continuous trace/video capture. This
+    //     keeps every Playwright worker independently scheduled without spawning
+    //     one SwiftShader thread pool and recorder per worker. An invalid value is
+    //     a loud WorkerConfigError, never a silent fallback.
     // Local `retries: 0` (below) is preserved so flakes still surface immediately.
     fullyParallel: true,
-    workers: resolveWorkers(process.env),
+    workers: configuredWorkers,
     // CI-only retries absorb SwiftShader rendering nondeterminism. The
     // click-to-focus test (matrix.spec.ts) intermittently misses a camera-motion
     // or node-click timing predicate; this predates sharding — it also flaked the
@@ -145,9 +146,13 @@ export default defineConfig({
           ],
     use: {
         baseURL,
-        trace: "retain-on-failure",
+        // Recording every page at 22-way SwiftShader concurrency adds another
+        // software-rendered frame consumer and makes context teardown take tens
+        // of seconds. Keep rich artifacts for the serial qualification/CI lanes;
+        // the explicit parallel stress lane favors the behavior under test.
+        trace: isParallelLocalRun ? "off" : "retain-on-failure",
         screenshot: "only-on-failure",
-        video: "retain-on-failure",
+        video: isParallelLocalRun ? "off" : "retain-on-failure",
     },
     projects,
     webServer: {

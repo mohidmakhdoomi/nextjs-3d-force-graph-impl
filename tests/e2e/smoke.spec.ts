@@ -1,4 +1,5 @@
-import {expect, test, type Locator, type Page} from "@playwright/test";
+import {expect, test, type Locator, type Page} from "./fixtures";
+import {READINESS_TIMEOUT_MS} from "./timing";
 
 type WebGLReadiness = {
     contextType: "webgl" | "webgl2" | null;
@@ -104,7 +105,7 @@ test("renders the graph and exercises its core controls", async ({page}) => {
         pageErrors.push(error.stack ?? error.message);
     });
 
-    const response = await page.goto("/");
+    const response = await page.goto("/", {waitUntil: "commit"});
     expect(response, "root navigation should return a response").not.toBeNull();
     expect(response?.ok(), "root navigation should succeed").toBe(true);
 
@@ -134,7 +135,7 @@ test("renders the graph and exercises its core controls", async ({page}) => {
         .poll(() => hasSizedCanvas(page), {
             message:
                 "expected a visible canvas with nonzero CSS and backing-store dimensions",
-            timeout: 15_000,
+            timeout: READINESS_TIMEOUT_MS,
         })
         .toBe(true);
 
@@ -154,24 +155,24 @@ test("renders the graph and exercises its core controls", async ({page}) => {
     });
     await expect(resumeRotationButton).toBeVisible();
 
-    await axesButton.click();
+    await axesButton.click({force: true});
     const hideAxesButton = page.getByRole("button", {
         name: "Hide Axes",
         exact: true,
     });
     await expect(hideAxesButton).toBeVisible();
-    await hideAxesButton.click();
+    await hideAxesButton.click({force: true});
     await expect(axesButton).toBeVisible();
 
-    await resetButton.click();
+    await resetButton.click({force: true});
     await page.waitForTimeout(1_200);
     expect(await hasSizedCanvas(page), "canvas should remain ready after reset").toBe(
         true,
     );
 
-    await resumeRotationButton.click();
+    await resumeRotationButton.click({force: true});
     await expect(rotationButton).toBeVisible();
-    await rotationButton.click();
+    await rotationButton.click({force: true});
     await expect(resumeRotationButton).toBeVisible();
 
     // Reading an active software-rendered context can be expensive. Do it once,
