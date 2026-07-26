@@ -55,3 +55,7 @@ codev/.update-hashes.json
 .builders/
 .architect-role.md
 .codev/config.json
+
+# Codev (added by codev update 2026-07-26)
+codev/state/*.md
+!codev/state/*_thread.md

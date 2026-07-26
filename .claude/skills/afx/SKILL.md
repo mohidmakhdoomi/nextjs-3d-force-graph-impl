@@ -99,6 +99,19 @@ afx status                      # Show all builders and workspace status
 
 No flags needed. Shows Tower status, workspace, and all active builders.
 
+## afx whoami
+
+```bash
+afx whoami                      # Report this terminal's identity (workspace, type, name)
+afx whoami --json               # Same, as a single JSON object
+```
+
+Resolves identity from Tower/global.db's perspective: builder-worktree cwd
+match first, then the Tower-injected `CODEV_ARCHITECT_NAME` env var. Exits 1
+with an explanation when identity cannot be determined — it never guesses and
+never defaults to `main` (issue #1094). Builders also get an `architect:`
+field naming their spawning architect when recorded. Works without Tower.
+
 ## afx tower
 
 ```bash

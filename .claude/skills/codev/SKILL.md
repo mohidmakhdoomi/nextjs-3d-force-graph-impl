@@ -16,7 +16,7 @@ codev doctor                   Check system dependencies
 
 ## codev init
 
-Creates a **new directory** with the full codev structure: specs/, plans/, reviews/, protocols, CLAUDE.md, AGENTS.md, .claude/skills/, .codev/config.json, .gitignore.
+Creates a **new directory** with the full codev structure: specs/, plans/, reviews/, protocols, CLAUDE.md, AGENTS.md, `.claude/skills/`, `.codex/skills/`, .codev/config.json, and .gitignore.
 
 ```bash
 codev init my-app              # Interactive setup
@@ -34,7 +34,7 @@ codev adopt -y                 # Skip conflict prompts
 
 ## codev update
 
-Updates framework files (protocols, roles, skills) from the installed `@cluesmith/codev` package. **Never touches user data** (specs, plans, reviews). Creates `.codev-new` versions for customized files.
+Updates framework files (protocols, roles, skills) from the installed `@cluesmith/codev` package. **Never touches user data** (specs, plans, reviews). Creates `.codev-new` versions for customized files. Missing Claude and Codex skills are added, while existing skill directories are preserved.
 
 ```bash
 codev update                   # Interactive update
