@@ -33,3 +33,9 @@ The first attempted `passive-u1` was stopped before completion and excluded beca
 The accepted original-profile 5+5 series completed with every run red and effectively identical median runtime (207.129 s control vs 207.448 s observed, +0.319 s / +0.15%). However, the predeclared recurrence rule failed: `smoke:78` moved 5→4, `matrix:572` stayed 5→5, and `matrix:225` moved 5→3. The latter difference of -2 exceeds the allowed one occurrence, so continuous 1 s host / 2 s process+GPU sampling plus blob reporting is rejected for causal use even though it did not broadly slow the suite.
 
 The next qualification reduces observation to 5 s `/proc` samples, 10 s process snapshots, no continuous `nvidia-smi`, and the same post-run blob materialization. Per-run renderer preflight and before/after GPU snapshots remain. A fresh `passive-lite` U-I sequence will apply the unchanged ±1/all-red rule; any renderer arm will use only this reduced profile if it qualifies.
+
+## 2026-07-26 — Reduced passive observer qualified
+
+The reduced 5+5 series passed H1: every run stayed red; `smoke:78` was 5→5, `matrix:225` 5→4, and `matrix:572` 5→5; observed median runtime was only +0.798 s (+0.38%), and blob timing measured 22 simultaneously active tests in every observed run. Qualified host evidence is consistent across all five observed runs: one-minute load 155.74–159.89, 226–243 runnable processes, and CPU PSI `some.avg10` 97.11–97.55%, while at least ~14.9 GiB remained available, swap stayed completely free, and memory PSI stayed zero. This supports a shared CPU scheduling/contention precursor and weighs strongly against memory/swap pressure for this host condition, without yet identifying each downstream first missing transition.
+
+Because H1 is satisfied, the five SwiftShader/native-GPU pairs may proceed using exactly the reduced profile and fresh per-run strict renderer verification.

@@ -152,15 +152,19 @@ See [`data/input/artifact-recovery.json`](data/input/artifact-recovery.json) for
 
 **Original profile rejected by the predeclared rule.** All five control and five observed runs were red. Median duration was effectively unchanged (207.129 s control vs 207.448 s observed; +0.319 s / +0.15%), and the observed runs reached 22 simultaneously active tests. However, core recurrence moved as follows: Chromium `smoke:78` 5/5→4/5, `matrix:225` 5/5→3/5, and `matrix:572` 5/5→5/5. The `matrix:225` difference of -2 exceeds the allowed ±1, so the one-second host/two-second process+GPU profile is not qualified for causal interpretation.
 
-A reduced profile (five-second host, ten-second process, no continuous GPU polling, same blob reporter) is pending a fresh five-pair qualification. The original profile's telemetry is descriptive only until the reduced profile passes H1.
+**Reduced profile qualified.** All five controls and five observed runs were red. Core recurrence was Chromium `smoke:78` 5/5→5/5, `matrix:225` 5/5→4/5, and `matrix:572` 5/5→5/5, all within the allowed ±1. Median duration changed from 209.599 s to 210.397 s (+0.798 s / +0.38%), and every observed run reached 22 simultaneously active tests.
+
+Qualified telemetry showed the same sustained host state in every observed run: one-minute load 155.74–159.89, 226–243 runnable processes, and CPU PSI `some.avg10` 97.11–97.55%. At least ~14.9 GiB memory remained available, all 16 GiB swap remained free, and memory PSI stayed zero. This supports CPU scheduling/contention as a shared precursor and strongly weighs against memory/swap pressure on this host, while not yet locating each downstream first missing transition.
 
 ### Same-Host Renderer Control
 
-Pending reduced passive qualification. Initial strict native-GPU feasibility remains verified, but the renderer series will not begin until a passive profile qualifies.
+Authorized by the qualified reduced profile and initial strict native-GPU feasibility. Five reduced-profile SwiftShader/native-GPU pairs are pending, with fresh strict renderer evidence on every run.
 
 ### Key Findings
 
-Pending.
+1. The original observer materially changed one core recurrence despite negligible runtime impact; runtime alone was not a sufficient observer-effect check.
+2. The reduced observer preserves the canonical core and measures 22 genuinely simultaneous tests under extreme sustained CPU scheduling pressure without memory or swap pressure.
+3. A/B/C/D remain distinct downstream signatures under the same qualified high-load context; the passive layer does not yet establish their individual first missing transitions.
 
 ### Metrics
 
@@ -169,8 +173,9 @@ Pending.
 | Canonical baseline | 10/10 red | Issue #61, 50 failures total |
 | Original-profile controls | 5/5 red | 31 failures; median 207.129 s |
 | Original-profile observed | 5/5 red | 23 failures; median 207.448 s; H1 rejected (`matrix:225` 5→3) |
-| Reduced-profile pairs | 0/5 | Pending requalification |
-| SwiftShader/native-GPU pairs | 0/5 | Blocked on reduced-profile H1 |
+| Reduced-profile controls | 5/5 red | 32 failures; median 209.599 s |
+| Reduced-profile observed | 5/5 red | 32 failures; median 210.397 s; H1 qualified |
+| SwiftShader/native-GPU pairs | 0/5 | Ready to execute with reduced profile |
 
 ### Output Files
 
@@ -183,7 +188,7 @@ Pending.
 
 - The fixed U-I order completed without harness failure, and every run preserved the canonical red condition.
 - Blob reports materialized after each run and classified each failure without consuming the test deadline.
-- The original profile measured 22 active tests and sustained high-load context while preserving traces/videos/screenshots.
+- The reduced profile qualified with 22 active tests, preserved traces/videos/screenshots, and captured sustained CPU pressure without memory/swap pressure.
 
 ## What Didn't Work
 
@@ -192,7 +197,7 @@ Pending.
 
 ## Next Steps
 
-Run the reduced passive 5+5 qualification. Proceed to the renderer control only if that profile passes the unchanged H1 rule. Any production fix remains explicitly deferred to a mechanism-specific follow-up.
+Run the five strict SwiftShader/native-GPU pairs with the qualified reduced observer. Then classify per-occurrence evidence, evaluate H2/H3, and decide whether a mechanism-specific focused follow-up is justified. Any production fix remains explicitly deferred.
 
 ## References
 
