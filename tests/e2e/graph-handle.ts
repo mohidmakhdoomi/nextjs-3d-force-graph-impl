@@ -1,5 +1,7 @@
 import {expect, type Locator, type Page} from "@playwright/test";
 
+import {READINESS_TIMEOUT_MS} from "./timing";
+
 /**
  * Numeric snapshot of the live graph, read through the react-force-graph
  * imperative handle from page context. All fields are plain numbers/booleans
@@ -693,7 +695,7 @@ export async function openGraphPage(page: Page): Promise<CollectedErrors> {
     await installGraphProbe(page);
     const collected = collectErrors(page);
 
-    const response = await page.goto("/");
+    const response = await page.goto("/", {waitUntil: "commit"});
     expect(response, "root navigation should return a response").not.toBeNull();
     expect(response?.ok(), "root navigation should succeed").toBe(true);
 
@@ -722,7 +724,7 @@ export async function waitForSizedCanvas(page: Page): Promise<void> {
         .poll(() => hasSizedCanvas(page), {
             message:
                 "expected a visible canvas with nonzero CSS and backing-store dimensions",
-            timeout: 15_000,
+            timeout: READINESS_TIMEOUT_MS,
         })
         .toBe(true);
 }
@@ -731,7 +733,7 @@ export async function waitForGraphHandle(page: Page): Promise<GraphSnapshot> {
     await expect
         .poll(async () => (await readGraphSnapshot(page)) !== null, {
             message: "expected the react-force-graph imperative handle",
-            timeout: 15_000,
+            timeout: READINESS_TIMEOUT_MS,
         })
         .toBe(true);
 
@@ -820,7 +822,7 @@ export async function sampleCameraMotion(
  */
 export async function waitForStableCameraDistance(
     page: Page,
-    timeoutMs = 15_000,
+    timeoutMs = READINESS_TIMEOUT_MS,
 ): Promise<GraphSnapshot> {
     let previousDistance = Number.NaN;
     await expect

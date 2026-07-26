@@ -14,7 +14,7 @@ import {
     resolveWorkers,
 } from "../scripts/e2e-workers.mjs";
 
-test("DEFAULT_LOCAL_WORKERS is serial 1 (Phase-3 qualification flipped it from parallel)", () => {
+test("DEFAULT_LOCAL_WORKERS keeps the ordinary local gate serial", () => {
     assert.strictEqual(DEFAULT_LOCAL_WORKERS, 1);
 });
 

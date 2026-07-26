@@ -15,6 +15,14 @@ const playwrightConfig = await readFile(
     new URL("../playwright.config.ts", import.meta.url),
     "utf8",
 );
+const e2eGlobalSetup = await readFile(
+    new URL("./e2e/global-setup.ts", import.meta.url),
+    "utf8",
+);
+const e2eFixtures = await readFile(
+    new URL("./e2e/fixtures.ts", import.meta.url),
+    "utf8",
+);
 const packageJson = JSON.parse(
     await readFile(new URL("../package.json", import.meta.url), "utf8"),
 );
@@ -93,7 +101,11 @@ test("shards the full Chromium e2e suite at the test level", () => {
     // tests/e2e-workers.test.mjs; here we assert only that the config delegates
     // to it.
     assert.match(playwrightConfig, /fullyParallel: true/);
-    assert.match(playwrightConfig, /workers: resolveWorkers\(process\.env\)/);
+    assert.match(
+        playwrightConfig,
+        /const configuredWorkers = resolveWorkers\(process\.env\)/,
+    );
+    assert.match(playwrightConfig, /workers: configuredWorkers/);
     // CI-only retries (count 2) absorb pre-existing SwiftShader flake (issue #34)
     // so a single flaky attempt can't red the gate; local stays 0 so flakes show.
     assert.match(playwrightConfig, /retries: process\.env\.CI \? 2 : 0/);
@@ -123,6 +135,24 @@ test("shards the full Chromium e2e suite at the test level", () => {
     const cache = step(e2e, "Cache Playwright browsers");
     assert.match(cache, /~\/\.cache\/ms-playwright/);
     assert.match(cache, /steps\.playwright\.outputs\.version/);
+});
+
+test("bounds renderer processes without reducing explicit local workers", () => {
+    assert.match(
+        playwrightConfig,
+        /globalSetup: "\.\/tests\/e2e\/global-setup\.ts"/,
+    );
+    assert.match(e2eGlobalSetup, /if \(config\.workers <= 1\)/);
+    assert.match(e2eGlobalSetup, /chromium: 4/);
+    assert.match(e2eGlobalSetup, /firefox: 2/);
+    assert.match(
+        e2eFixtures,
+        /workerInfo\.parallelIndex % endpoints\.length/,
+    );
+    assert.match(
+        playwrightConfig,
+        /video: isParallelLocalRun \? "off" : "retain-on-failure"/,
+    );
 });
 
 test("keeps audit evidence separate without weakening validation", () => {

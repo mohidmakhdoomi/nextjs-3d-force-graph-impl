@@ -19,23 +19,15 @@
 //      computes the count from `os.cpus().length`). Empty/unset falls to the
 //      default; anything malformed is a LOUD failure (WorkerConfigError), never a
 //      silent fallback — mirroring the config's fail-closed E2E_ENGINES guard.
-//   3. Default: DEFAULT_LOCAL_WORKERS (`1`, serial). Phase-3 qualification (issue
-//      #41) showed parallel workers destabilize the timing-sensitive Chromium
-//      matrix.spec.ts camera-settle/drag assertions under SwiftShader CPU
-//      contention (4-5 of 22 tests fail on every parallel run — the problem is
-//      destabilization, not slowness: parallel is faster) and amplify the known
-//      Firefox flake #33 even on hardware — so a `retries: 0` gate cannot default
-//      to parallel. Parallelism is therefore OPT-IN via E2E_WORKERS (most useful
-//      on the native-GPU lane, where it runs ~4x faster and mostly green; see the
-//      review for the recorded evidence and spec Decision 4 / Scenario 5).
+//   3. Default: DEFAULT_LOCAL_WORKERS (`1`, serial). Serial remains the cheap,
+//      artifact-rich local qualification lane. Parallelism is explicit via
+//      E2E_WORKERS because it uses a bounded browser-server pool, longer
+//      scheduler-delay budgets, and disables continuous trace/video recording;
+//      those are deliberate stress-lane tradeoffs rather than silent defaults.
 
-// The local default worker count. Phase-3 qualification (issue #41) flipped this
-// from the originally-proposed parallel `'50%'` to serial `1` (spec Decision 4 /
-// Scenario 5): parallel workers destabilize the timing-sensitive SwiftShader gate
-// (4-5 of 22 tests fail on every parallel run — destabilization, not slowness), so
-// the qualified `retries: 0` local gate stays serial. Parallelism is opt-in via
-// E2E_WORKERS (`'50%'` is the recommended value, most useful on the native-GPU
-// lane). Kept as a named constant so the config and tests reference one value.
+// The local default worker count. Keep the ordinary local gate serial and make
+// the resource-intensive parallel stress lane opt-in via E2E_WORKERS. Kept as a
+// named constant so the config and tests reference one value.
 export const DEFAULT_LOCAL_WORKERS = 1;
 
 // A malformed E2E_WORKERS value — a hard configuration failure, never a silent

@@ -21,6 +21,11 @@ test("uses stable graph data directly without blanket Three type suppression", a
     assert.match(source, /graphData\.nodes\.forEach/);
     assert.doesNotMatch(source, /Graph\?\.props\.graphData/);
     assert.doesNotMatch(source, /mainEffectCounter|counter\.current/);
+    assert.match(source, /enableDelay=4000/);
+    assert.match(
+        source,
+        /resources\.scheduleInteraction\([\s\S]*?\}, enableDelay\);/,
+    );
 });
 
 test("replay and cleanup leave no stale timers or axes helpers", () => {
@@ -36,9 +41,9 @@ test("replay and cleanup leave no stale timers or axes helpers", () => {
         clearInterval(handle) {
             intervals.delete(handle);
         },
-        setTimeout(callback) {
+        setTimeout(callback, delay) {
             const handle = ++nextHandle;
-            timeouts.set(handle, callback);
+            timeouts.set(handle, {callback, delay});
             return handle;
         },
         clearTimeout(handle) {
@@ -83,6 +88,11 @@ test("replay and cleanup leave no stale timers or axes helpers", () => {
 
     assert.equal(intervals.size, 1, "rotation setup must be idempotent");
     assert.equal(timeouts.size, 2, "only live interaction/reset timers remain");
+    assert.deepEqual(
+        [...timeouts.values()].map(({delay}) => delay).sort((a, b) => a - b),
+        [1000, 4000],
+        "reset and interaction delays must retain their configured boundaries",
+    );
     assert.deepEqual([...sceneObjects], [liveAxes]);
 
     resources.cleanup();
