@@ -1,0 +1,65 @@
+1) [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+
+Error: wheel down should zoom the camera in
+
+wheel down should zoom the camera in
+
+expect(received).toBeLessThan(expected)
+
+Expected: < 2376.605324314609
+Received:   2377.105324314609
+
+Call Log:
+- Timeout 5000ms exceeded while waiting on the predicate
+
+  244 |             {message: "wheel down should zoom the camera in", timeout: SETTLE_TIMEOUT_MS},
+  245 |         )
+> 246 |         .toBeLessThan(start.cameraDistance - ZOOM_EPSILON);
+	  |          ^
+  247 |
+  248 |     // Trackball rotation via a real background drag. The start point must be
+  249 |     // GENUINE background: issue #55's flake was a stray node capture — the
+	at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/tests/e2e/matrix.spec.ts:246:10
+
+2) [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Test timeout of 120000ms exceeded.
+
+3) [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls ─
+
+Test timeout of 120000ms exceeded.
+
+Error: locator.click: Test timeout of 120000ms exceeded.
+Call log:
+  - waiting for getByRole('button', { name: 'Resume Auto Rotation', exact: true })
+	- locator resolved to <button id="rotationToggle" class="m-[8px] h-[25px] w-[200px]">Resume Auto Rotation</button>
+  - attempting click action
+	- waiting for element to be visible, enabled and stable
+
+
+  170 |     );
+  171 |
+> 172 |     await resumeRotationButton.click();
+	  |                                ^
+  173 |     await expect(rotationButton).toBeVisible();
+  174 |     await rotationButton.click();
+  175 |     await expect(resumeRotationButton).toBeVisible();
+	at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/tests/e2e/smoke.spec.ts:172:32
+
+4) [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+
+Error: navigation controls should start disabled
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: false
+Received: true
+
+  147 |         early.controlsEnabled,
+  148 |         "navigation controls should start disabled",
+> 149 |     ).toBe(false);
+	  |       ^
+  150 |
+  151 |     // Real input cannot be *delivered* inside the pre-enablement window in
+  152 |     // this environment: SwiftShader plus force-engine warmup saturates the
+	at /home/user/code/graph-site_root/nextjs-3d-force-graph-impl/tests/e2e/matrix.spec.ts:149:7

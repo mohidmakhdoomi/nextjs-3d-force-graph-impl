@@ -1,0 +1,10 @@
+2026-07-25T22:41:32.260Z engine: chromium
+2026-07-25T22:41:32.260Z candidate: wsl2-d3d12-angle-gl (WSL2 Mesa d3d12 via ANGLE native-GL (proven: bugfix-22 / PR #43; headless validated by the spec-44 FR5 matrix + full-suite run))
+2026-07-25T22:41:32.260Z flags: --use-gl=angle --use-angle=gl --ignore-gpu-blocklist --disable-gpu-sandbox
+2026-07-25T22:41:32.260Z env injected: {"GALLIUM_DRIVER":"d3d12","LD_LIBRARY_PATH":"/usr/lib/wsl/lib"}
+2026-07-25T22:41:32.260Z mode: headless
+2026-07-25T22:41:32.260Z binary: playwright default headless (chromium headless shell)
+2026-07-25T22:41:32.890Z renderer: "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 3080), OpenGL 4.6)"
+2026-07-25T22:41:32.890Z vendor: "Google Inc. (Microsoft Corporation)"
+2026-07-25T22:41:32.890Z class: hardware
+2026-07-25T22:41:32.977Z duration: 717ms

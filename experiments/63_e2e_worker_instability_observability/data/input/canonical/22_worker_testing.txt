@@ -1,0 +1,79 @@
+Run 10:
+  6 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [chromium] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Run 9:
+  5 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Run 8:
+  4 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Run 7:
+  6 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Run 6:
+  5 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel
+    [firefox] › tests/e2e/matrix.spec.ts:314:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Run 5:
+  4 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Run 4:
+  5 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [firefox] › tests/e2e/matrix.spec.ts:314:5 › click-to-focus fixes the node, animates the camera, and reset restores the view
+
+Run 3:
+  4 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Run 2:
+  6 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [chromium] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [chromium] › tests/e2e/matrix.spec.ts:195:5 › zooms out with the wheel
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation
+
+Run 1:
+  5 failed
+    [chromium] › tests/e2e/smoke.spec.ts:78:5 › renders the graph and exercises its core controls
+    [firefox] › tests/e2e/matrix.spec.ts:135:5 › keeps pointer navigation inert until the enable delay elapses
+    [firefox] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:225:5 › zooms in with the wheel and rotates with a background drag
+    [chromium] › tests/e2e/matrix.spec.ts:572:5 › remounts a fresh working canvas on re-navigation

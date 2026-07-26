@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-07-26T01:20:07.886Z",
+  "intent": "default-suite-renderers-with-explicit-chromium-swiftshader",
+  "launch": {
+    "chromiumArgs": [
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader"
+    ],
+    "firefoxPrefs": {
+      "webgl.force-enabled": true,
+      "webgl.sanitize-unmasked-renderer": false
+    }
+  },
+  "results": [
+    {
+      "engine": "chromium",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "vendor": "Google Inc. (Google)",
+      "class": "software",
+      "durationMs": 133
+    },
+    {
+      "engine": "firefox",
+      "renderer": "D3D12 (NVIDIA GeForce RTX 3080)",
+      "vendor": "Microsoft Corporation",
+      "class": "hardware",
+      "durationMs": 1103
+    }
+  ],
+  "verification": {
+    "chromiumSwiftShaderVerified": true,
+    "firefoxRendererObserved": true
+  }
+}

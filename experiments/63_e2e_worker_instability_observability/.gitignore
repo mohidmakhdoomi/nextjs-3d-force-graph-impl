@@ -1,0 +1,4 @@
+data/output/pilots/
+data/output/probes/swiftshader-runs/*.stderr.log
+data/output/runs/
+data/output/series/raw/

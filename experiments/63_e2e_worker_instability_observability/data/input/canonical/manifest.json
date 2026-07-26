@@ -1,0 +1,48 @@
+{
+  "source": {
+    "issue": 61,
+    "title": "E2E instability at E2E_WORKERS=22: 4-6 failures on every test:smoke run (10/10 runs, timing-sensitive WebGL tests)",
+    "url": "https://github.com/mohidmakhdoomi/nextjs-3d-force-graph-impl/issues/61",
+    "updatedAt": "2026-07-25T22:13:09Z",
+    "exportPath": "data/input/issue-61.json"
+  },
+  "limitation": "The text files were reconstructed from issue #61. Their original filesystem metadata and any unposted binary Playwright artifacts are not implied to have survived.",
+  "files": [
+    {
+      "path": "data/input/canonical/22_worker_testing.txt",
+      "bytes": 5472,
+      "sha256": "9647c1d9f56f7db13bea1e8aafbbf1112ddc1bfbfa2ff10e26d849acb5acf199",
+      "provenance": "reconstructed from the verbatim fenced attachment in issue #61"
+    },
+    {
+      "path": "data/input/canonical/run_6.txt",
+      "bytes": 3140,
+      "sha256": "88bf9152478d77806eceb3ff3c038bbf1f88b29ca6f63ff55f490d7e2bb43e1a",
+      "provenance": "reconstructed from the verbatim fenced attachment in issue #61"
+    },
+    {
+      "path": "data/input/canonical/run_7.txt",
+      "bytes": 4151,
+      "sha256": "37dc2a0e1044efbec44cdda2d7f8be3073ff25d99016ad8fb6cbf1187e2f800a",
+      "provenance": "reconstructed from the verbatim fenced attachment in issue #61"
+    },
+    {
+      "path": "data/input/canonical/run_8.txt",
+      "bytes": 2503,
+      "sha256": "db0e427d7bfe2d4b9462f67d949cd4876d551f32bc39fd77cb6742feb7e8730a",
+      "provenance": "reconstructed from the verbatim fenced attachment in issue #61"
+    },
+    {
+      "path": "data/input/canonical/run_9.txt",
+      "bytes": 3402,
+      "sha256": "9e531e2014fbcc97cea0c88d4bd26618f1d19486fc74cdc34941765cfecef730",
+      "provenance": "reconstructed from the verbatim fenced attachment in issue #61"
+    },
+    {
+      "path": "data/input/canonical/run_10.txt",
+      "bytes": 4517,
+      "sha256": "890428ec3c8dc285790ce9768642d4857effb5c6751874969bc93725edf0255e",
+      "provenance": "reconstructed from the verbatim fenced attachment in issue #61"
+    }
+  ]
+}
