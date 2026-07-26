@@ -135,6 +135,7 @@ function failuresFromBlob(rows) {
                 title: row.title ?? "unknown",
                 status: row.result.status,
                 detail,
+                attachments: row.result.attachments ?? [],
                 source: "blob-report",
             };
         });
@@ -147,47 +148,270 @@ function classifyFailure(project, file, line, detail) {
     if (
         project === "chromium" &&
         normalizedFile === "matrix.spec.ts" &&
-        [135, 195, 225].includes(line) &&
-        /wheel .*should zoom|wheel input after enablement should zoom/i.test(detail)
+        [135, 195, 225].includes(line)
     ) {
-        return {combination, signature: "A-wheel-zero-delta"};
-    }
-    if (project === "chromium" && normalizedFile === "smoke.spec.ts" && line === 78) {
+        if (/wheel .*should zoom|wheel input after enablement should zoom/i.test(detail)) {
+            return {
+                combination,
+                family: "A",
+                signature: "A-camera-distance-unchanged-after-wheel",
+                transition:
+                    "camera distance remained unchanged within the post-wheel observation budget",
+            };
+        }
+        if (/mouse\.move: Test timeout/i.test(detail)) {
+            return {
+                combination,
+                family: "A",
+                signature: "A-background-drag-action-timeout",
+                transition:
+                    "the wheel phase completed, then the background-drag mouse.move remained pending until the test deadline",
+            };
+        }
         return {
             combination,
-            signature: /locator\.click|visible, enabled and stable/i.test(detail)
-                ? "B-actionability-hang"
-                : "B-unresolved-smoke",
+            family: "A",
+            signature: /Test timeout/i.test(detail)
+                ? "A-unresolved-test-timeout"
+                : "A-unresolved",
+            transition: "the retained failure does not identify A's first missing transition",
+        };
+    }
+    if (project === "chromium" && normalizedFile === "smoke.spec.ts" && line === 78) {
+        if (/locator\.click|visible, enabled and stable/i.test(detail)) {
+            const button = /Reset Camera/i.test(detail)
+                ? "reset"
+                : /Resume Auto Rotation/i.test(detail)
+                  ? "resume-rotation"
+                  : /Pause Auto Rotation/i.test(detail)
+                    ? "pause-rotation"
+                    : "unidentified";
+            return {
+                combination,
+                family: "B",
+                signature: `B-${button}-click-actionability-hang`,
+                transition:
+                    `the ordinary ${button} click remained in Playwright's combined visible/enabled/stable actionability wait until the test deadline`,
+            };
+        }
+        return {
+            combination,
+            family: "B",
+            signature: "B-unresolved-smoke",
+            transition: "the retained smoke failure does not identify B's first missing transition",
         };
     }
     if (project === "chromium" && normalizedFile === "matrix.spec.ts" && line === 572) {
-        return {
-            combination,
-            signature: /ERR_ABORTED|frame was detached/i.test(detail)
-                ? "C-navigation-aborted"
-                : "C-navigation-timeout-unresolved",
-        };
+        return /ERR_ABORTED|frame was detached/i.test(detail)
+            ? {
+                  combination,
+                  family: "C",
+                  signature: "C-second-navigation-aborted",
+                  transition:
+                      "the second page.goto surfaced ERR_ABORTED or frame-detached evidence",
+              }
+            : {
+                  combination,
+                  family: "C",
+                  signature: "C-second-navigation-timeout-unresolved",
+                  transition:
+                      "the retained error reaches the test deadline without identifying the navigation stage",
+              };
     }
     if (project === "firefox" && normalizedFile === "matrix.spec.ts" && line === 135) {
-        return {
-            combination,
-            signature: /navigation controls should start disabled|Expected:\s*false[\s\S]*Received:\s*true/i.test(
+        if (
+            /navigation controls should start disabled|Expected:\s*false[\s\S]*Received:\s*true/i.test(
                 detail,
             )
-                ? "D-controls-enabled-before-probe"
-                : "D-unresolved-enable-delay",
+        ) {
+            return {
+                combination,
+                family: "D",
+                signature: "D-controls-enabled-at-first-observation",
+                transition:
+                    "the first successful graph snapshot already reported navigation controls enabled",
+            };
+        }
+        if (/expected the react-force-graph imperative handle/i.test(detail)) {
+            return {
+                combination,
+                family: "D",
+                signature: "D-graph-handle-unavailable",
+                transition:
+                    "the graph handle was not observable before the enable-delay invariant could be checked",
+            };
+        }
+        return {
+            combination,
+            family: "D",
+            signature: "D-unresolved",
+            transition: "the retained failure does not identify D's first missing transition",
         };
     }
     if (project === "firefox" && normalizedFile === "matrix.spec.ts" && line === 314) {
-        return {combination, signature: "E1-camera-motion-zero-or-unresolved"};
+        return {
+            combination,
+            family: "E1",
+            signature: "E1-camera-motion-zero-or-unresolved",
+            transition: "camera motion was not observed within the retained budget",
+        };
     }
     if (project === "firefox" && normalizedFile === "matrix.spec.ts" && line === 225) {
-        return {combination, signature: "E2-camera-settle-or-unresolved"};
+        return {
+            combination,
+            family: "E2",
+            signature: "E2-camera-settle-or-unresolved",
+            transition: "the camera did not satisfy the retained settle precondition",
+        };
     }
     if (project === "firefox" && normalizedFile === "smoke.spec.ts" && line === 78) {
-        return {combination, signature: "F-ui-visibility-or-unresolved"};
+        return {
+            combination,
+            family: "F",
+            signature: "F-ui-visibility-or-unresolved",
+            transition: "the expected UI visibility transition was not observed",
+        };
     }
-    return {combination, signature: "other"};
+    return {
+        combination,
+        family: "other",
+        signature: "other",
+        transition: "not classified by the experiment taxonomy",
+    };
+}
+
+function readZipJsonLines(zipPath, entryName) {
+    const result = spawnSync("unzip", ["-p", zipPath, entryName], {
+        encoding: "utf8",
+        maxBuffer: 64 * 1024 * 1024,
+    });
+    if (result.status !== 0) {
+        return {
+            rows: [],
+            error:
+                result.error?.message ??
+                result.stderr?.trim() ??
+                `unzip exited ${result.status}`,
+        };
+    }
+    try {
+        return {
+            rows: result.stdout
+                .split("\n")
+                .filter(Boolean)
+                .map((line) => JSON.parse(line)),
+            error: null,
+        };
+    } catch (error) {
+        return {rows: [], error: error.message};
+    }
+}
+
+function classifyNavigationTrace(failure, runDir) {
+    if (
+        failure.family !== "C" ||
+        failure.signature !== "C-second-navigation-timeout-unresolved"
+    ) {
+        return failure;
+    }
+    const trace = failure.attachments?.find(
+        (attachment) =>
+            attachment.name === "trace" && attachment.contentType === "application/zip",
+    );
+    if (trace?.path === undefined) {
+        return failure;
+    }
+
+    const tracePath = path.join(
+        runDir,
+        "blob-report/resources",
+        path.basename(trace.path),
+    );
+    const testTrace = readZipJsonLines(tracePath, "test.trace");
+    const networkTrace = readZipJsonLines(tracePath, "0-trace.network");
+    if (testTrace.error !== null || networkTrace.error !== null) {
+        return {
+            ...failure,
+            traceEvidence: {
+                available: false,
+                error: testTrace.error ?? networkTrace.error,
+            },
+        };
+    }
+
+    const navigations = testTrace.rows.filter(
+        (row) => row.type === "before" && row.params?.url === "/",
+    );
+    const secondNavigation = navigations[1];
+    const secondNavigationAfter = testTrace.rows.find(
+        (row) =>
+            row.type === "after" &&
+            secondNavigation !== undefined &&
+            row.callId === secondNavigation.callId,
+    );
+    const testTimeoutRecorded = testTrace.rows.some(
+        (row) => row.type === "error" && /Test timeout/i.test(row.message ?? ""),
+    );
+    const documentResponses = networkTrace.rows
+        .map((row) => row.snapshot)
+        .filter(
+            (snapshot) =>
+                snapshot?._resourceType === "document" &&
+                snapshot.request?.url === "http://127.0.0.1:3000/",
+        );
+    const secondResponse = documentResponses[1];
+    const responseBodyCompletionRecorded = Boolean(
+        secondResponse !== undefined &&
+            Number.isFinite(secondResponse.timings?.receive) &&
+            secondResponse.timings.receive >= 0 &&
+            Number.isFinite(secondResponse.response?.bodySize) &&
+            secondResponse.response.bodySize >= 0 &&
+            Number.isFinite(secondResponse.response?._transferSize) &&
+            secondResponse.response._transferSize >= 0,
+    );
+    const traceEvidence = {
+        available: true,
+        navigationCalls: navigations.length,
+        secondNavigationCallDurationMs:
+            secondNavigation !== undefined && secondNavigationAfter !== undefined
+                ? secondNavigationAfter.endTime - secondNavigation.startTime
+                : null,
+        testTimeoutRecorded,
+        documentResponses: documentResponses.length,
+        secondResponseStatus: secondResponse?.response?.status ?? null,
+        secondResponseWaitMs: secondResponse?.timings?.wait ?? null,
+        secondResponseReceiveMs: secondResponse?.timings?.receive ?? null,
+        secondResponseBodyCompletionRecorded: responseBodyCompletionRecorded,
+    };
+
+    if (secondNavigation === undefined || !testTimeoutRecorded) {
+        return {...failure, traceEvidence};
+    }
+    if (secondResponse === undefined) {
+        return {
+            ...failure,
+            signature: "C-second-navigation-load-stall-before-response",
+            transition:
+                "the second page.goto remained pending at the test deadline without a retained document response",
+            traceEvidence,
+        };
+    }
+    if (responseBodyCompletionRecorded) {
+        return {
+            ...failure,
+            signature: "C-second-navigation-load-stall-after-complete-response",
+            transition:
+                `the second page.goto received a complete ${secondResponse.response.status} document response but did not reach load before the test deadline`,
+            traceEvidence,
+        };
+    }
+    return {
+        ...failure,
+        signature: "C-second-navigation-load-stall-response-completion-unrecorded",
+        transition:
+            `the second page.goto received ${secondResponse.response.status} response headers, but the trace did not record completed document receipt and load did not finish before the test deadline`,
+        traceEvidence,
+    };
 }
 
 function failuresFromEvents(events) {
@@ -394,12 +618,15 @@ for (const runId of runEntries) {
     ]);
     const combined = `${stdout}\n${stderr}`;
     const reporterFailures = failuresFromEvents(events);
-    const failures =
+    const rawFailures =
         blobOutcome.report !== null
             ? failuresFromBlob(blobRows)
             : reporterFailures.length > 0
               ? reporterFailures
               : failuresFromText(combined);
+    const failures = rawFailures.map((failure) =>
+        classifyNavigationTrace(failure, runDir),
+    );
     const rendererEvidence = await readRendererEvidence(runDir, manifest);
     const artifactDirectory = path.relative(experimentDir, runDir);
 
@@ -436,13 +663,16 @@ for (const runId of runEntries) {
         blobReportError: blobOutcome.error,
         failures: failures.map((failure) => ({
             combination: failure.combination,
+            family: failure.family,
             signature: failure.signature,
+            transition: failure.transition,
             project: failure.project,
             file: failure.file,
             line: failure.line,
             title: failure.title,
             status: failure.status,
             source: failure.source,
+            traceEvidence: failure.traceEvidence ?? null,
         })),
         failureCount: failures.length,
         combinations: failures.map((failure) => failure.combination),
@@ -501,6 +731,26 @@ function armSummary(arm) {
         durationMs: numberSummary(armRuns.map((run) => run.durationMs)),
         reportedWorkers: numberSummary(armRuns.map((run) => run.reportedWorkers)),
         maxActiveTests: numberSummary(armRuns.map((run) => run.maxActiveTests)),
+        telemetry: {
+            maxLoadOneMinute: numberSummary(
+                armRuns.map((run) => run.telemetry.maxLoadOneMinute),
+            ),
+            maxRunnableProcesses: numberSummary(
+                armRuns.map((run) => run.telemetry.maxRunnableProcesses),
+            ),
+            maxCpuPressureSomeAvg10: numberSummary(
+                armRuns.map((run) => run.telemetry.maxCpuPressureSomeAvg10),
+            ),
+            minMemAvailableKiB: numberSummary(
+                armRuns.map((run) => run.telemetry.minMemAvailableKiB),
+            ),
+            minSwapFreeKiB: numberSummary(
+                armRuns.map((run) => run.telemetry.minSwapFreeKiB),
+            ),
+            maxMemoryPressureSomeAvg10: numberSummary(
+                armRuns.map((run) => run.telemetry.maxMemoryPressureSomeAvg10),
+            ),
+        },
         combinationCounts,
         signatureCounts,
     };
@@ -588,6 +838,24 @@ const rendererControl =
               everyRunRendererVerified: rendererRuns.every(
                   (run) => run.rendererEvidence.verified,
               ),
+              outcomes: {
+                  swiftShaderRedRuns: swiftShader.redRuns,
+                  nativeGpuRedRuns: nativeGpu.redRuns,
+                  swiftShaderFailures: swiftShader.totalFailures,
+                  nativeGpuFailures: nativeGpu.totalFailures,
+              },
+              endToEndDurationComparison: {
+                  swiftShader: swiftShader.durationMs,
+                  nativeGpu: nativeGpu.durationMs,
+                  medianDeltaMs:
+                      nativeGpu.durationMs.median - swiftShader.durationMs.median,
+                  nativeToSwiftShaderMedianRatio:
+                      nativeGpu.durationMs.median / swiftShader.durationMs.median,
+              },
+              hostPressureComparison: {
+                  swiftShader: swiftShader.telemetry,
+                  nativeGpu: nativeGpu.telemetry,
+              },
               targetCounts: Object.fromEntries(
                   observerTargets.map((target) => [
                       target,
@@ -634,6 +902,53 @@ const rendererControl =
                             : "mixed-needs-follow-up",
           };
 
+const classificationArms = ["passive-lite-observed", "renderer-swiftshader"];
+const classifiedOccurrences = runs
+    .filter((run) => classificationArms.includes(run.arm))
+    .flatMap((run) =>
+        run.failures
+            .filter((failure) => ["A", "B", "C", "D"].includes(failure.family))
+            .map((failure) => ({
+                runId: run.runId,
+                arm: run.arm,
+                combination: failure.combination,
+                family: failure.family,
+                signature: failure.signature,
+                transition: failure.transition,
+                status: failure.status,
+                traceEvidence: failure.traceEvidence,
+            })),
+    );
+const classification = {
+    sourceArms: classificationArms,
+    occurrenceCount: classifiedOccurrences.length,
+    byFamily: Object.fromEntries(
+        ["A", "B", "C", "D"].map((family) => {
+            const occurrences = classifiedOccurrences.filter(
+                (occurrence) => occurrence.family === family,
+            );
+            return [
+                family,
+                {
+                    occurrences: occurrences.length,
+                    runs: new Set(occurrences.map((occurrence) => occurrence.runId)).size,
+                    signatureCounts: Object.fromEntries(
+                        [...new Set(occurrences.map((occurrence) => occurrence.signature))].map(
+                            (signature) => [
+                                signature,
+                                occurrences.filter(
+                                    (occurrence) => occurrence.signature === signature,
+                                ).length,
+                            ],
+                        ),
+                    ),
+                },
+            ];
+        }),
+    ),
+    perOccurrence: classifiedOccurrences,
+};
+
 const summary = {
     generatedAt: new Date().toISOString(),
     runs,
@@ -641,6 +956,7 @@ const summary = {
     observerQualificationAttempts,
     observerQualification,
     rendererControl,
+    classification,
 };
 await writeFile(path.join(outputDir, "run-summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
 
