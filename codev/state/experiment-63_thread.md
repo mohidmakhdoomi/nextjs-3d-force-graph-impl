@@ -49,3 +49,9 @@ Post-run trace analysis preserves the split branches. Across the ten accepted in
 Experiment 63 is ready to close as diagnostic evidence. Recommendation: adopt a focused synchronized co-load follow-up, starting with C's post-response navigation/load stall; defer every production mitigation, ownership assignment, retry/timeout/serial change, and canonical-gate change.
 
 Final validation passed: experiment syntax/lint, analyzer invariants, 138/138 unit tests, typecheck, and a real clean-worktree `npm ci && npm run validate` with the exact pending patch. The canonical gate passed lint/typecheck/build and all 22 serial Chromium/Firefox E2E tests in 12.5 minutes. No flaky test was skipped.
+
+## 2026-07-26 — Porch state reconciled; completion gate pending
+
+Architect integration review found that the completed experiment artifacts had advanced manually in soft mode while Porch still recorded the Hypothesis phase. Without hand-editing `status.yaml`, ran `porch done 63` through the already-completed Hypothesis, Design, Execute, and Analyze phases. Porch created and pushed the legitimate transition commits and requested the `experiment-complete` gate.
+
+The project now remains in Analyze with `experiment-complete` pending human approval, as required. Experiment findings and recommendations are unchanged; builder work stops at this gate.
